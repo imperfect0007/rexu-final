@@ -6,6 +6,7 @@ import {
   verifySupabaseToken,
 } from '../../../../backend/supabaseJwtVerifier';
 import { uploadQrPngToBucket } from '../../../../backend/qrBucketUploader';
+import { getActivationPricing } from '../../../../backend/pricingTier';
 
 export async function POST(request: Request) {
   try {
@@ -22,11 +23,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid token subject' }, { status: 400 });
     }
 
-    // NOTE: Mobile verification check temporarily disabled.
-    // Previously we enforced `mobile_verified = true` before activation.
+    const pricing = await getActivationPricing();
+    if (!pricing.isFree) {
+      return NextResponse.json(
+        { error: 'Payment required. Please complete payment through the checkout flow.' },
+        { status: 402 }
+      );
+    }
 
-    // Call the database function that atomically increments the counter,
-    // marks the profile as activated, and ensures a QR token exists.
     const { data: activationRows, error: activationError } = await supabaseAdmin
       .rpc('complete_activation', {
         p_profile_id: userId,
@@ -34,11 +38,7 @@ export async function POST(request: Request) {
 
     if (activationError || !activationRows || activationRows.length === 0) {
       console.error('complete_activation error:', activationError);
-      const message =
-        (activationError as any)?.message ||
-        (activationError as any)?.details ||
-        'Failed to complete activation';
-      return NextResponse.json({ error: message }, { status: 500 });
+      return NextResponse.json({ error: 'Failed to complete activation' }, { status: 500 });
     }
 
     const { activation_number, is_free } = activationRows[0] as {
@@ -58,11 +58,7 @@ export async function POST(request: Request) {
 
     if (qrError || !qrCodes || qrCodes.length === 0) {
       console.error('Failed to fetch QR code after activation:', qrError);
-      const message =
-        (qrError as any)?.message ||
-        (qrError as any)?.details ||
-        'Activation completed but QR code is missing';
-      return NextResponse.json({ error: message }, { status: 500 });
+      return NextResponse.json({ error: 'Activation completed but QR code is missing' }, { status: 500 });
     }
 
     const qrCode = qrCodes[0];
@@ -75,29 +71,6 @@ export async function POST(request: Request) {
       // Non-fatal: activation should still succeed even if image upload fails.
     }
 
-    // Work out tiered pricing based on how many activations exist so far
-    // 1–100   → free
-    // 101–500 → ₹99
-    // 501–1000 → ₹199
-    // >1000   → ₹299
-    const { count: existingActivations } = await supabaseAdmin
-      .from('payments')
-      .select('id', { count: 'exact', head: true })
-      .eq('is_activation', true);
-
-    const activationIndex = (existingActivations ?? 0) + 1;
-
-    let amountPaise = 0;
-    if (activationIndex <= 100) {
-      amountPaise = 0;
-    } else if (activationIndex <= 500) {
-      amountPaise = 9900;
-    } else if (activationIndex <= 1000) {
-      amountPaise = 19900;
-    } else {
-      amountPaise = 29900;
-    }
-
     const idempotencyKey = `activation-${userId}`;
 
     const { error: paymentError } = await supabaseAdmin
@@ -105,7 +78,7 @@ export async function POST(request: Request) {
       .upsert(
         {
           profile_id: userId,
-          amount_paise: amountPaise,
+          amount_paise: 0,
           currency_code: 'INR',
           provider: 'mock',
           provider_payment_id: crypto.randomUUID(),
@@ -124,15 +97,13 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       activationNumber: activation_number,
-      isFree: amountPaise === 0,
+      isFree: true,
       token: qrCode.token,
-      pricePaise: amountPaise,
+      pricePaise: 0,
     });
   } catch (error) {
     console.error('Activation error:', error);
-    const message =
-      error instanceof Error ? error.message : 'Failed to activate QR';
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to activate QR' }, { status: 500 });
   }
 }
 

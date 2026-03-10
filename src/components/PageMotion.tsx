@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 
-const ease = [0.33, 1, 0.68, 1];
+const ease = [0.33, 1, 0.68, 1] as [number, number, number, number];
 
 export function PageMotion({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
@@ -33,5 +33,5 @@ export function MainMotion({ children }: { children: React.ReactNode }) {
 
 export const sectionVariants = {
   hidden: { opacity: 0, y: 16 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.33, 1, 0.68, 1] } },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.33, 1, 0.68, 1] as [number, number, number, number] } },
 };

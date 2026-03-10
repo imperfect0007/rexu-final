@@ -86,6 +86,7 @@ export default function ConditionalFooter() {
                     Instagram
                   </a>
                   <a
+                    // TODO: Replace with your real WhatsApp number
                     href="https://wa.me/919876543210"
                     target="_blank"
                     rel="noreferrer"
@@ -104,15 +105,21 @@ export default function ConditionalFooter() {
                   <Link href="/privacy" className="block hover:text-zinc-50 transition-colors">
                     Privacy Policy
                   </Link>
-                  <Link href="/security" className="block hover:text-zinc-50 transition-colors">
-                    Security Policy
+                  <Link href="/terms" className="block hover:text-zinc-50 transition-colors">
+                    Terms &amp; Conditions
+                  </Link>
+                  <Link href="/refund" className="block hover:text-zinc-50 transition-colors">
+                    Refund Policy
+                  </Link>
+                  <Link href="/shipping" className="block hover:text-zinc-50 transition-colors">
+                    Shipping &amp; Delivery
                   </Link>
                 </div>
               </div>
 
               <div className="space-y-3">
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">
-                  Register
+                  Account
                 </p>
                 <div className="space-y-1.5 flex flex-col">
                   <Link href="/register" className="block hover:text-zinc-50 transition-colors">
@@ -121,12 +128,9 @@ export default function ConditionalFooter() {
                   <Link href="/login" className="block hover:text-zinc-50 transition-colors">
                     Login
                   </Link>
-                  <a
-                    href="mailto:hello@rexu.app"
-                    className="block hover:text-zinc-50 transition-colors"
-                  >
-                    Contact
-                  </a>
+                  <Link href="/contact" className="block hover:text-zinc-50 transition-colors">
+                    Contact Us
+                  </Link>
                 </div>
               </div>
             </div>

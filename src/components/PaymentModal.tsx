@@ -204,7 +204,8 @@ export function PaymentModal({
     return () => {
       cancelled = true;
     };
-  }, [isOpen, userId, getAuthHeaders, onSuccess]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- onSuccess is intentionally omitted to prevent re-triggering
+  }, [isOpen, userId, getAuthHeaders]);
 
   if (!isOpen) return null;
 
@@ -305,9 +306,26 @@ export function PaymentModal({
         ) : null}
 
         {!error && !success && (
-          <div className="mt-6 flex items-center justify-center gap-2 text-xs text-zinc-400">
-            <Shield className="w-3 h-3" />
-            <span>Secure payment via Razorpay</span>
+          <div className="mt-6 space-y-2 text-center">
+            <div className="flex items-center justify-center gap-2 text-xs text-zinc-400">
+              <Shield className="w-3 h-3" />
+              <span>Secure payment via Razorpay</span>
+            </div>
+            <p className="text-[10px] text-zinc-500 leading-relaxed">
+              By proceeding, you agree to our{' '}
+              <a href="/terms" target="_blank" className="text-zinc-300 underline underline-offset-2 hover:text-white">
+                Terms
+              </a>
+              ,{' '}
+              <a href="/privacy" target="_blank" className="text-zinc-300 underline underline-offset-2 hover:text-white">
+                Privacy Policy
+              </a>
+              , and{' '}
+              <a href="/refund" target="_blank" className="text-zinc-300 underline underline-offset-2 hover:text-white">
+                Refund Policy
+              </a>
+              .
+            </p>
           </div>
         )}
       </div>

@@ -1,22 +1,18 @@
 'use client';
 
-import { motion, useMotionTemplate, useMotionValue } from 'framer-motion';
+import { motion, useMotionTemplate, useMotionValue, type HTMLMotionProps } from 'framer-motion';
 import { useRef } from 'react';
 
-const defaultTransition = { duration: 0.35, ease: [0.33, 1, 0.68, 1] };
+const defaultTransition = { duration: 0.35, ease: [0.33, 1, 0.68, 1] as [number, number, number, number] };
 
 interface Card3DProps {
   children: React.ReactNode;
   className?: string;
-  /** Enable subtle tilt on mouse move (default true) */
   tilt?: boolean;
-  /** Enable lift + shadow on hover (default true) */
   lift?: boolean;
-  /** Optional initial animation */
-  initial?: object;
-  animate?: object;
-  transition?: object;
-  as?: keyof typeof motion;
+  initial?: HTMLMotionProps<'div'>['initial'];
+  animate?: HTMLMotionProps<'div'>['animate'];
+  transition?: HTMLMotionProps<'div'>['transition'];
 }
 
 export function Card3D({
@@ -27,7 +23,6 @@ export function Card3D({
   initial,
   animate,
   transition = defaultTransition,
-  as: Component = motion.div,
 }: Card3DProps) {
   const ref = useRef<HTMLDivElement>(null);
   const rotateX = useMotionValue(0);
@@ -65,7 +60,7 @@ export function Card3D({
   };
 
   return (
-    <Component
+    <motion.div
       ref={ref}
       className={className}
       style={{
@@ -80,6 +75,6 @@ export function Card3D({
       whileHover={lift && !tilt ? { y: -4, transition: { duration: 0.25 } } : undefined}
     >
       {children}
-    </Component>
+    </motion.div>
   );
 }

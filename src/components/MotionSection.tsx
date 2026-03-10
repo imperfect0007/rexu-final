@@ -1,22 +1,23 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { motion, type Variants } from 'framer-motion';
 
-/** Use with MotionSection stagger: give your motion children these variants */
+type CubicBezier = [number, number, number, number];
+const defaultEase: CubicBezier = [0.33, 1, 0.68, 1];
+
 export const staggerChildVariants = {
   hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.33, 1, 0.68, 1] } },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: defaultEase } },
 };
 
 interface MotionSectionProps {
   children: React.ReactNode;
   id?: string;
   className?: string;
-  /** Use when this section is a container for staggered children (children should be motion.* with variants={staggerChildVariants}) */
   stagger?: boolean;
   staggerDelay?: number;
   once?: boolean;
-  variants?: object;
+  variants?: Variants;
 }
 
 export function MotionSection({
@@ -40,7 +41,7 @@ export function MotionSection({
         }
       : {
           hidden: { opacity: 0, y: 16 },
-          visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.33, 1, 0.68, 1] } },
+          visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: defaultEase } },
         });
 
   return (
@@ -57,7 +58,6 @@ export function MotionSection({
   );
 }
 
-/** Single element fade-up with optional delay */
 export function FadeUp({
   children,
   delay = 0,
@@ -73,7 +73,7 @@ export function FadeUp({
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-40px' }}
-      transition={{ duration: 0.5, delay, ease: [0.33, 1, 0.68, 1] }}
+      transition={{ duration: 0.5, delay, ease: defaultEase }}
     >
       {children}
     </motion.div>

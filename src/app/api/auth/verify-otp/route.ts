@@ -8,7 +8,7 @@ function hashOtp(otp: string) {
 
 export async function POST(request: Request) {
   try {
-    const { mobile, otp } = await request.json();
+    const { mobile, otp } = await request.json().catch(() => ({} as any));
 
     if (!mobile || typeof mobile !== 'string' || !otp || typeof otp !== 'string') {
       return NextResponse.json(
@@ -44,20 +44,39 @@ export async function POST(request: Request) {
       );
     }
 
+    const MAX_ATTEMPTS = 5;
+    if ((record.attempts ?? 0) >= MAX_ATTEMPTS) {
+      return NextResponse.json(
+        { error: 'Too many failed attempts. Request a new OTP.' },
+        { status: 429 }
+      );
+    }
+
     const expectedHash = record.otp_hash;
     const providedHash = hashOtp(otp);
 
-    if (expectedHash !== providedHash) {
+    const expBuf = Buffer.from(expectedHash, 'hex');
+    const provBuf = Buffer.from(providedHash, 'hex');
+    const hashMatch = expBuf.length === provBuf.length && crypto.timingSafeEqual(expBuf, provBuf);
+
+    if (!hashMatch) {
       await supabaseAdmin
         .from('mobile_verification')
         .update({ attempts: (record.attempts ?? 0) + 1 })
         .eq('id', record.id);
 
+      const remaining = MAX_ATTEMPTS - ((record.attempts ?? 0) + 1);
       return NextResponse.json(
-        { error: 'Invalid OTP' },
+        { error: `Invalid OTP. ${remaining} attempt(s) remaining.` },
         { status: 400 }
       );
     }
+
+    // OTP matched — delete it immediately to prevent replay attacks
+    await supabaseAdmin
+      .from('mobile_verification')
+      .delete()
+      .eq('id', record.id);
 
     // Mark the profile with this mobile as verified
     const { data: profile, error: profileError } = await supabaseAdmin

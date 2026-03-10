@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import { supabaseAdmin } from '../../../../../backend/supabaseAdminClient';
 import {
   getBearerTokenFromRequest,
   verifySupabaseToken,
 } from '../../../../../backend/supabaseJwtVerifier';
+import { getActivationPricing } from '../../../../../backend/pricingTier';
 
 /**
  * GET /api/razorpay/quote
@@ -22,33 +22,17 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 400 });
     }
 
-    const { count: existingActivations } = await supabaseAdmin
-      .from('payments')
-      .select('id', { count: 'exact', head: true })
-      .eq('is_activation', true);
-
-    const activationIndex = (existingActivations ?? 0) + 1;
-
-    let amountPaise = 0;
-    if (activationIndex <= 100) {
-      amountPaise = 0;
-    } else if (activationIndex <= 500) {
-      amountPaise = 9900;
-    } else if (activationIndex <= 1000) {
-      amountPaise = 19900;
-    } else {
-      amountPaise = 29900;
-    }
+    const { activationIndex, amountPaise, isFree } = await getActivationPricing();
 
     return NextResponse.json({
-      isFree: amountPaise === 0,
+      isFree,
       amountPaise,
       activationNumber: activationIndex,
     });
   } catch (error) {
     console.error('Razorpay quote error:', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to get quote' },
+      { error: 'Failed to get quote' },
       { status: 500 }
     );
   }

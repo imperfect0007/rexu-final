@@ -12,9 +12,9 @@ import { Shield, Smartphone, QrCode, PhoneCall, CheckCircle2, ArrowRight, Menu, 
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const ease = [0.33, 1, 0.68, 1];
-const easeBounce = [0.34, 1.56, 0.64, 1];
-const navEase = { ease: [0.33, 1, 0.68, 1] };
+const ease: [number, number, number, number] = [0.33, 1, 0.68, 1];
+const easeBounce: [number, number, number, number] = [0.34, 1.56, 0.64, 1];
+const navEase = { ease: [0.33, 1, 0.68, 1] as [number, number, number, number] };
 
 type HomePageProps = {
   params?: Promise<Record<string, string | string[]>>;
@@ -261,9 +261,10 @@ export default function Home(props: HomePageProps) {
               transition={{ duration: 0.7, delay: 0.38, ease }}
               className="max-w-2xl mx-auto text-base sm:text-lg text-[#D1D7DC] leading-relaxed"
             >
-              A high‑trust safety layer that lives on your vehicle. In an emergency, anyone can scan
-              your REXU QR to reach your trusted contacts—securely, even when you can&apos;t use
-              your phone.
+              A high‑trust safety layer for <strong className="text-white">personal riders</strong> and{' '}
+              <strong className="text-white">commercial fleets</strong>. In an emergency, anyone
+              can scan your REXU QR to reach your trusted contacts — securely, even when you
+              can&apos;t use your phone.
             </motion.p>
 
             <motion.div

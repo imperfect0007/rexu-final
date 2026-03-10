@@ -248,7 +248,7 @@ export default function FleetManagerPage() {
       <motion.header
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35, ease: [0.33, 1, 0.68, 1] }}
+        transition={{ duration: 0.35, ease: [0.33, 1, 0.68, 1] as [number, number, number, number] }}
         className="bg-[#1F2428] border-b border-[#2B3136] sticky top-0 z-10"
       >
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">

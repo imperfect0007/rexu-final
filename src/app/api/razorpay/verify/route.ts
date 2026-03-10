@@ -6,6 +6,7 @@ import {
   verifySupabaseToken,
 } from '../../../../../backend/supabaseJwtVerifier';
 import { uploadQrPngToBucket } from '../../../../../backend/qrBucketUploader';
+import { getActivationPricing } from '../../../../../backend/pricingTier';
 
 const keySecret = process.env.RAZORPAY_KEY_SECRET;
 
@@ -17,18 +18,17 @@ function verifyPaymentSignature(
 ): boolean {
   const body = `${orderId}|${paymentId}`;
   const expected = crypto.createHmac('sha256', secret).update(body).digest('hex');
-  return expected === signature;
+  const expectedBuf = Buffer.from(expected, 'hex');
+  const signatureBuf = Buffer.from(signature, 'hex');
+  if (expectedBuf.length !== signatureBuf.length) return false;
+  return crypto.timingSafeEqual(expectedBuf, signatureBuf);
 }
 
-/**
- * POST /api/razorpay/verify
- * Verifies Razorpay payment signature, then completes activation and records payment.
- */
 export async function POST(request: Request) {
   try {
     if (!keySecret) {
       return NextResponse.json(
-        { error: 'Razorpay is not configured.' },
+        { error: 'Payment system is not configured.' },
         { status: 503 }
       );
     }
@@ -57,7 +57,7 @@ export async function POST(request: Request) {
 
     if (!orderId || !paymentId || !signature) {
       return NextResponse.json(
-        { error: 'Missing razorpay_order_id, razorpay_payment_id or razorpay_signature' },
+        { error: 'Missing payment verification fields' },
         { status: 400 }
       );
     }
@@ -75,23 +75,14 @@ export async function POST(request: Request) {
     if (activationError || !activationRows || activationRows.length === 0) {
       console.error('complete_activation error:', activationError);
       return NextResponse.json(
-        { error: (activationError as any)?.message || 'Activation failed' },
+        { error: 'Failed to complete activation' },
         { status: 500 }
       );
     }
 
     const { activation_number } = activationRows[0] as { activation_number: number; is_free: boolean };
 
-    let amountPaise = 0;
-    if (activation_number <= 100) {
-      amountPaise = 0;
-    } else if (activation_number <= 500) {
-      amountPaise = 9900;
-    } else if (activation_number <= 1000) {
-      amountPaise = 19900;
-    } else {
-      amountPaise = 29900;
-    }
+    const { amountPaise } = await getActivationPricing();
 
     const idempotencyKey = `razorpay-${orderId}`;
 
@@ -109,17 +100,19 @@ export async function POST(request: Request) {
       { onConflict: 'idempotency_key' }
     );
 
-    const { data: qrCode } = await supabaseAdmin
+    const { data: qrCodes } = await supabaseAdmin
       .from('qr_codes')
       .select('token')
       .eq('profile_id', userId)
-      .single();
+      .limit(1);
 
-    if (qrCode?.token) {
+    const qrToken = qrCodes?.[0]?.token ?? null;
+
+    if (qrToken) {
       try {
-        await uploadQrPngToBucket(qrCode.token);
+        await uploadQrPngToBucket(qrToken);
       } catch (err) {
-        console.error('Failed to upload QR PNG to QR bucket (verify):', err);
+        console.error('Failed to upload QR PNG:', err);
       }
     }
 
@@ -127,13 +120,13 @@ export async function POST(request: Request) {
       success: true,
       activationNumber: activation_number,
       isFree: false,
-      token: qrCode?.token ?? null,
+      token: qrToken,
       pricePaise: amountPaise,
     });
   } catch (error) {
     console.error('Razorpay verify error:', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Verification failed' },
+      { error: 'Payment verification failed' },
       { status: 500 }
     );
   }

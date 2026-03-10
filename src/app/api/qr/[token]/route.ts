@@ -3,12 +3,12 @@ import { supabaseAdmin } from '../../../../../backend/supabaseAdminClient';
 
 export async function GET(
   request: Request,
-  context: { params: { token: string } }
+  { params }: { params: Promise<{ token: string }> }
 ) {
-  const token = context.params.token;
+  const { token } = await params;
 
-  if (!token) {
-    return NextResponse.json({ error: 'Token is required' }, { status: 400 });
+  if (!token || !/^[a-f0-9]{16,64}$/i.test(token)) {
+    return NextResponse.json({ error: 'Invalid token' }, { status: 400 });
   }
 
   try {
@@ -39,4 +39,3 @@ export async function GET(
     );
   }
 }
-

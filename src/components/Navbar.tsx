@@ -6,7 +6,7 @@ import { Menu, X } from 'lucide-react';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const navEase = { ease: [0.33, 1, 0.68, 1] };
+const navEase = { ease: [0.33, 1, 0.68, 1] as [number, number, number, number] };
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);

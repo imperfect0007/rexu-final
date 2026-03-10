@@ -41,7 +41,7 @@ interface Profile {
   is_paid: boolean;
   mobile_verified: boolean;
   date_of_birth?: string | null;
-  account_type?: 'personal' | 'commercial' | null;
+  account_type?: string | null;
 }
 
 interface Contact {
@@ -79,7 +79,11 @@ type PageProps = {
 
 export default function DashboardPage(props: PageProps) {
   if (props.params) React.use(props.params);
-  if (props.searchParams) React.use(props.searchParams);
+  const searchParams = props.searchParams ? React.use(props.searchParams) : {};
+  const segmentFromUrl =
+    (searchParams?.segment as string | undefined)?.toLowerCase() === 'commercial'
+      ? 'commercial'
+      : null;
   const [profile, setProfile] = useState<Profile | null>(null);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [fleetVehicles, setFleetVehicles] = useState<FleetVehicle[]>([]);
@@ -124,6 +128,9 @@ export default function DashboardPage(props: PageProps) {
   const [emergencyStatus, setEmergencyStatus] = useState<string | null>(null);
   const [emergencyError, setEmergencyError] = useState<string | null>(null);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [mobileInput, setMobileInput] = useState('');
+  const [savingMobile, setSavingMobile] = useState(false);
+  const [mobileError, setMobileError] = useState<string | null>(null);
   // B2B fleet vehicle modal state
   const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
   const [isDriverModalOpen, setIsDriverModalOpen] = useState(false);
@@ -158,7 +165,7 @@ export default function DashboardPage(props: PageProps) {
     // Fetch profile (including date_of_birth so we can derive age); use maybeSingle so new users without a row don't error
     const { data: profileData, error: profileError } = await supabase
       .from('profiles')
-      .select('id, full_name, mobile, is_paid, mobile_verified, date_of_birth')
+      .select('id, full_name, mobile, is_paid, mobile_verified, date_of_birth, account_type')
       .eq('id', user.id)
       .maybeSingle();
 
@@ -168,11 +175,19 @@ export default function DashboardPage(props: PageProps) {
       return;
     }
 
-    // Use profile row or fallback from auth user metadata so UI always has a profile when logged in.
-    // Also carry over account_type from auth metadata (personal vs commercial) even if the column
-    // does not yet exist in the profiles table.
-    const accountType =
-      (user.user_metadata?.account_type as 'personal' | 'commercial' | undefined) ?? 'personal';
+    let accountType =
+      profileData?.account_type ??
+      (user.user_metadata?.account_type as string | undefined) ??
+      'personal';
+
+    // Google OAuth redirect may carry ?segment=commercial — persist it to the profile row
+    if (segmentFromUrl === 'commercial' && accountType !== 'commercial') {
+      accountType = 'commercial';
+      await supabase
+        .from('profiles')
+        .update({ account_type: 'commercial' })
+        .eq('id', user.id);
+    }
 
     const effectiveProfile: Profile =
       profileData !== null
@@ -243,7 +258,9 @@ export default function DashboardPage(props: PageProps) {
         setQrToken(qrData.token);
       } else if (profileData.is_paid) {
         // Generate new token if paid but no token exists
-        const token = Math.random().toString(36).substring(2, 9).toUpperCase();
+        const buf = new Uint8Array(16);
+        crypto.getRandomValues(buf);
+        const token = Array.from(buf).map(b => b.toString(16).padStart(2, '0')).join('');
         await supabase.from('qr_codes').insert({ profile_id: user.id, token });
         setQrToken(token);
       }
@@ -392,6 +409,38 @@ export default function DashboardPage(props: PageProps) {
       console.error('Verify OTP error:', error);
       setOtpError('Something went wrong verifying OTP.');
     }
+  };
+
+  const handleSaveMobile = async () => {
+    if (!mobileInput.trim() || !profile) return;
+    setSavingMobile(true);
+    setMobileError(null);
+
+    let normalized = mobileInput.trim().replace(/\s+/g, '');
+    if (!normalized.startsWith('+91')) {
+      normalized = normalized.replace(/^0+/, '');
+      normalized = `+91${normalized}`;
+    }
+
+    if (normalized.length < 13) {
+      setMobileError('Enter a valid 10-digit mobile number.');
+      setSavingMobile(false);
+      return;
+    }
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({ mobile: normalized })
+      .eq('id', profile.id);
+
+    if (error) {
+      setMobileError('Failed to save mobile number.');
+      console.error('Save mobile error:', error);
+    } else {
+      setProfile({ ...profile, mobile: normalized });
+      setMobileInput('');
+    }
+    setSavingMobile(false);
   };
 
   const handleLogout = async () => {
@@ -595,7 +644,7 @@ export default function DashboardPage(props: PageProps) {
       });
       const url = URL.createObjectURL(blob);
 
-      const img = new Image();
+      const img = document.createElement('img');
       img.onload = () => {
         const canvas = document.createElement('canvas');
         canvas.width = img.width;
@@ -917,7 +966,7 @@ export default function DashboardPage(props: PageProps) {
     );
   }
 
-  const sectionVariants = { hidden: { opacity: 0, y: 12 }, visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.33, 1, 0.68, 1] } } };
+  const sectionVariants = { hidden: { opacity: 0, y: 12 }, visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.33, 1, 0.68, 1] as [number, number, number, number] } } };
 
   // B2B / commercial dashboard – separate interface for fleet owners.
   if (profile?.account_type === 'commercial') {
@@ -1643,6 +1692,40 @@ export default function DashboardPage(props: PageProps) {
             <p className="text-[#B7BEC4]">Manage your emergency contacts and vehicle QR code.</p>
           </div>
         </motion.section>
+
+        {/* Prompt Google OAuth users to add mobile number */}
+        {profile && !profile.mobile && (
+          <motion.section variants={sectionVariants} initial="hidden" animate="visible">
+            <div className="bg-amber-950/40 rounded-[28px] p-6 border border-amber-500/30 space-y-3">
+              <div className="flex items-center gap-2 text-amber-300 text-sm font-semibold">
+                <Phone className="w-4 h-4" />
+                Add your mobile number
+              </div>
+              <p className="text-xs text-amber-200/70">
+                We need your mobile number for emergency alerts and OTP verification. This wasn&apos;t provided during Google sign-in.
+              </p>
+              {mobileError && (
+                <p className="text-xs text-red-400">{mobileError}</p>
+              )}
+              <div className="flex gap-2">
+                <input
+                  type="tel"
+                  value={mobileInput}
+                  onChange={(e) => setMobileInput(e.target.value)}
+                  placeholder="+91 98765 43210"
+                  className="flex-1 px-4 py-2.5 rounded-xl border border-amber-500/30 bg-[#1E2328] text-sm text-white placeholder:text-[#B7BEC4]/40 focus:outline-none focus:ring-2 focus:ring-amber-500/40 transition"
+                />
+                <button
+                  onClick={handleSaveMobile}
+                  disabled={savingMobile || !mobileInput.trim()}
+                  className="px-5 py-2.5 rounded-xl bg-amber-600 text-white text-sm font-semibold hover:bg-amber-700 active:scale-[0.98] transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {savingMobile ? 'Saving...' : 'Save'}
+                </button>
+              </div>
+            </div>
+          </motion.section>
+        )}
 
         {/* Emergency Contacts overview (between welcome and profile) */}
         {contacts.length > 0 && (

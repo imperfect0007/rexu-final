@@ -21,7 +21,7 @@ export async function uploadQrPngToBucket(token: string) {
 
   // Generate PNG buffer
   const pngBuffer = await QRCode.toBuffer(url, {
-    type: 'image/png',
+    type: 'png',
     width: 512,
     margin: 2,
   });

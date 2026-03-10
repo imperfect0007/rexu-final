@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 import Razorpay from 'razorpay';
-import { supabaseAdmin } from '../../../../../backend/supabaseAdminClient';
 import {
   getBearerTokenFromRequest,
   verifySupabaseToken,
 } from '../../../../../backend/supabaseJwtVerifier';
+import { getActivationPricing } from '../../../../../backend/pricingTier';
 
 const keyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
 const keySecret = process.env.RAZORPAY_KEY_SECRET;
@@ -17,7 +17,7 @@ export async function POST(request: Request) {
   try {
     if (!keyId || !keySecret) {
       return NextResponse.json(
-        { error: 'Razorpay is not configured. Add NEXT_PUBLIC_RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET.' },
+        { error: 'Payment system is not configured.' },
         { status: 503 }
       );
     }
@@ -36,23 +36,7 @@ export async function POST(request: Request) {
     const body = await request.json().catch(() => ({}));
     const { amountPaise } = body as { amountPaise?: number };
 
-    const { count: existingActivations } = await supabaseAdmin
-      .from('payments')
-      .select('id', { count: 'exact', head: true })
-      .eq('is_activation', true);
-
-    const activationIndex = (existingActivations ?? 0) + 1;
-
-    let expectedPaise = 0;
-    if (activationIndex <= 100) {
-      expectedPaise = 0;
-    } else if (activationIndex <= 500) {
-      expectedPaise = 9900;
-    } else if (activationIndex <= 1000) {
-      expectedPaise = 19900;
-    } else {
-      expectedPaise = 29900;
-    }
+    const { activationIndex, amountPaise: expectedPaise } = await getActivationPricing();
 
     if (expectedPaise === 0) {
       return NextResponse.json(
@@ -90,7 +74,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('Razorpay create-order error:', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to create order' },
+      { error: 'Failed to create order' },
       { status: 500 }
     );
   }

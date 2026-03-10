@@ -1,9 +1,12 @@
 import { notFound } from 'next/navigation';
 import { headers } from 'next/headers';
-import { Phone, Shield, AlertTriangle, HeartPulse, Pill, Activity, ArrowLeft } from 'lucide-react';
+import { Shield, AlertTriangle, HeartPulse, Pill, Activity, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { supabaseAdmin } from '../../../../backend/supabaseAdminClient';
 import { EmergencyContactActions } from './EmergencyContactActions';
+import { getEmergencyData } from '@/lib/emergencyCache';
+
+export const revalidate = 60;
 
 interface EmergencyPageProps {
   params: Promise<{
@@ -14,120 +17,50 @@ interface EmergencyPageProps {
 export default async function EmergencyPage({ params }: EmergencyPageProps) {
   const { token } = await params;
 
-  // Basic rate limiting / brute-force slowdown
-  await new Promise((resolve) => setTimeout(resolve, 300));
-
-  const { data: qrCode, error: qrError } = await supabaseAdmin
-    .from('qr_codes')
-    .select('profile_id')
-    .eq('token', token)
-    .single();
-
-  if (!qrCode || qrError) {
+  if (!token || !/^[a-f0-9]{16,64}$/i.test(token)) {
     return notFound();
   }
 
-  const [
-    { data: profile },
-    { data: emergencyProfile },
-    { data: medicalInfo },
-    { data: emergencyNote },
-    { data: contacts },
-    { data: fleetVehicle },
-  ] = await Promise.all([
-    supabaseAdmin
-      .from('profiles')
-      .select('full_name, is_paid, mobile')
-      .eq('id', qrCode.profile_id)
-      .single(),
-    supabaseAdmin
-      .from('emergency_profiles')
-      .select(
-        'blood_group, guardian_phone, secondary_contact_phone, emergency_instruction, language_note, age, organ_donor'
-      )
-      .eq('profile_id', qrCode.profile_id)
-      .maybeSingle(),
-    supabaseAdmin
-      .from('medical_info')
-      .select('allergies, medical_conditions, medications')
-      .eq('profile_id', qrCode.profile_id)
-      .maybeSingle(),
-    supabaseAdmin
-      .from('emergency_notes')
-      .select('note')
-      .eq('profile_id', qrCode.profile_id)
-      .maybeSingle(),
-    supabaseAdmin
-      .from('emergency_contacts')
-      .select('id, name, relation, phone')
-      .eq('profile_id', qrCode.profile_id)
-      .order('created_at', { ascending: true }),
-    // If this QR belongs to a fleet vehicle, we attach vehicle details
-    supabaseAdmin
-      .from('fleet_vehicles')
-      .select('id, vehicle_number, label, make_model')
-      .eq('qr_token', token)
-      .maybeSingle(),
-  ]);
+  const data = await getEmergencyData(token);
 
-  if (!profile || !profile.is_paid) {
+  if (!data) {
     return notFound();
   }
 
-  // Log the scan for admin analytics
-  try {
-    const h = await headers();
-    const ip = h.get('x-forwarded-for') || 'unknown';
-    const userAgent = h.get('user-agent') || 'unknown';
+  // Log scan asynchronously — fire-and-forget so it never blocks render
+  logScan(token, data.profileId).catch(() => {});
 
-    await supabaseAdmin.from('scan_logs').insert({
-      token,
-      profile_id: qrCode.profile_id,
-      ip,
-      user_agent: userAgent,
-    });
-  } catch (error) {
-    console.error('Failed to log scan:', error);
-  }
+  const safeContacts = data.contacts;
+  const criticalNote = data.emergencyNote || data.emergencyInstruction || null;
+  const allergies = data.allergies;
+  const conditions = data.medicalConditions;
+  const medications = data.medications;
+  const bloodGroup = data.bloodGroup;
+  const guardianPhone = data.guardianPhone;
+  const secondaryPhone = data.secondaryContactPhone;
+  const age = data.age;
+  const languageNote = data.languageNote;
+  const isOrganDonor = data.organDonor;
+  const isFleetVehicle = !!data.fleetVehicle;
+  const fleetVehicle = data.fleetVehicle;
 
-  const safeContacts = contacts || [];
-  const criticalNote = emergencyNote?.note || emergencyProfile?.emergency_instruction || null;
-  const allergies = medicalInfo?.allergies || null;
-  const conditions = medicalInfo?.medical_conditions || null;
-  const medications = medicalInfo?.medications || null;
-  const bloodGroup = emergencyProfile?.blood_group || null;
-  const guardianPhone = emergencyProfile?.guardian_phone || null;
-  const secondaryPhone = emergencyProfile?.secondary_contact_phone || (safeContacts[0]?.phone ?? null);
-  const age = emergencyProfile?.age ?? null;
-  const languageNote = emergencyProfile?.language_note || null;
-  const isOrganDonor = emergencyProfile?.organ_donor ?? false;
-  const isFleetVehicle = !!fleetVehicle;
+  let driverName: string | null = null;
+  let driverPhone: string | null = null;
+  let driverBloodGroup: string | null = null;
 
-  // If this QR is tied to a fleet vehicle, try to resolve the currently assigned driver
-  let fleetDriver: { name: string; phone: string | null; blood_group: string | null } | null =
-    null;
   if (fleetVehicle?.id) {
-    const { data: driverData, error: driverError } = await supabaseAdmin
+    const { data: driverData } = await supabaseAdmin
       .from('fleet_drivers')
       .select('name, phone, blood_group')
       .eq('assigned_vehicle_id', fleetVehicle.id)
       .maybeSingle();
 
-    if (driverError) {
-      console.error('EmergencyPage: failed to fetch fleet driver for vehicle:', driverError);
-    }
     if (driverData) {
-      fleetDriver = {
-        name: (driverData as any).name,
-        phone: (driverData as any).phone ?? null,
-        blood_group: (driverData as any).blood_group ?? null,
-      };
+      driverName = (driverData as any).name ?? null;
+      driverPhone = (driverData as any).phone ?? null;
+      driverBloodGroup = (driverData as any).blood_group ?? null;
     }
   }
-
-  const driverName = fleetDriver?.name ?? null;
-  const driverPhone = fleetDriver?.phone ?? null;
-  const driverBloodGroup = fleetDriver?.blood_group ?? null;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-[#101518] to-black text-white flex flex-col">
@@ -164,7 +97,7 @@ export default async function EmergencyPage({ params }: EmergencyPageProps) {
                 ? driverName
                 : isFleetVehicle
                 ? 'This vehicle & driver'
-                : profile.full_name}
+                : data.fullName}
               {!isFleetVehicle && age ? (
                 <span className="text-base text-[#B7BEC4] ml-2">({age} yrs)</span>
               ) : null}
@@ -201,12 +134,12 @@ export default async function EmergencyPage({ params }: EmergencyPageProps) {
                   Vehicle details
                 </p>
                 <p className="text-sm text-[#B7BEC4]">
-                  <span className="font-semibold text-white">Company:</span> {profile.full_name}
+                  <span className="font-semibold text-white">Company:</span> {data.fullName}
                 </p>
-                {profile.mobile && (
+                {data.mobile && (
                   <p className="text-sm text-[#B7BEC4]">
                     <span className="font-semibold text-white">Company mobile:</span>{' '}
-                    <span className="font-mono">{profile.mobile}</span>
+                    <span className="font-mono">{data.mobile}</span>
                   </p>
                 )}
                 <p className="text-sm text-[#B7BEC4]">
@@ -221,9 +154,9 @@ export default async function EmergencyPage({ params }: EmergencyPageProps) {
                 )}
               </div>
 
-              {profile.mobile && (
+              {data.mobile && (
                 <a
-                  href={`tel:${profile.mobile}`}
+                  href={`tel:${data.mobile}`}
                   className="inline-flex items-center justify-center w-full px-4 py-2.5 rounded-2xl bg-red-600 text-white text-sm font-semibold hover:bg-red-700 active:scale-[0.98] transition"
                 >
                   Call owner
@@ -348,5 +281,22 @@ export default async function EmergencyPage({ params }: EmergencyPageProps) {
       </main>
     </div>
   );
+}
+
+async function logScan(token: string, profileId: string) {
+  try {
+    const h = await headers();
+    const ip = h.get('x-forwarded-for')?.split(',')[0]?.trim() || null;
+    const userAgent = h.get('user-agent') || 'unknown';
+
+    await supabaseAdmin.from('scan_logs').insert({
+      token,
+      profile_id: profileId,
+      ip,
+      user_agent: userAgent,
+    });
+  } catch {
+    // non-critical — never block the emergency page
+  }
 }
 

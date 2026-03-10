@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcrypt';
 import { supabaseAdmin } from '../../../../../backend/supabaseAdminClient';
+import { signAdminToken } from '../../../../../backend/adminAuth';
 
 export async function POST(request: Request) {
   try {
-    const { email, password } = await request.json();
+    const { email, password } = await request.json().catch(() => ({} as any));
 
     if (!email || !password) {
       return NextResponse.json(
@@ -36,14 +37,16 @@ export async function POST(request: Request) {
       );
     }
 
+    const adminToken = signAdminToken(admin.id);
+
     const response = NextResponse.json({ success: true });
 
-    response.cookies.set('admin_auth', 'true', {
+    response.cookies.set('admin_auth', adminToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       path: '/',
-      maxAge: 60 * 60 * 8, // 8 hours
+      maxAge: 60 * 60 * 8,
     });
 
     return response;
@@ -55,4 +58,3 @@ export async function POST(request: Request) {
     );
   }
 }
-

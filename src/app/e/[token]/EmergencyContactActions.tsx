@@ -98,7 +98,9 @@ export function EmergencyContactActions({
                   </div>
                 </div>
                 <div className="text-right text-[11px] text-[#B7BEC4] font-mono">
-                  {contact.phone}
+                  {contact.phone.length > 6
+                    ? `${contact.phone.slice(0, 4)}${'*'.repeat(contact.phone.length - 6)}${contact.phone.slice(-2)}`
+                    : '******'}
                 </div>
               </div>
             </a>

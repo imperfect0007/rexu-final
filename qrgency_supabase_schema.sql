@@ -15,7 +15,10 @@ create extension if not exists "uuid-ossp";
 create table if not exists public.profiles (
   id uuid primary key references auth.users (id) on delete cascade,
   full_name text not null,
-  mobile text not null,
+  mobile text,
+  avatar_url text,
+  date_of_birth date,
+  account_type text not null default 'personal', -- 'personal' (B2C) or 'commercial' (B2B fleet)
   mobile_verified boolean not null default false,
   is_paid boolean not null default false,
   activation_completed boolean not null default false,
@@ -28,6 +31,7 @@ create index if not exists idx_profiles_is_paid on public.profiles (is_paid);
 create index if not exists idx_profiles_created_at on public.profiles (created_at);
 create index if not exists idx_profiles_mobile on public.profiles (mobile);
 create index if not exists idx_profiles_activation_number on public.profiles (activation_number);
+create index if not exists idx_profiles_account_type on public.profiles (account_type);
 
 -- Extend profiles with emergency / medical profile linkage and guardian details
 alter table public.profiles
@@ -59,18 +63,24 @@ create table if not exists public.mobile_verification (
 create index if not exists idx_mobile_verification_mobile
   on public.mobile_verification (mobile);
 
--- Auto-create profile row when a new auth user is created
+-- Auto-create profile row when a new auth user is created.
+-- Supports both email/password (full_name in metadata) and Google OAuth (name or full_name).
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
 security definer
 as $$
 begin
-  insert into public.profiles (id, full_name, mobile)
+  insert into public.profiles (id, full_name, mobile, account_type)
   values (
     new.id,
-    new.raw_user_meta_data->>'full_name',
-    new.raw_user_meta_data->>'mobile'
+    coalesce(
+      new.raw_user_meta_data->>'full_name',
+      new.raw_user_meta_data->>'name',
+      'User'
+    ),
+    new.raw_user_meta_data->>'mobile',
+    coalesce(new.raw_user_meta_data->>'account_type', 'personal')
   )
   on conflict (id) do nothing;
 
@@ -197,6 +207,47 @@ drop trigger if exists trg_enforce_max_three_contacts on public.emergency_contac
 create trigger trg_enforce_max_three_contacts
 before insert on public.emergency_contacts
 for each row execute procedure public.enforce_max_three_contacts();
+
+-- =========================================================
+-- FLEET VEHICLES (company fleet QR tracking)
+-- =========================================================
+
+create table if not exists public.fleet_vehicles (
+  id uuid primary key default gen_random_uuid(),
+  owner_profile_id uuid not null references public.profiles (id) on delete cascade,
+  qr_token text unique,
+  vehicle_number text not null,
+  label text,
+  make_model text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists idx_fleet_vehicles_owner_profile_id
+  on public.fleet_vehicles (owner_profile_id);
+create index if not exists idx_fleet_vehicles_qr_token
+  on public.fleet_vehicles (qr_token);
+
+-- =========================================================
+-- FLEET DRIVERS (assigned to vehicles)
+-- =========================================================
+
+create table if not exists public.fleet_drivers (
+  id uuid primary key default gen_random_uuid(),
+  owner_profile_id uuid not null references public.profiles (id) on delete cascade,
+  assigned_vehicle_id uuid references public.fleet_vehicles (id) on delete set null,
+  name text not null,
+  phone text not null,
+  blood_group text,
+  notes text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists idx_fleet_drivers_owner_profile_id
+  on public.fleet_drivers (owner_profile_id);
+create index if not exists idx_fleet_drivers_vehicle_id
+  on public.fleet_drivers (assigned_vehicle_id);
 
 -- =========================================================
 -- QR CODES (Tokens referenced by public scan URL /e/{token})
@@ -432,10 +483,11 @@ begin
     raise exception 'Profile not found for activation';
   end if;
 
-  -- Idempotency: if already completed, return existing values
+  -- Idempotency: if already completed, return existing values and exit
   if v_profile.activation_completed then
     return query
     select v_profile.activation_number, v_profile.is_free_customer;
+    return;
   end if;
 
   -- Lock and increment global counter
@@ -548,8 +600,42 @@ on public.qr_codes
 for select
 using (auth.uid() = profile_id);
 
--- Scan logs and payments: only service role / admin (no anon user)
--- In Supabase, rely on service role bypassing RLS; no public policies.
+-- Fleet vehicles: owner only
+alter table public.fleet_vehicles enable row level security;
+create policy "Users can manage own fleet vehicles"
+on public.fleet_vehicles for all
+using (auth.uid() = owner_profile_id)
+with check (auth.uid() = owner_profile_id);
+
+-- Fleet drivers: owner only
+alter table public.fleet_drivers enable row level security;
+create policy "Users can manage own fleet drivers"
+on public.fleet_drivers for all
+using (auth.uid() = owner_profile_id)
+with check (auth.uid() = owner_profile_id);
+
+-- Mobile verification: service role only (no anon user policies)
+alter table public.mobile_verification enable row level security;
+
+-- Customer counter: service role only
+alter table public.customer_counter enable row level security;
+
+-- Admins: service role only
+alter table public.admins enable row level security;
+
+-- User lifecycle events: service role only
+alter table public.user_lifecycle_events enable row level security;
+
+-- Daily stats: service role only
+alter table public.daily_stats enable row level security;
+
+-- Analytics snapshots: service role only
+alter table public.analytics_snapshots enable row level security;
+
+-- Abuse incidents: service role only
+alter table public.abuse_incidents enable row level security;
+
+-- Scan logs and payments: service role / admin only (no anon user)
 
 -- =========================================================
 -- DONE

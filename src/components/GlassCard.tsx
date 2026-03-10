@@ -15,7 +15,7 @@ export function GlassCard({ children, className = '', hover = true }: GlassCardP
       initial={{ opacity: 0, y: 12 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-20px' }}
-      transition={{ duration: 0.4, ease: [0.33, 1, 0.68, 1] }}
+      transition={{ duration: 0.4, ease: [0.33, 1, 0.68, 1] as [number, number, number, number] }}
       whileHover={hover ? { y: -4, transition: { duration: 0.2 } } : undefined}
     >
       {children}

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
 
-const ease = [0.33, 1, 0.68, 1];
+const ease = [0.33, 1, 0.68, 1] as [number, number, number, number];
 
 export default function AuthLayout({
   children,

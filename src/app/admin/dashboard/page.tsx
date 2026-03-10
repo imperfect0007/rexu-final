@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { AdminQrToggleButton } from '@/components/AdminQrToggleButton';
 import { supabaseAdmin } from '../../../../backend/supabaseAdminClient';
 import { cookies } from 'next/headers';
+import { verifyAdminToken } from '../../../../backend/adminAuth';
 
 interface AdminDashboardPageProps {
   searchParams: Promise<{ q?: string }>;
@@ -11,7 +12,7 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
   const cookieStore = await cookies();
   const adminAuth = cookieStore.get('admin_auth');
 
-  if (!adminAuth || adminAuth.value !== 'true') {
+  if (!adminAuth || !verifyAdminToken(adminAuth.value)) {
     redirect('/admin');
   }
 
@@ -24,7 +25,6 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
     { count: paidNonFreeUsers },
     { count: totalQr },
     { data: recentUsers },
-    { data: qrForRecent },
     { data: recentScans },
   ] = await Promise.all([
     supabaseAdmin.from('profiles').select('id', { count: 'exact', head: true }),
@@ -43,22 +43,23 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
     supabaseAdmin
       .from('profiles')
       .select('id, full_name, mobile, is_paid, is_free_customer, created_at')
-      .ilike('mobile', search ? `%${search}%` : '%')
+      .ilike('full_name', search ? `%${search}%` : '%')
       .order('created_at', { ascending: false })
       .limit(20),
-    supabaseAdmin
-      .from('qr_codes')
-      .select('profile_id, token, is_active')
-      .in(
-        'profile_id',
-        (recentUsers || []).map((u: any) => u.id) || []
-      ),
     supabaseAdmin
       .from('scan_logs')
       .select('id, token, created_at, ip')
       .order('created_at', { ascending: false })
       .limit(20),
   ]);
+
+  const userIds = (recentUsers || []).map((u: any) => u.id);
+  const { data: qrForRecent } = userIds.length > 0
+    ? await supabaseAdmin
+        .from('qr_codes')
+        .select('profile_id, token, is_active')
+        .in('profile_id', userIds)
+    : { data: [] as any[] };
 
   // Compute total revenue from activation payments (sum of amount_paise)
   const { data: activationPayments } = await supabaseAdmin
@@ -194,7 +195,7 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
           </div>
 
           <div className="rounded-2xl bg-zinc-950 border border-zinc-800 p-4">
-            <h2 className="text-sm font-semibold mb3">Recent Scan Logs</h2>
+            <h2 className="text-sm font-semibold mb-3">Recent Scan Logs</h2>
             <div className="space-y-2 max-h-80 overflow-y-auto pr-2 mt-1">
               {(recentScans || []).map((scan) => (
                 <div

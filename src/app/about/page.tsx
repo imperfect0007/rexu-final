@@ -45,7 +45,11 @@ export default function AboutPage() {
             </span>
           </h2>
           <p className="max-w-2xl mx-auto text-base sm:text-lg text-[#D1D7DC] leading-relaxed mt-6">
-            REXU is a safety and trust platform designed for real-world emergencies—where quick access to the right information can make all the difference.
+            REXU is a safety and trust platform designed for real-world emergencies — for
+            individual riders and their families <strong className="text-white">(B2C)</strong>, and
+            for logistics companies, cab operators, and fleet owners{' '}
+            <strong className="text-white">(B2B)</strong>. Quick access to the right information
+            can make all the difference.
           </p>
         </div>
       </section>
