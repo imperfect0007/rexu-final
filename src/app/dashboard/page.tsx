@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
+import { logFleetActivity } from '@/lib/fleetLogger';
 import { useRouter } from 'next/navigation';
 import {
   Shield,
@@ -27,6 +28,10 @@ import {
   Pencil,
   Truck,
   ArrowLeft,
+  FileText,
+  ClipboardCheck,
+  ScrollText,
+  Clock,
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -145,6 +150,7 @@ export default function DashboardPage(props: PageProps) {
   const [driverNotes, setDriverNotes] = useState('');
   const [driverSaving, setDriverSaving] = useState(false);
   const [driverError, setDriverError] = useState<string | null>(null);
+  const [expiringDocs, setExpiringDocs] = useState<{ id: string; document_name: string; document_type: string; expiry_date: string; fleet_vehicles: { vehicle_number: string } | null }[]>([]);
   const qrRef = useRef<SVGSVGElement | null>(null);
   const router = useRouter();
 
@@ -240,6 +246,18 @@ export default function DashboardPage(props: PageProps) {
           console.error('Error fetching fleet drivers:', driverError);
         }
         setFleetDrivers(driverData || []);
+
+        const thirtyDaysFromNow = new Date();
+        thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+        const { data: expiringData } = await supabase
+          .from('fleet_documents')
+          .select('id, document_name, document_type, expiry_date, fleet_vehicles(vehicle_number)')
+          .eq('owner_profile_id', user.id)
+          .not('expiry_date', 'is', null)
+          .lte('expiry_date', thirtyDaysFromNow.toISOString().split('T')[0])
+          .order('expiry_date', { ascending: true });
+
+        setExpiringDocs((expiringData as typeof expiringDocs) || []);
       }
 
       // Fetch or generate QR token (tolerant of duplicate rows)
@@ -853,7 +871,13 @@ export default function DashboardPage(props: PageProps) {
         return;
       }
 
-      // Clear form and close modal so HR can continue adding vehicles
+      await logFleetActivity({
+        action: 'vehicle_added',
+        entityType: 'vehicle',
+        description: `Added vehicle ${vehicleNumber.trim()}${vehicleLabel.trim() ? ` (${vehicleLabel.trim()})` : ''}`,
+        metadata: { vehicle_number: vehicleNumber.trim(), label: vehicleLabel.trim() || null, make_model: vehicleMakeModel.trim() || null },
+      });
+
       setVehicleNumber('');
       setVehicleLabel('');
       setVehicleMakeModel('');
@@ -902,6 +926,15 @@ export default function DashboardPage(props: PageProps) {
       }
 
       setFleetDrivers((prev) => [data as FleetDriver, ...prev]);
+
+      await logFleetActivity({
+        action: 'driver_added',
+        entityType: 'driver',
+        entityId: data.id,
+        description: `Added driver ${driverName.trim()} (${driverPhone.trim()})`,
+        metadata: { name: driverName.trim(), phone: driverPhone.trim(), blood_group: driverBloodGroup.trim() || null },
+      });
+
       setDriverName('');
       setDriverPhone('');
       setDriverBloodGroup('');
@@ -932,6 +965,17 @@ export default function DashboardPage(props: PageProps) {
       setFleetDrivers((prev) =>
         prev.map((d) => (d.id === driverId ? (data as FleetDriver) : d))
       );
+
+      const driverObj = fleetDrivers.find((d) => d.id === driverId);
+      const vehicleObj = vehicleId ? fleetVehicles.find((v) => v.id === vehicleId) : null;
+      await logFleetActivity({
+        action: vehicleId ? 'driver_assigned' : 'driver_unassigned',
+        entityType: 'driver',
+        entityId: driverId,
+        description: vehicleId
+          ? `Assigned ${driverObj?.name || 'driver'} to ${vehicleObj?.vehicle_number || 'vehicle'}`
+          : `Unassigned ${driverObj?.name || 'driver'} from vehicle`,
+      });
     } catch (err) {
       console.error('Update driver assignment error:', err);
     }
@@ -952,7 +996,15 @@ export default function DashboardPage(props: PageProps) {
         return;
       }
 
+      const deletedDriver = fleetDrivers.find((d) => d.id === driverId);
       setFleetDrivers((prev) => prev.filter((d) => d.id !== driverId));
+
+      await logFleetActivity({
+        action: 'driver_deleted',
+        entityType: 'driver',
+        entityId: driverId,
+        description: `Deleted driver ${deletedDriver?.name || 'unknown'}`,
+      });
     } catch (err) {
       console.error('Delete driver error:', err);
     }
@@ -1030,6 +1082,33 @@ export default function DashboardPage(props: PageProps) {
             >
               <Link2 className="w-4 h-4" /> Assignments
             </button>
+
+            <p className="px-5 mt-6 mb-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#B7BEC4]/60">
+              Operations
+            </p>
+            <Link
+              href="/documents"
+              className="flex items-center gap-3 px-5 py-2.5 text-sm text-[#B7BEC4] hover:bg-[#2B3136] hover:text-white border-l-[3px] border-transparent transition-colors"
+            >
+              <FileText className="w-4 h-4" /> Documents
+              {expiringDocs.length > 0 && (
+                <span className="ml-auto text-[10px] font-bold text-amber-400 bg-amber-950/40 border border-amber-500/30 rounded-full px-1.5 py-0.5 leading-none">
+                  {expiringDocs.length}
+                </span>
+              )}
+            </Link>
+            <Link
+              href="/checkins"
+              className="flex items-center gap-3 px-5 py-2.5 text-sm text-[#B7BEC4] hover:bg-[#2B3136] hover:text-white border-l-[3px] border-transparent transition-colors"
+            >
+              <ClipboardCheck className="w-4 h-4" /> Check-in / out
+            </Link>
+            <Link
+              href="/logs"
+              className="flex items-center gap-3 px-5 py-2.5 text-sm text-[#B7BEC4] hover:bg-[#2B3136] hover:text-white border-l-[3px] border-transparent transition-colors"
+            >
+              <ScrollText className="w-4 h-4" /> Activity Logs
+            </Link>
 
             <p className="px-5 mt-6 mb-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#B7BEC4]/60">
               Account
@@ -1137,6 +1216,46 @@ export default function DashboardPage(props: PageProps) {
 
           {/* Scrollable main area */}
           <main className="flex-1 overflow-y-auto p-8 space-y-6 bg-gradient-to-b from-[#1F2428] via-[#101518] to-[#1F2428]">
+            {/* ── Document expiry alerts ── */}
+            {expiringDocs.length > 0 && (
+              <div className="rounded-[28px] bg-amber-950/30 border border-amber-500/30 p-5 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-amber-300 text-sm font-semibold">
+                    <AlertTriangle className="w-4 h-4" />
+                    Document Expiry Alerts ({expiringDocs.length})
+                  </div>
+                  <Link
+                    href="/documents"
+                    className="text-xs text-amber-400 hover:text-amber-300 font-medium transition-colors"
+                  >
+                    View all →
+                  </Link>
+                </div>
+                <div className="space-y-1.5">
+                  {expiringDocs.slice(0, 5).map((doc) => {
+                    const expiry = new Date(doc.expiry_date);
+                    const now = new Date();
+                    now.setHours(0, 0, 0, 0);
+                    const days = Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                    const isExpired = days < 0;
+                    return (
+                      <div key={doc.id} className="flex items-center justify-between text-xs">
+                        <span className="text-white/80">
+                          {doc.document_name}
+                          {doc.fleet_vehicles && (
+                            <span className="text-[#B7BEC4]/60"> · {doc.fleet_vehicles.vehicle_number}</span>
+                          )}
+                        </span>
+                        <span className={isExpired ? 'text-red-400 font-semibold' : 'text-amber-400 font-semibold'}>
+                          {isExpired ? `Expired ${Math.abs(days)}d ago` : `${days}d left`}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* ── Stats cards ── */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
               <div className="border border-white/10 rounded-[28px] bg-[#101518]/90 p-6 flex items-center justify-between">

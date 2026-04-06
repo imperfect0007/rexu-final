@@ -556,17 +556,20 @@ alter table public.scan_logs
   enable row level security;
 
 -- Profiles: users can see/update only their own profile
+drop policy if exists "Users can view own profile" on public.profiles;
 create policy "Users can view own profile"
 on public.profiles
 for select
 using (auth.uid() = id);
 
+drop policy if exists "Users can update own profile" on public.profiles;
 create policy "Users can update own profile"
 on public.profiles
 for update
 using (auth.uid() = id);
 
 -- Emergency contacts: owner only
+drop policy if exists "Users can manage own contacts" on public.emergency_contacts;
 create policy "Users can manage own contacts"
 on public.emergency_contacts
 for all
@@ -574,6 +577,7 @@ using (auth.uid() = profile_id)
 with check (auth.uid() = profile_id);
 
 -- Emergency profiles: owner only
+drop policy if exists "Users can manage own emergency profile" on public.emergency_profiles;
 create policy "Users can manage own emergency profile"
 on public.emergency_profiles
 for all
@@ -581,6 +585,7 @@ using (auth.uid() = profile_id)
 with check (auth.uid() = profile_id);
 
 -- Medical info: owner only
+drop policy if exists "Users can manage own medical info" on public.medical_info;
 create policy "Users can manage own medical info"
 on public.medical_info
 for all
@@ -588,6 +593,7 @@ using (auth.uid() = profile_id)
 with check (auth.uid() = profile_id);
 
 -- Emergency notes: owner only
+drop policy if exists "Users can manage own emergency notes" on public.emergency_notes;
 create policy "Users can manage own emergency notes"
 on public.emergency_notes
 for all
@@ -595,6 +601,7 @@ using (auth.uid() = profile_id)
 with check (auth.uid() = profile_id);
 
 -- QR codes: owner can read their own; writes via service role
+drop policy if exists "Users can view own QR codes" on public.qr_codes;
 create policy "Users can view own QR codes"
 on public.qr_codes
 for select
@@ -602,6 +609,7 @@ using (auth.uid() = profile_id);
 
 -- Fleet vehicles: owner only
 alter table public.fleet_vehicles enable row level security;
+drop policy if exists "Users can manage own fleet vehicles" on public.fleet_vehicles;
 create policy "Users can manage own fleet vehicles"
 on public.fleet_vehicles for all
 using (auth.uid() = owner_profile_id)
@@ -609,6 +617,7 @@ with check (auth.uid() = owner_profile_id);
 
 -- Fleet drivers: owner only
 alter table public.fleet_drivers enable row level security;
+drop policy if exists "Users can manage own fleet drivers" on public.fleet_drivers;
 create policy "Users can manage own fleet drivers"
 on public.fleet_drivers for all
 using (auth.uid() = owner_profile_id)
@@ -636,6 +645,106 @@ alter table public.analytics_snapshots enable row level security;
 alter table public.abuse_incidents enable row level security;
 
 -- Scan logs and payments: service role / admin only (no anon user)
+
+-- =========================================================
+-- FLEET DOCUMENTS (insurance, RC, license, permits, etc.)
+-- =========================================================
+
+create table if not exists public.fleet_documents (
+  id uuid primary key default gen_random_uuid(),
+  owner_profile_id uuid not null references public.profiles (id) on delete cascade,
+  vehicle_id uuid references public.fleet_vehicles (id) on delete set null,
+  driver_id uuid references public.fleet_drivers (id) on delete set null,
+  document_type text not null, -- 'insurance','registration','license','permit','fitness','pollution','other'
+  document_name text not null,
+  file_path text not null,
+  expiry_date date,
+  notes text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists idx_fleet_documents_owner on public.fleet_documents (owner_profile_id);
+create index if not exists idx_fleet_documents_expiry on public.fleet_documents (expiry_date);
+create index if not exists idx_fleet_documents_vehicle on public.fleet_documents (vehicle_id);
+create index if not exists idx_fleet_documents_driver on public.fleet_documents (driver_id);
+
+alter table public.fleet_documents enable row level security;
+drop policy if exists "Users can manage own fleet documents" on public.fleet_documents;
+create policy "Users can manage own fleet documents"
+on public.fleet_documents for all
+using (auth.uid() = owner_profile_id)
+with check (auth.uid() = owner_profile_id);
+
+-- =========================================================
+-- FLEET CHECK-INS / CHECK-OUTS (driver shift tracking)
+-- =========================================================
+
+create table if not exists public.fleet_checkins (
+  id uuid primary key default gen_random_uuid(),
+  owner_profile_id uuid not null references public.profiles (id) on delete cascade,
+  vehicle_id uuid not null references public.fleet_vehicles (id) on delete cascade,
+  driver_id uuid references public.fleet_drivers (id) on delete set null,
+  check_type text not null check (check_type in ('check_in', 'check_out')),
+  odometer_reading numeric,
+  fuel_level text,
+  condition_notes text,
+  photo_paths text[] default '{}',
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_fleet_checkins_owner on public.fleet_checkins (owner_profile_id);
+create index if not exists idx_fleet_checkins_vehicle on public.fleet_checkins (vehicle_id);
+create index if not exists idx_fleet_checkins_created on public.fleet_checkins (created_at desc);
+
+alter table public.fleet_checkins enable row level security;
+drop policy if exists "Users can manage own fleet checkins" on public.fleet_checkins;
+create policy "Users can manage own fleet checkins"
+on public.fleet_checkins for all
+using (auth.uid() = owner_profile_id)
+with check (auth.uid() = owner_profile_id);
+
+-- =========================================================
+-- FLEET ACTIVITY LOGS (B2B audit trail)
+-- =========================================================
+
+create table if not exists public.fleet_activity_logs (
+  id uuid primary key default gen_random_uuid(),
+  owner_profile_id uuid not null references public.profiles (id) on delete cascade,
+  action text not null,
+  entity_type text,       -- 'vehicle','driver','document','checkin'
+  entity_id text,
+  description text not null,
+  metadata jsonb default '{}',
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_fleet_activity_logs_owner on public.fleet_activity_logs (owner_profile_id);
+create index if not exists idx_fleet_activity_logs_created on public.fleet_activity_logs (created_at desc);
+create index if not exists idx_fleet_activity_logs_entity on public.fleet_activity_logs (entity_type);
+
+alter table public.fleet_activity_logs enable row level security;
+drop policy if exists "Users can manage own fleet activity logs" on public.fleet_activity_logs;
+create policy "Users can manage own fleet activity logs"
+on public.fleet_activity_logs for all
+using (auth.uid() = owner_profile_id)
+with check (auth.uid() = owner_profile_id);
+
+-- =========================================================
+-- SUPABASE STORAGE BUCKETS (run in Supabase SQL editor)
+-- =========================================================
+-- Uncomment and run these in Supabase SQL editor to create storage buckets:
+--
+-- insert into storage.buckets (id, name, public) values ('fleet-documents', 'fleet-documents', false) on conflict (id) do nothing;
+-- insert into storage.buckets (id, name, public) values ('fleet-photos', 'fleet-photos', false) on conflict (id) do nothing;
+--
+-- Storage RLS policies:
+-- create policy "Fleet owners upload documents" on storage.objects for insert with check (bucket_id = 'fleet-documents' and auth.uid()::text = (storage.foldername(name))[1]);
+-- create policy "Fleet owners read own documents" on storage.objects for select using (bucket_id = 'fleet-documents' and auth.uid()::text = (storage.foldername(name))[1]);
+-- create policy "Fleet owners delete own documents" on storage.objects for delete using (bucket_id = 'fleet-documents' and auth.uid()::text = (storage.foldername(name))[1]);
+-- create policy "Fleet owners upload photos" on storage.objects for insert with check (bucket_id = 'fleet-photos' and auth.uid()::text = (storage.foldername(name))[1]);
+-- create policy "Fleet owners read own photos" on storage.objects for select using (bucket_id = 'fleet-photos' and auth.uid()::text = (storage.foldername(name))[1]);
+-- create policy "Fleet owners delete own photos" on storage.objects for delete using (bucket_id = 'fleet-photos' and auth.uid()::text = (storage.foldername(name))[1]);
 
 -- =========================================================
 -- DONE

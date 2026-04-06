@@ -74,7 +74,7 @@ export default function RegisterPage(props: PageProps) {
       normalizedMobile = `+91${normalizedMobile}`;
     }
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -88,6 +88,9 @@ export default function RegisterPage(props: PageProps) {
 
     if (error) {
       setError(error.message);
+      setLoading(false);
+    } else if (data.user && data.user.identities?.length === 0) {
+      setError('An account already exists with this email. Please log in instead.');
       setLoading(false);
     } else {
       router.push('/dashboard');

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { logFleetActivity } from '@/lib/fleetLogger';
 import {
   Shield,
   Plus,
@@ -58,16 +59,19 @@ export default function FleetManagerPage() {
         return;
       }
 
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('full_name, account_type')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      const accountType = profileData?.account_type ?? user.user_metadata?.account_type ?? 'personal';
+
       setProfileName(
-        (user.user_metadata?.full_name as string | undefined) || 'Fleet owner'
+        profileData?.full_name ?? (user.user_metadata?.full_name as string | undefined) ?? 'Fleet owner'
       );
 
-      const accountType =
-        (user.user_metadata?.account_type as 'personal' | 'commercial' | undefined) ??
-        'personal';
-
       if (accountType !== 'commercial') {
-        // Non-fleet users are redirected back to the main dashboard
         router.push('/dashboard');
         return;
       }
@@ -130,7 +134,14 @@ export default function FleetManagerPage() {
 
       setFleetVehicles((prev) => [data as FleetVehicle, ...prev]);
 
-      // Clear form and close modal
+      await logFleetActivity({
+        action: 'vehicle_added',
+        entityType: 'vehicle',
+        entityId: data.id,
+        description: `Added vehicle ${vehicleNumber.trim()}`,
+        metadata: { vehicle_number: vehicleNumber.trim(), label: vehicleLabel.trim() || null },
+      });
+
       setVehicleNumber('');
       setVehicleLabel('');
       setVehicleMakeModel('');
@@ -215,7 +226,15 @@ export default function FleetManagerPage() {
         return;
       }
 
+      const deletedVehicle = fleetVehicles.find((v) => v.id === vehicleId);
       setFleetVehicles((prev) => prev.filter((v) => v.id !== vehicleId));
+
+      await logFleetActivity({
+        action: 'vehicle_deleted',
+        entityType: 'vehicle',
+        entityId: vehicleId,
+        description: `Deleted vehicle ${deletedVehicle?.vehicle_number || 'unknown'}`,
+      });
     } catch (err) {
       console.error('FleetManager: delete vehicle error:', err);
     }
