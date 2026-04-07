@@ -17,6 +17,8 @@ import {
   LogOut,
   Image as ImageIcon,
   ChevronDown,
+  Tag,
+  Filter,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -28,6 +30,8 @@ interface FleetCheckin {
   odometer_reading: number | null;
   fuel_level: string | null;
   condition_notes: string | null;
+  trip_purpose: string | null;
+  trip_note: string | null;
   photo_paths: string[];
   created_at: string;
   fleet_vehicles: { vehicle_number: string } | null;
@@ -46,6 +50,7 @@ interface DriverOption {
 }
 
 const FUEL_LEVELS = ['Full', '3/4', '1/2', '1/4', 'Empty'];
+const TRIP_PURPOSES = ['Delivery', 'Personal Use', 'Maintenance', 'Other'];
 
 export default function CheckinsPage() {
   const [loading, setLoading] = useState(true);
@@ -56,12 +61,16 @@ export default function CheckinsPage() {
   const [expandedCheckin, setExpandedCheckin] = useState<string | null>(null);
   const [photoUrls, setPhotoUrls] = useState<Record<string, string[]>>({});
 
+  const [filterPurpose, setFilterPurpose] = useState('all');
+
   const [checkType, setCheckType] = useState<'check_in' | 'check_out'>('check_in');
   const [selectedVehicle, setSelectedVehicle] = useState('');
   const [selectedDriver, setSelectedDriver] = useState('');
   const [odometer, setOdometer] = useState('');
   const [fuelLevel, setFuelLevel] = useState('');
   const [conditionNotes, setConditionNotes] = useState('');
+  const [tripPurpose, setTripPurpose] = useState('');
+  const [tripNote, setTripNote] = useState('');
   const [photos, setPhotos] = useState<File[]>([]);
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
@@ -190,6 +199,8 @@ export default function CheckinsPage() {
           odometer_reading: odometer ? parseFloat(odometer) : null,
           fuel_level: fuelLevel || null,
           condition_notes: conditionNotes.trim() || null,
+          trip_purpose: tripPurpose || null,
+          trip_note: tripPurpose === 'Other' ? (tripNote.trim() || null) : null,
           photo_paths: uploadedPaths,
         })
         .select('*, fleet_vehicles(vehicle_number), fleet_drivers(name)')
@@ -225,6 +236,8 @@ export default function CheckinsPage() {
           driver_id: selectedDriver || null,
           odometer: odometer || null,
           fuel_level: fuelLevel || null,
+          trip_purpose: tripPurpose || null,
+          trip_note: tripPurpose === 'Other' ? (tripNote.trim() || null) : null,
           photos_count: uploadedPaths.length,
         },
       });
@@ -236,6 +249,8 @@ export default function CheckinsPage() {
       setOdometer('');
       setFuelLevel('');
       setConditionNotes('');
+      setTripPurpose('');
+      setTripNote('');
       photoPreviews.forEach((url) => URL.revokeObjectURL(url));
       setPhotos([]);
       setPhotoPreviews([]);
@@ -279,6 +294,13 @@ export default function CheckinsPage() {
     const now = new Date();
     return d.toDateString() === now.toDateString();
   });
+
+  const filteredCheckins =
+    filterPurpose === 'all'
+      ? checkins
+      : filterPurpose === 'none'
+        ? checkins.filter((c) => !c.trip_purpose)
+        : checkins.filter((c) => c.trip_purpose === filterPurpose);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-[#101518] to-black text-white pb-20">
@@ -485,6 +507,39 @@ export default function CheckinsPage() {
               />
             </div>
 
+            {/* Trip Purpose */}
+            <div>
+              <label className="block text-xs font-medium text-[#B7BEC4] mb-1.5">
+                <span className="flex items-center gap-1.5"><Tag className="w-3 h-3" /> Trip Purpose</span>
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {TRIP_PURPOSES.map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => { setTripPurpose(tripPurpose === p ? '' : p); if (p !== 'Other') setTripNote(''); }}
+                    className={`px-3.5 py-2 rounded-xl text-xs font-semibold border transition-colors ${
+                      tripPurpose === p
+                        ? 'bg-[#145A3A] border-[#145A3A] text-white'
+                        : 'bg-[#2B3136] border-[#3A3F45] text-[#B7BEC4] hover:bg-[#3A3F45] hover:text-white'
+                    }`}
+                  >
+                    {p}
+                  </button>
+                ))}
+              </div>
+              {tripPurpose === 'Other' && (
+                <input
+                  type="text"
+                  value={tripNote}
+                  onChange={(e) => setTripNote(e.target.value)}
+                  maxLength={120}
+                  className="w-full mt-2 px-4 py-2.5 rounded-xl border border-[#3A3F45] bg-[#2B3136] text-sm text-white placeholder:text-[#B7BEC4]/40 focus:outline-none focus:ring-2 focus:ring-[#145A3A]/40 focus:border-[#145A3A] transition"
+                  placeholder="Describe the trip purpose..."
+                />
+              )}
+            </div>
+
             {/* Photo upload */}
             <div>
               <label className="block text-xs font-medium text-[#B7BEC4] mb-1.5">Photos</label>
@@ -548,14 +603,30 @@ export default function CheckinsPage() {
 
         {/* History */}
         <section className="bg-[#101518]/90 rounded-[28px] p-6 border border-white/10 space-y-5">
-          <div>
-            <h2 className="text-lg font-bold text-white">Recent History</h2>
-            <p className="text-sm text-[#B7BEC4] mt-0.5">Latest check-ins and check-outs</p>
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div>
+              <h2 className="text-lg font-bold text-white">Recent History</h2>
+              <p className="text-sm text-[#B7BEC4] mt-0.5">Latest check-ins and check-outs</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Filter className="w-3.5 h-3.5 text-[#B7BEC4]/60" />
+              <select
+                value={filterPurpose}
+                onChange={(e) => setFilterPurpose(e.target.value)}
+                className="px-3 py-1.5 rounded-lg border border-[#3A3F45] bg-[#2B3136] text-xs text-white focus:outline-none focus:ring-2 focus:ring-[#145A3A]/40 focus:border-[#145A3A] transition"
+              >
+                <option value="all">All purposes</option>
+                {TRIP_PURPOSES.map((p) => (
+                  <option key={p} value={p}>{p}</option>
+                ))}
+                <option value="none">No purpose set</option>
+              </select>
+            </div>
           </div>
 
-          {checkins.length > 0 ? (
+          {filteredCheckins.length > 0 ? (
             <div className="rounded-xl border border-white/5 divide-y divide-white/5">
-              {checkins.map((c) => (
+              {filteredCheckins.map((c) => (
                 <div key={c.id} className="hover:bg-white/[0.02] transition-colors">
                   <div className="px-4 py-4 flex items-center gap-4">
                     <div
@@ -591,6 +662,12 @@ export default function CheckinsPage() {
                         {c.fleet_drivers && <span>Driver: {c.fleet_drivers.name}</span>}
                         {c.odometer_reading && <span>Odo: {c.odometer_reading} km</span>}
                         {c.fuel_level && <span>Fuel: {c.fuel_level}</span>}
+                        {c.trip_purpose && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-indigo-950/40 border border-indigo-500/30 text-indigo-300">
+                            <Tag className="w-2.5 h-2.5" />
+                            {c.trip_purpose}{c.trip_purpose === 'Other' && c.trip_note ? `: ${c.trip_note}` : ''}
+                          </span>
+                        )}
                         <span>
                           {new Date(c.created_at).toLocaleString('en-IN', {
                             day: 'numeric',

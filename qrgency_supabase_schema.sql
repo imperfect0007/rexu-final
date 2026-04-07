@@ -731,6 +731,65 @@ using (auth.uid() = owner_profile_id)
 with check (auth.uid() = owner_profile_id);
 
 -- =========================================================
+-- FLEET CHECKINS: trip purpose extension
+-- =========================================================
+
+alter table public.fleet_checkins
+  add column if not exists trip_purpose text,
+  add column if not exists trip_note text;
+
+-- =========================================================
+-- FLEET MAINTENANCE REMINDERS
+-- =========================================================
+
+create table if not exists public.fleet_maintenance_reminders (
+  id uuid primary key default gen_random_uuid(),
+  owner_profile_id uuid not null references public.profiles (id) on delete cascade,
+  vehicle_id uuid not null references public.fleet_vehicles (id) on delete cascade,
+  title text not null,
+  due_date date not null,
+  status text not null default 'pending' check (status in ('pending', 'completed')),
+  completed_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_fleet_maint_owner on public.fleet_maintenance_reminders (owner_profile_id);
+create index if not exists idx_fleet_maint_vehicle on public.fleet_maintenance_reminders (vehicle_id);
+create index if not exists idx_fleet_maint_due on public.fleet_maintenance_reminders (due_date);
+
+alter table public.fleet_maintenance_reminders enable row level security;
+drop policy if exists "Users can manage own fleet reminders" on public.fleet_maintenance_reminders;
+create policy "Users can manage own fleet reminders"
+on public.fleet_maintenance_reminders for all
+using (auth.uid() = owner_profile_id)
+with check (auth.uid() = owner_profile_id);
+
+-- =========================================================
+-- FLEET INCIDENTS (unauthorized use, damage, etc.)
+-- =========================================================
+
+create table if not exists public.fleet_incidents (
+  id uuid primary key default gen_random_uuid(),
+  owner_profile_id uuid not null references public.profiles (id) on delete cascade,
+  vehicle_id uuid not null references public.fleet_vehicles (id) on delete cascade,
+  incident_type text not null,
+  description text not null,
+  image_path text,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_fleet_incidents_owner on public.fleet_incidents (owner_profile_id);
+create index if not exists idx_fleet_incidents_vehicle on public.fleet_incidents (vehicle_id);
+create index if not exists idx_fleet_incidents_created on public.fleet_incidents (created_at desc);
+
+alter table public.fleet_incidents enable row level security;
+drop policy if exists "Users can manage own fleet incidents" on public.fleet_incidents;
+create policy "Users can manage own fleet incidents"
+on public.fleet_incidents for all
+using (auth.uid() = owner_profile_id)
+with check (auth.uid() = owner_profile_id);
+
+-- =========================================================
 -- SUPABASE STORAGE BUCKETS (run in Supabase SQL editor)
 -- =========================================================
 -- Uncomment and run these in Supabase SQL editor to create storage buckets:
