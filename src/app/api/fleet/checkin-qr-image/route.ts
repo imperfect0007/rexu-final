@@ -9,7 +9,7 @@ import {
 const QR_BASE_URL =
   process.env.NEXT_PUBLIC_APP_URL ||
   process.env.NEXT_PUBLIC_SITE_URL ||
-  'https://kavach.world';
+  'https://rexu.in';
 
 export async function GET(request: Request) {
   try {
@@ -71,13 +71,13 @@ export async function GET(request: Request) {
   <image x="352" y="272" width="300" height="300" href="${qrDataUrl}"/>
 
   <text x="512" y="652" text-anchor="middle" fill="#111827" font-family="Arial, Helvetica, sans-serif" font-size="64" font-weight="800">Check In/Out</text>
-  <text x="512" y="736" text-anchor="middle" fill="#374151" font-family="Arial, Helvetica, sans-serif" font-size="39" font-weight="500">Scan using phone camera, google lens</text>
-  <text x="512" y="774" text-anchor="middle" fill="#374151" font-family="Arial, Helvetica, sans-serif" font-size="39" font-weight="500">or any QR Scanning app.</text>
+  <text x="512" y="724" text-anchor="middle" fill="#374151" font-family="Arial, Helvetica, sans-serif" font-size="29" font-weight="500">Scan using phone camera, google lens</text>
+  <text x="512" y="758" text-anchor="middle" fill="#374151" font-family="Arial, Helvetica, sans-serif" font-size="29" font-weight="500">or any QR Scanning app.</text>
 
   <rect x="205" y="802" width="614" height="82" fill="#A3D27A"/>
-  <text x="512" y="853" text-anchor="middle" fill="#111827" font-family="Arial, Helvetica, sans-serif" font-size="47" font-weight="700">Please scan the QR code before</text>
-  <text x="512" y="893" text-anchor="middle" fill="#111827" font-family="Arial, Helvetica, sans-serif" font-size="47" font-weight="700">starting a ride</text>
-  <text x="512" y="930" text-anchor="middle" fill="#111827" font-family="Arial, Helvetica, sans-serif" font-size="44" font-weight="500">Get yours now at www.rexu.in</text>
+  <text x="512" y="844" text-anchor="middle" fill="#111827" font-family="Arial, Helvetica, sans-serif" font-size="37" font-weight="700">Please scan the QR code before</text>
+  <text x="512" y="878" text-anchor="middle" fill="#111827" font-family="Arial, Helvetica, sans-serif" font-size="37" font-weight="700">starting a ride</text>
+  <text x="512" y="918" text-anchor="middle" fill="#111827" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="500">Get yours now at www.rexu.in</text>
 </svg>`;
 
     return new NextResponse(cardSvg, {

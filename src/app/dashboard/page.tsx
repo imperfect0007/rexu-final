@@ -2140,7 +2140,7 @@ export default function DashboardPage(props: PageProps) {
                   <div className="mx-auto w-fit p-4 bg-white rounded-3xl border-8 border-white/10 shadow-inner">
                     <QRCodeSVG 
                       ref={qrRef}
-                      value={`${process.env.NEXT_PUBLIC_APP_URL || 'https://kavach.world'}/e/${qrToken}`} 
+                      value={`${process.env.NEXT_PUBLIC_APP_URL || 'https://rexu.in'}/e/${qrToken}`} 
                       size={180}
                       level="H"
                     />

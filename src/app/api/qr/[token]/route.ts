@@ -27,7 +27,7 @@ export async function GET(
     const baseUrl =
       process.env.NEXT_PUBLIC_APP_URL ||
       process.env.NEXT_PUBLIC_SITE_URL ||
-      'https://kavach.world';
+      'https://rexu.in';
     const emergencyUrl = `${baseUrl.replace(/\/$/, '')}/e/${token}`;
 
     const qrDataUrl = await QRCode.toDataURL(emergencyUrl, {

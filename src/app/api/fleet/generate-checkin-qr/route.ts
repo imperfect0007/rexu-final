@@ -11,7 +11,7 @@ const QR_BUCKET_NAME = process.env.SUPABASE_QR_BUCKET || 'QR';
 const QR_BASE_URL =
   process.env.NEXT_PUBLIC_APP_URL ||
   process.env.NEXT_PUBLIC_SITE_URL ||
-  'https://kavach.world';
+  'https://rexu.in';
 
 export async function POST(request: Request) {
   try {

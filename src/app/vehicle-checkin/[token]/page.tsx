@@ -282,7 +282,14 @@ export default function VehicleCheckinPage() {
                 <span className="text-[9px] uppercase tracking-wider font-semibold">Add</span>
               </button>
             </div>
-            <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handlePhotoSelect} className="hidden" />
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={handlePhotoSelect}
+              className="hidden"
+            />
           </div>
 
           <button type="submit" disabled={submitting} className={`w-full mt-2 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-2xl text-white text-sm font-semibold active:scale-[0.98] transition disabled:opacity-50 ${checkType === 'check_in' ? 'bg-[#145A3A] hover:bg-[#1F7A5A]' : 'bg-amber-600 hover:bg-amber-700'}`}>

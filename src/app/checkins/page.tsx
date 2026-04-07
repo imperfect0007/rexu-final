@@ -569,7 +569,7 @@ export default function CheckinsPage() {
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"
-                multiple
+                capture="environment"
                 onChange={handlePhotoSelect}
                 className="hidden"
               />
