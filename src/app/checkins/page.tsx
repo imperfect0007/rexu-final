@@ -51,6 +51,52 @@ interface DriverOption {
 
 const FUEL_LEVELS = ['Full', '3/4', '1/2', '1/4', 'Empty'];
 const TRIP_PURPOSES = ['Delivery', 'Personal Use', 'Maintenance', 'Other'];
+const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
+
+async function compressImageTo2MB(file: File): Promise<File> {
+  if (!file.type.startsWith('image/') || file.size <= MAX_IMAGE_BYTES) return file;
+
+  const imageUrl = URL.createObjectURL(file);
+  try {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const el = new Image();
+      el.onload = () => resolve(el);
+      el.onerror = () => reject(new Error('Failed to load image'));
+      el.src = imageUrl;
+    });
+
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return file;
+
+    const maxDim = 1920;
+    const ratio = Math.min(1, maxDim / Math.max(img.width, img.height));
+    canvas.width = Math.max(1, Math.round(img.width * ratio));
+    canvas.height = Math.max(1, Math.round(img.height * ratio));
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+    let quality = 0.9;
+    let outBlob: Blob | null = null;
+    for (let i = 0; i < 8; i += 1) {
+      outBlob = await new Promise<Blob | null>((resolve) =>
+        canvas.toBlob(resolve, 'image/jpeg', quality)
+      );
+      if (outBlob && outBlob.size <= MAX_IMAGE_BYTES) break;
+      quality -= 0.1;
+      if (quality < 0.2) quality = 0.2;
+    }
+
+    if (!outBlob) return file;
+    if (outBlob.size > MAX_IMAGE_BYTES) return file;
+
+    const nextName = file.name.replace(/\.[^.]+$/, '') + '.jpg';
+    return new File([outBlob], nextName, { type: 'image/jpeg' });
+  } catch {
+    return file;
+  } finally {
+    URL.revokeObjectURL(imageUrl);
+  }
+}
 
 export default function CheckinsPage() {
   const [loading, setLoading] = useState(true);
@@ -145,12 +191,13 @@ export default function CheckinsPage() {
     }
   };
 
-  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
 
-    setPhotos((prev) => [...prev, ...files]);
-    const newPreviews = files.map((f) => URL.createObjectURL(f));
+    const optimized = await Promise.all(files.map((f) => compressImageTo2MB(f)));
+    setPhotos((prev) => [...prev, ...optimized]);
+    const newPreviews = optimized.map((f) => URL.createObjectURL(f));
     setPhotoPreviews((prev) => [...prev, ...newPreviews]);
   };
 

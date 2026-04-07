@@ -43,24 +43,23 @@ export async function GET(
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760">
   <rect width="1200" height="760" fill="#9CA3AF"/>
   <rect x="80" y="120" width="1040" height="520" rx="28" fill="#F8FAFC"/>
+
   <text x="130" y="205" fill="#0F172A" font-family="Arial, Helvetica, sans-serif" font-size="72" font-weight="700">rexu</text>
   <line x1="130" y1="225" x2="575" y2="225" stroke="#A3D27A" stroke-width="3"/>
-  <text x="130" y="260" fill="#334155" font-family="Arial, Helvetica, sans-serif" font-size="40" font-weight="700">
-    Scan the code
+
+  <text x="130" y="272" fill="#334155" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="600">Scan the code</text>
+  <text x="130" y="314" fill="#334155" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="600">to contact</text>
+  <text x="130" y="370" fill="#0F172A" font-family="Arial, Helvetica, sans-serif" font-size="64" font-weight="800">in case of emergency.</text>
+
+  <rect x="90" y="450" width="1020" height="86" fill="#A3D27A"/>
+  <text x="130" y="503" fill="#0F172A" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="700">
+    Accidents? Wrong parking? Please scan the QR code.
   </text>
-  <text x="130" y="310" fill="#334155" font-family="Arial, Helvetica, sans-serif" font-size="40" font-weight="700">
-    to contact
-  </text>
-  <text x="130" y="360" fill="#0F172A" font-family="Arial, Helvetica, sans-serif" font-size="56" font-weight="800">
-    in case of emergency.
-  </text>
-  <rect x="90" y="450" width="1020" height="90" fill="#A3D27A"/>
-  <text x="145" y="505" fill="#0F172A" font-family="Arial, Helvetica, sans-serif" font-size="44" font-weight="700">
-    Accidents? Wrong parking? please scan the QR code.
-  </text>
-  <text x="130" y="605" fill="#111827" font-family="Arial, Helvetica, sans-serif" font-size="38" font-weight="500">
+
+  <text x="130" y="604" fill="#111827" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="500">
     Get yours now at www.rexu.in
   </text>
+
   <rect x="608" y="200" width="430" height="430" rx="26" fill="#FFFFFF" stroke="#A3D27A" stroke-width="14"/>
   <image x="658" y="250" width="330" height="330" href="${qrDataUrl}"/>
 </svg>`;
