@@ -22,6 +22,7 @@ export default function LoginPage(props: PageProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showEmail, setShowEmail] = useState(false);
+  const [resetSent, setResetSent] = useState<string | null>(null);
   const router = useRouter();
 
   const handleGoogleLogin = async () => {
@@ -54,6 +55,7 @@ export default function LoginPage(props: PageProps) {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setResetSent(null);
 
     const { error } = await supabase.auth.signInWithPassword({
       email,
@@ -68,6 +70,35 @@ export default function LoginPage(props: PageProps) {
     }
   };
 
+  const handleForgotPassword = async () => {
+    if (!email.trim()) {
+      setError('Enter your email first, then click "Forgot password?".');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    setResetSent(null);
+
+    try {
+      const redirectTo =
+        typeof window !== 'undefined'
+          ? `${window.location.origin}/reset-password`
+          : undefined;
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo });
+      if (error) {
+        setError(error.message);
+      } else {
+        setResetSent('Password reset link sent. Please check your email.');
+      }
+    } catch (e) {
+      console.error('Forgot password error:', e);
+      setError('Failed to send reset email.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <AuthLayout
       title="Welcome back"
@@ -77,6 +108,11 @@ export default function LoginPage(props: PageProps) {
         {error && (
           <div className="p-3 rounded-xl bg-red-900/30 text-red-400 text-sm font-medium border border-red-800">
             {error}
+          </div>
+        )}
+        {resetSent && (
+          <div className="p-3 rounded-xl bg-[#0F3D2E]/30 text-[#9AC57A] text-sm font-medium border border-[#145A3A]">
+            {resetSent}
           </div>
         )}
 
@@ -153,6 +189,15 @@ export default function LoginPage(props: PageProps) {
                   placeholder="Your password"
                 />
               </div>
+
+              <button
+                type="button"
+                onClick={handleForgotPassword}
+                disabled={loading}
+                className="w-full text-sm text-[#9AC57A] hover:text-white transition-colors text-center"
+              >
+                Forgot password?
+              </button>
 
               <motion.button
                 type="submit"
