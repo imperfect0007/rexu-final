@@ -10,91 +10,58 @@ import {
   ArrowLeft,
   ScrollText,
   Truck,
-  Users,
-  FileText,
-  ClipboardCheck,
-  QrCode,
   Filter,
-  ChevronDown,
-  ChevronUp,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-interface ActivityLog {
-  id: string;
-  action: string;
-  entity_type: string | null;
-  entity_id: string | null;
-  description: string;
-  metadata: Record<string, unknown>;
+interface FleetVehicleSummary {
+  vehicle_id: string;
+  owner_profile_id: string;
+  vehicle_number: string;
+  label: string | null;
+  make_model: string | null;
+  last_log_at: string | null;
+  logs_total: number;
+  checkins_total: number;
+  checkouts_total: number;
+  logs_with_vec: number;
+}
+
+interface FleetVehicleLog {
+  checkin_id: string;
+  owner_profile_id: string;
+  vehicle_id: string;
+  driver_id: string | null;
+  check_type: 'check_in' | 'check_out';
   created_at: string;
+  trip_purpose: string | null;
+  trip_note: string | null;
+  has_vec: boolean;
+  vec_doc_link: string | null;
 }
 
-const ENTITY_FILTERS = [
-  { value: 'all', label: 'All' },
-  { value: 'vehicle', label: 'Vehicles' },
-  { value: 'driver', label: 'Drivers' },
-  { value: 'document', label: 'Documents' },
-  { value: 'checkin', label: 'Check-in/out' },
-];
-
-function getEntityIcon(entityType: string | null) {
-  switch (entityType) {
-    case 'vehicle':
-      return <Truck className="w-4 h-4" />;
-    case 'driver':
-      return <Users className="w-4 h-4" />;
-    case 'document':
-      return <FileText className="w-4 h-4" />;
-    case 'checkin':
-      return <ClipboardCheck className="w-4 h-4" />;
-    default:
-      return <QrCode className="w-4 h-4" />;
-  }
-}
-
-function getEntityColor(entityType: string | null) {
-  switch (entityType) {
-    case 'vehicle':
-      return 'text-blue-400 bg-blue-950/30 border-blue-500/30';
-    case 'driver':
-      return 'text-purple-400 bg-purple-950/30 border-purple-500/30';
-    case 'document':
-      return 'text-amber-400 bg-amber-950/30 border-amber-500/30';
-    case 'checkin':
-      return 'text-[#9AC57A] bg-[#0F3D2E]/30 border-[#145A3A]/40';
-    default:
-      return 'text-[#B7BEC4] bg-[#2B3136] border-[#3A3F45]';
-  }
-}
-
-function formatAction(action: string) {
-  return action
-    .replace(/_/g, ' ')
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+function formatTime(ts: string) {
+  return new Date(ts).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
 }
 
 export default function LogsPage() {
   const [loading, setLoading] = useState(true);
-  const [logs, setLogs] = useState<ActivityLog[]>([]);
-  const [filterEntity, setFilterEntity] = useState('all');
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const [expandedLog, setExpandedLog] = useState<string | null>(null);
-  const [page, setPage] = useState(0);
-  const [hasMore, setHasMore] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-
-  const PAGE_SIZE = 50;
+  const [profileName, setProfileName] = useState('rexu');
+  const [vehicles, setVehicles] = useState<FleetVehicleSummary[]>([]);
+  const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
+  const [vehicleLogs, setVehicleLogs] = useState<FleetVehicleLog[]>([]);
+  const [logsLoading, setLogsLoading] = useState(false);
+  const [filterHasVec, setFilterHasVec] = useState<'all' | 'yes' | 'no'>('all');
   const router = useRouter();
 
   useEffect(() => {
-    void fetchLogs(true);
+    void init();
   }, []);
 
-  const fetchLogs = async (reset = false) => {
+  const init = async () => {
     try {
-      if (reset) setLoading(true);
-      else setLoadingMore(true);
+      setLoading(true);
 
       const {
         data: { user },
@@ -105,48 +72,59 @@ export default function LogsPage() {
         return;
       }
 
-      const { data: profileData } = await supabase
+      const { data: profileData, error: profileErr } = await supabase
         .from('profiles')
-        .select('account_type')
+        .select('account_type, full_name')
         .eq('id', user.id)
         .maybeSingle();
 
+      if (profileErr) console.error('Logs: profile error:', profileErr);
+      if (profileData?.full_name) setProfileName(profileData.full_name);
       if ((profileData?.account_type ?? 'personal') !== 'commercial') {
         router.push('/dashboard');
         return;
       }
 
-      const currentPage = reset ? 0 : page;
-      const from = currentPage * PAGE_SIZE;
-      const to = from + PAGE_SIZE - 1;
-
       const { data, error } = await supabase
-        .from('fleet_activity_logs')
+        .from('fleet_vehicle_logs_summary')
         .select('*')
         .eq('owner_profile_id', user.id)
-        .order('created_at', { ascending: false })
-        .range(from, to);
+        .order('last_log_at', { ascending: false, nullsFirst: false });
 
       if (error) {
-        console.error('Logs: fetch error:', error);
+        console.error('Logs: vehicles fetch error:', error);
         return;
       }
 
-      const fetched = (data as ActivityLog[]) || [];
-      setHasMore(fetched.length === PAGE_SIZE);
-
-      if (reset) {
-        setLogs(fetched);
-        setPage(1);
-      } else {
-        setLogs((prev) => [...prev, ...fetched]);
-        setPage(currentPage + 1);
+      const v = (data as FleetVehicleSummary[]) || [];
+      setVehicles(v);
+      if (v.length > 0) {
+        setSelectedVehicleId(v[0].vehicle_id);
+        void loadVehicleLogs(v[0].vehicle_id);
       }
     } catch (err) {
-      console.error('Logs: fetch error:', err);
+      console.error('Logs init error:', err);
     } finally {
       setLoading(false);
-      setLoadingMore(false);
+    }
+  };
+
+  const loadVehicleLogs = async (vehicleId: string) => {
+    setLogsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('fleet_checkin_logs')
+        .select('*')
+        .eq('vehicle_id', vehicleId)
+        .order('created_at', { ascending: false })
+        .limit(200);
+      if (error) {
+        console.error('Vehicle logs fetch error:', error);
+        return;
+      }
+      setVehicleLogs((data as FleetVehicleLog[]) || []);
+    } finally {
+      setLogsLoading(false);
     }
   };
 
@@ -158,22 +136,13 @@ export default function LogsPage() {
     );
   }
 
-  const filtered =
-    filterEntity === 'all'
-      ? logs
-      : logs.filter((l) => l.entity_type === filterEntity);
-
-  const grouped: Record<string, ActivityLog[]> = {};
-  for (const log of filtered) {
-    const dateKey = new Date(log.created_at).toLocaleDateString('en-IN', {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    });
-    if (!grouped[dateKey]) grouped[dateKey] = [];
-    grouped[dateKey].push(log);
-  }
+  const selectedVehicle = vehicles.find((x) => x.vehicle_id === selectedVehicleId) || null;
+  const filteredLogs =
+    filterHasVec === 'all'
+      ? vehicleLogs
+      : filterHasVec === 'yes'
+        ? vehicleLogs.filter((l) => l.has_vec)
+        : vehicleLogs.filter((l) => !l.has_vec);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-[#101518] to-black text-white pb-20">
@@ -209,7 +178,7 @@ export default function LogsPage() {
               onClick={() => setProfileMenuOpen((o) => !o)}
               className="h-8 px-2.5 rounded-lg bg-[#2B3136] border border-[#3A3F45] text-white text-[11px] font-bold tracking-wide flex items-center justify-center hover:bg-[#3A3F45] transition-colors"
             >
-              rexu
+              {profileName || 'rexu'}
             </button>
             {profileMenuOpen && (
               <div className="absolute right-0 mt-2 w-44 rounded-xl border border-[#3A3F45] bg-[#1F2428] shadow-lg py-1 text-sm z-20">
@@ -235,16 +204,16 @@ export default function LogsPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="border border-white/10 rounded-[28px] bg-[#101518]/90 p-6 flex items-center justify-between">
             <div>
-              <p className="text-sm text-[#B7BEC4] mb-1">Total Log Entries</p>
-              <p className="text-3xl font-bold text-white">{logs.length}{hasMore ? '+' : ''}</p>
+              <p className="text-sm text-[#B7BEC4] mb-1">Vehicles</p>
+              <p className="text-3xl font-bold text-white">{vehicles.length}</p>
             </div>
             <ScrollText className="w-6 h-6 text-[#B7BEC4]/40" />
           </div>
           <div className="border border-white/10 rounded-[28px] bg-[#101518]/90 p-6 flex items-center justify-between">
             <div>
-              <p className="text-sm text-[#B7BEC4] mb-1">Categories</p>
+              <p className="text-sm text-[#B7BEC4] mb-1">Selected vehicle logs</p>
               <p className="text-3xl font-bold text-[#9AC57A]">
-                {new Set(logs.map((l) => l.entity_type).filter(Boolean)).size}
+                {filteredLogs.length}
               </p>
             </div>
             <Filter className="w-6 h-6 text-[#9AC57A]/40" />
@@ -255,146 +224,174 @@ export default function LogsPage() {
         <section className="bg-[#101518]/90 rounded-[28px] p-6 border border-white/10 space-y-5">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <h2 className="text-lg font-bold text-white">All Activity</h2>
+              <h2 className="text-lg font-bold text-white">Vehicle logs</h2>
               <p className="text-sm text-[#B7BEC4] mt-0.5">
-                Segregated logs of all fleet operations
+                Tap a vehicle to view check-in/out logs.
               </p>
             </div>
           </div>
 
-          {/* Entity type filter pills */}
-          <div className="flex flex-wrap gap-2">
-            {ENTITY_FILTERS.map((f) => (
-              <button
-                key={f.value}
-                type="button"
-                onClick={() => setFilterEntity(f.value)}
-                className={`px-4 py-2 rounded-xl text-xs font-semibold transition-colors ${
-                  filterEntity === f.value
-                    ? 'bg-[#145A3A] text-white'
-                    : 'bg-[#2B3136] text-[#B7BEC4] border border-[#3A3F45] hover:bg-[#3A3F45] hover:text-white'
-                }`}
-              >
-                {f.label}
-                {f.value !== 'all' && (
-                  <span className="ml-1.5 opacity-60">
-                    ({logs.filter((l) => l.entity_type === f.value).length})
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
-
-          {/* Grouped timeline */}
-          {Object.keys(grouped).length > 0 ? (
-            <div className="space-y-6">
-              {Object.entries(grouped).map(([date, entries]) => (
-                <div key={date}>
-                  <p className="text-[11px] uppercase tracking-[0.2em] text-[#B7BEC4]/60 font-semibold mb-3">
-                    {date}
-                  </p>
-                  <div className="rounded-xl border border-white/5 divide-y divide-white/5">
-                    {entries.map((log) => (
-                      <div key={log.id} className="hover:bg-white/[0.02] transition-colors">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setExpandedLog(expandedLog === log.id ? null : log.id)
-                          }
-                          className="w-full px-4 py-3 flex items-center gap-3 text-left"
-                        >
-                          <div
-                            className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 border ${getEntityColor(log.entity_type)}`}
-                          >
-                            {getEntityIcon(log.entity_type)}
-                          </div>
-
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                              <span className="font-semibold text-sm text-white">
-                                {formatAction(log.action)}
-                              </span>
-                              {log.entity_type && (
-                                <span
-                                  className={`text-[9px] font-medium px-1.5 py-0.5 rounded-full uppercase tracking-wider border ${getEntityColor(log.entity_type)}`}
-                                >
-                                  {log.entity_type}
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-xs text-[#B7BEC4] truncate">
-                              {log.description}
+          {/* Vehicle picker */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="rounded-2xl border border-white/10 bg-[#0B0F12]/30 overflow-hidden">
+              <div className="px-4 py-3 border-b border-white/10 flex items-center gap-2">
+                <Truck className="w-4 h-4 text-[#B7BEC4]" />
+                <p className="text-sm font-semibold text-white">Vehicles</p>
+              </div>
+              <div className="max-h-[420px] overflow-auto divide-y divide-white/5">
+                {vehicles.length === 0 ? (
+                  <p className="px-4 py-4 text-sm text-[#B7BEC4]/70">No vehicles yet.</p>
+                ) : (
+                  vehicles.map((v) => {
+                    const active = v.vehicle_id === selectedVehicleId;
+                    return (
+                      <button
+                        key={v.vehicle_id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedVehicleId(v.vehicle_id);
+                          void loadVehicleLogs(v.vehicle_id);
+                        }}
+                        className={`w-full px-4 py-3 text-left hover:bg-white/[0.03] transition ${
+                          active ? 'bg-[#145A3A]/20' : ''
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-white truncate">
+                              {v.vehicle_number}
+                              {v.label ? <span className="text-[#B7BEC4] font-normal"> • {v.label}</span> : null}
+                            </p>
+                            <p className="text-[11px] text-[#B7BEC4]/70">
+                              {v.make_model || '—'}
+                              {v.last_log_at ? ` • Last: ${new Date(v.last_log_at).toLocaleString('en-IN')}` : ''}
                             </p>
                           </div>
-
-                          <div className="flex items-center gap-2 shrink-0">
-                            <span className="text-[11px] text-[#B7BEC4]/60 font-mono">
-                              {new Date(log.created_at).toLocaleTimeString('en-IN', {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              })}
-                            </span>
-                            {Object.keys(log.metadata).length > 0 && (
-                              expandedLog === log.id ? (
-                                <ChevronUp className="w-3.5 h-3.5 text-[#B7BEC4]/40" />
-                              ) : (
-                                <ChevronDown className="w-3.5 h-3.5 text-[#B7BEC4]/40" />
-                              )
-                            )}
+                          <div className="shrink-0 text-right">
+                            <p className="text-xs font-bold text-white">{v.logs_total}</p>
+                            <p className="text-[10px] text-[#B7BEC4]/70">logs</p>
                           </div>
-                        </button>
-
-                        {expandedLog === log.id && Object.keys(log.metadata).length > 0 && (
-                          <div className="px-4 pb-3 pl-[60px]">
-                            <div className="rounded-lg bg-[#2B3136]/50 border border-[#3A3F45]/50 p-3 space-y-1">
-                              {Object.entries(log.metadata).map(([key, value]) =>
-                                value != null ? (
-                                  <div key={key} className="flex items-center justify-between text-xs">
-                                    <span className="text-[#B7BEC4]/60 capitalize">
-                                      {key.replace(/_/g, ' ')}
-                                    </span>
-                                    <span className="text-[#B7BEC4] font-mono">
-                                      {String(value)}
-                                    </span>
-                                  </div>
-                                ) : null
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-[#B7BEC4]/60 py-4 text-center">
-              {filterEntity !== 'all'
-                ? 'No log entries match this filter.'
-                : 'No activity logs yet. Actions like uploading documents, check-ins, and driver changes will appear here.'}
-            </p>
-          )}
-
-          {/* Load more */}
-          {hasMore && (
-            <div className="flex justify-center pt-2">
-              <button
-                type="button"
-                onClick={() => fetchLogs(false)}
-                disabled={loadingMore}
-                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl border border-[#3A3F45] text-sm font-medium text-[#B7BEC4] hover:bg-[#2B3136] hover:text-white transition disabled:opacity-50"
-              >
-                {loadingMore ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" /> Loading…
-                  </>
-                ) : (
-                  'Load more'
+                        </div>
+                        <div className="mt-2 flex items-center gap-2 text-[10px] text-[#B7BEC4]/70">
+                          <span className="px-2 py-1 rounded-full border border-white/10 bg-white/[0.02]">
+                            In: {v.checkins_total}
+                          </span>
+                          <span className="px-2 py-1 rounded-full border border-white/10 bg-white/[0.02]">
+                            Out: {v.checkouts_total}
+                          </span>
+                          <span className="px-2 py-1 rounded-full border border-white/10 bg-white/[0.02]">
+                            VEC: {v.logs_with_vec}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })
                 )}
-              </button>
+              </div>
             </div>
-          )}
+
+            <div className="rounded-2xl border border-white/10 bg-[#0B0F12]/30 overflow-hidden">
+              <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-white truncate">
+                    {selectedVehicle ? `Logs • ${selectedVehicle.vehicle_number}` : 'Logs'}
+                  </p>
+                  <p className="text-[11px] text-[#B7BEC4]/70">
+                    {selectedVehicle?.make_model || 'Select a vehicle to view logs.'}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setFilterHasVec('all')}
+                    className={`px-3 py-2 rounded-xl text-xs font-semibold border transition ${
+                      filterHasVec === 'all'
+                        ? 'bg-[#145A3A] border-[#145A3A] text-white'
+                        : 'bg-[#2B3136] border-[#3A3F45] text-[#B7BEC4] hover:bg-[#3A3F45] hover:text-white'
+                    }`}
+                  >
+                    All
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFilterHasVec('yes')}
+                    className={`px-3 py-2 rounded-xl text-xs font-semibold border transition ${
+                      filterHasVec === 'yes'
+                        ? 'bg-[#145A3A] border-[#145A3A] text-white'
+                        : 'bg-[#2B3136] border-[#3A3F45] text-[#B7BEC4] hover:bg-[#3A3F45] hover:text-white'
+                    }`}
+                  >
+                    VEC ✓
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFilterHasVec('no')}
+                    className={`px-3 py-2 rounded-xl text-xs font-semibold border transition ${
+                      filterHasVec === 'no'
+                        ? 'bg-[#145A3A] border-[#145A3A] text-white'
+                        : 'bg-[#2B3136] border-[#3A3F45] text-[#B7BEC4] hover:bg-[#3A3F45] hover:text-white'
+                    }`}
+                  >
+                    VEC ☐
+                  </button>
+                </div>
+              </div>
+
+              <div className="max-h-[420px] overflow-auto divide-y divide-white/5">
+                {logsLoading ? (
+                  <div className="px-4 py-6 flex items-center gap-2 text-sm text-[#B7BEC4]">
+                    <Loader2 className="w-4 h-4 animate-spin" /> Loading logs…
+                  </div>
+                ) : selectedVehicleId == null ? (
+                  <p className="px-4 py-4 text-sm text-[#B7BEC4]/70">Select a vehicle.</p>
+                ) : filteredLogs.length === 0 ? (
+                  <p className="px-4 py-4 text-sm text-[#B7BEC4]/70">No logs for this vehicle.</p>
+                ) : (
+                  filteredLogs.map((l) => (
+                    <div key={l.checkin_id} className="px-4 py-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-white">
+                            {l.check_type === 'check_in' ? 'Check In' : 'Check Out'}
+                            <span className="ml-2 text-[10px] font-semibold px-2 py-1 rounded-full border border-white/10 bg-white/[0.02] text-[#B7BEC4]">
+                              {formatTime(l.created_at)}
+                            </span>
+                          </p>
+                          <p className="text-[11px] text-[#B7BEC4]/70">
+                            {new Date(l.created_at).toLocaleDateString('en-IN')}
+                            {l.trip_purpose ? ` • ${l.trip_purpose}` : ''}
+                            {l.trip_note ? ` • ${l.trip_note}` : ''}
+                          </p>
+                        </div>
+                        <div className="shrink-0 flex items-center gap-2">
+                          <span
+                            className={`text-[10px] font-semibold px-2 py-1 rounded-full border ${
+                              l.has_vec
+                                ? 'text-[#9AC57A] bg-[#0F3D2E]/30 border-[#145A3A]/40'
+                                : 'text-[#B7BEC4] bg-[#2B3136] border-[#3A3F45]'
+                            }`}
+                          >
+                            VEC {l.has_vec ? '✓' : '☐'}
+                          </span>
+                          {l.vec_doc_link ? (
+                            <a
+                              href={l.vec_doc_link}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-xs font-semibold text-[#9AC57A] hover:underline"
+                            >
+                              Open
+                            </a>
+                          ) : null}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+
         </section>
       </motion.main>
     </div>

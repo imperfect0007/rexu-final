@@ -10,7 +10,7 @@ interface Profile {
   id: string;
   full_name: string;
   mobile: string;
-  avatar_url?: string | null;
+  avatar_url?: string | null; // stored as storage path in profile-photos bucket
   date_of_birth?: string | null;
 }
 
@@ -72,7 +72,14 @@ export default function ProfilePage(props: PageProps) {
         } else {
           const typed = data as Profile;
           setProfile(typed);
-          setAvatarPreview(typed.avatar_url ?? null);
+          if (typed.avatar_url) {
+            const { data: signed } = await supabase.storage
+              .from('profile-photos')
+              .createSignedUrl(typed.avatar_url, 60 * 60);
+            setAvatarPreview(signed?.signedUrl ?? null);
+          } else {
+            setAvatarPreview(null);
+          }
           setDateOfBirth(typed.date_of_birth ?? '');
         }
       }
@@ -91,15 +98,15 @@ export default function ProfilePage(props: PageProps) {
     setError(null);
     setSuccess(null);
 
-    let avatarUrl = profile.avatar_url ?? null;
+    let avatarPath = profile.avatar_url ?? null;
 
-    // If a new avatar file is selected, upload it to the "photo" bucket
+    // If a new avatar file is selected, upload it to the "profile-photos" bucket (private)
     if (avatarFile) {
       const fileExt = avatarFile.name.split('.').pop() || 'jpg';
-      const filePath = `avatars/${profile.id}-${Date.now()}.${fileExt}`;
+      const filePath = `${profile.id}/avatar-${Date.now()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
-        .from('photo')
+        .from('profile-photos')
         .upload(filePath, avatarFile, {
           upsert: true,
         });
@@ -111,11 +118,7 @@ export default function ProfilePage(props: PageProps) {
         return;
       }
 
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from('photo').getPublicUrl(filePath);
-
-      avatarUrl = publicUrl;
+      avatarPath = filePath;
     }
 
     // Normalize mobile to always include +91 prefix
@@ -130,7 +133,7 @@ export default function ProfilePage(props: PageProps) {
       .update({
         full_name: profile.full_name,
         mobile: normalizedMobile,
-        avatar_url: avatarUrl,
+        avatar_url: avatarPath,
         // Store date of birth as ISO date (yyyy-mm-dd) or null
         date_of_birth: dateOfBirth || null,
       })
@@ -141,9 +144,12 @@ export default function ProfilePage(props: PageProps) {
       setError('Failed to update profile.');
     } else {
       setSuccess('Profile updated successfully.');
-      setProfile((p) => (p ? { ...p, avatar_url: avatarUrl } : p));
-      if (avatarUrl) {
-        setAvatarPreview(avatarUrl);
+      setProfile((p) => (p ? { ...p, avatar_url: avatarPath } : p));
+      if (avatarPath) {
+        const { data: signed } = await supabase.storage
+          .from('profile-photos')
+          .createSignedUrl(avatarPath, 60 * 60);
+        setAvatarPreview(signed?.signedUrl ?? null);
       }
     }
 

@@ -566,7 +566,8 @@ drop policy if exists "Users can update own profile" on public.profiles;
 create policy "Users can update own profile"
 on public.profiles
 for update
-using (auth.uid() = id);
+using (auth.uid() = id)
+with check (auth.uid() = id);
 
 -- Emergency contacts: owner only
 drop policy if exists "Users can manage own contacts" on public.emergency_contacts;
@@ -740,6 +741,94 @@ alter table public.fleet_vehicles
 create index if not exists idx_fleet_vehicles_checkin_token
   on public.fleet_vehicles (checkin_token);
 
+-- IMPORTANT:
+-- - Emergency QR (public.qr_codes.token) is for emergency profile flows.
+-- - Check-in QR (public.fleet_vehicles.checkin_token) is for vehicle/fleet flows (documents/logs/attendance).
+
+-- Resolve a check-in token to the vehicle (used by your "scan checkin QR -> open vehicle" screen)
+create or replace function public.resolve_vehicle_by_checkin_token(p_checkin_token text)
+returns table(
+  vehicle_id uuid,
+  owner_profile_id uuid,
+  vehicle_number text,
+  label text,
+  make_model text
+)
+language sql
+security definer
+set search_path = public
+as $$
+  select
+    v.id,
+    v.owner_profile_id,
+    v.vehicle_number,
+    v.label,
+    v.make_model
+  from public.fleet_vehicles v
+  where v.checkin_token = p_checkin_token
+  limit 1;
+$$;
+
+grant execute on function public.resolve_vehicle_by_checkin_token(text) to anon, authenticated;
+
+-- Fetch vehicle documents ONLY via check-in token (prevents emergency QR from exposing fleet docs)
+create or replace function public.get_vehicle_documents_by_checkin_token(p_checkin_token text)
+returns table(
+  document_id uuid,
+  vehicle_id uuid,
+  document_type text,
+  document_name text,
+  file_path text,
+  expiry_date date,
+  notes text,
+  created_at timestamptz,
+  updated_at timestamptz
+)
+language sql
+security definer
+set search_path = public
+as $$
+  select
+    d.id,
+    d.vehicle_id,
+    d.document_type,
+    d.document_name,
+    d.file_path,
+    d.expiry_date,
+    d.notes,
+    d.created_at,
+    d.updated_at
+  from public.fleet_documents d
+  join public.fleet_vehicles v
+    on v.id = d.vehicle_id
+   and v.owner_profile_id = d.owner_profile_id
+  where v.checkin_token = p_checkin_token
+  order by d.created_at desc;
+$$;
+
+grant execute on function public.get_vehicle_documents_by_checkin_token(text) to anon, authenticated;
+
+-- Optional: track check-in QR scans separately from emergency scan_logs
+create table if not exists public.fleet_checkin_scan_logs (
+  id bigserial primary key,
+  checkin_token text not null,
+  owner_profile_id uuid references public.profiles (id) on delete set null,
+  vehicle_id uuid references public.fleet_vehicles (id) on delete set null,
+  ip inet,
+  user_agent text,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_fleet_checkin_scan_logs_token on public.fleet_checkin_scan_logs (checkin_token);
+create index if not exists idx_fleet_checkin_scan_logs_vehicle on public.fleet_checkin_scan_logs (vehicle_id);
+create index if not exists idx_fleet_checkin_scan_logs_created on public.fleet_checkin_scan_logs (created_at desc);
+
+alter table public.fleet_checkin_scan_logs enable row level security;
+drop policy if exists "Users can view own fleet checkin scan logs" on public.fleet_checkin_scan_logs;
+create policy "Users can view own fleet checkin scan logs"
+on public.fleet_checkin_scan_logs for select
+using (auth.uid() = owner_profile_id);
+
 -- =========================================================
 -- FLEET CHECKINS: trip purpose extension
 -- =========================================================
@@ -802,18 +891,476 @@ with check (auth.uid() = owner_profile_id);
 -- =========================================================
 -- SUPABASE STORAGE BUCKETS (run in Supabase SQL editor)
 -- =========================================================
--- Uncomment and run these in Supabase SQL editor to create storage buckets:
---
--- insert into storage.buckets (id, name, public) values ('fleet-documents', 'fleet-documents', false) on conflict (id) do nothing;
--- insert into storage.buckets (id, name, public) values ('fleet-photos', 'fleet-photos', false) on conflict (id) do nothing;
---
--- Storage RLS policies:
--- create policy "Fleet owners upload documents" on storage.objects for insert with check (bucket_id = 'fleet-documents' and auth.uid()::text = (storage.foldername(name))[1]);
--- create policy "Fleet owners read own documents" on storage.objects for select using (bucket_id = 'fleet-documents' and auth.uid()::text = (storage.foldername(name))[1]);
--- create policy "Fleet owners delete own documents" on storage.objects for delete using (bucket_id = 'fleet-documents' and auth.uid()::text = (storage.foldername(name))[1]);
--- create policy "Fleet owners upload photos" on storage.objects for insert with check (bucket_id = 'fleet-photos' and auth.uid()::text = (storage.foldername(name))[1]);
--- create policy "Fleet owners read own photos" on storage.objects for select using (bucket_id = 'fleet-photos' and auth.uid()::text = (storage.foldername(name))[1]);
--- create policy "Fleet owners delete own photos" on storage.objects for delete using (bucket_id = 'fleet-photos' and auth.uid()::text = (storage.foldername(name))[1]);
+-- This section is meant to be run in the Supabase SQL editor.
+-- It creates buckets and Storage RLS policies so users can upload/read their own files.
+
+insert into storage.buckets (id, name, public)
+values ('fleet-documents', 'fleet-documents', false)
+on conflict (id) do nothing;
+
+insert into storage.buckets (id, name, public)
+values ('fleet-photos', 'fleet-photos', false)
+on conflict (id) do nothing;
+
+insert into storage.buckets (id, name, public)
+values ('profile-photos', 'profile-photos', false)
+on conflict (id) do nothing;
+
+insert into storage.buckets (id, name, public)
+values ('checkin-documents', 'checkin-documents', false)
+on conflict (id) do nothing;
+
+-- Storage RLS policies (idempotent via drop/create)
+drop policy if exists "Fleet owners upload documents" on storage.objects;
+create policy "Fleet owners upload documents"
+on storage.objects for insert
+with check (bucket_id = 'fleet-documents' and auth.uid()::text = (storage.foldername(name))[1]);
+
+drop policy if exists "Fleet owners read own documents" on storage.objects;
+create policy "Fleet owners read own documents"
+on storage.objects for select
+using (bucket_id = 'fleet-documents' and auth.uid()::text = (storage.foldername(name))[1]);
+
+drop policy if exists "Fleet owners delete own documents" on storage.objects;
+create policy "Fleet owners delete own documents"
+on storage.objects for delete
+using (bucket_id = 'fleet-documents' and auth.uid()::text = (storage.foldername(name))[1]);
+
+drop policy if exists "Fleet owners upload photos" on storage.objects;
+create policy "Fleet owners upload photos"
+on storage.objects for insert
+with check (bucket_id = 'fleet-photos' and auth.uid()::text = (storage.foldername(name))[1]);
+
+drop policy if exists "Fleet owners read own photos" on storage.objects;
+create policy "Fleet owners read own photos"
+on storage.objects for select
+using (bucket_id = 'fleet-photos' and auth.uid()::text = (storage.foldername(name))[1]);
+
+drop policy if exists "Fleet owners delete own photos" on storage.objects;
+create policy "Fleet owners delete own photos"
+on storage.objects for delete
+using (bucket_id = 'fleet-photos' and auth.uid()::text = (storage.foldername(name))[1]);
+
+drop policy if exists "Users upload own profile photo" on storage.objects;
+create policy "Users upload own profile photo"
+on storage.objects for insert
+with check (bucket_id = 'profile-photos' and auth.uid()::text = (storage.foldername(name))[1]);
+
+drop policy if exists "Users read own profile photo" on storage.objects;
+create policy "Users read own profile photo"
+on storage.objects for select
+using (bucket_id = 'profile-photos' and auth.uid()::text = (storage.foldername(name))[1]);
+
+drop policy if exists "Users delete own profile photo" on storage.objects;
+create policy "Users delete own profile photo"
+on storage.objects for delete
+using (bucket_id = 'profile-photos' and auth.uid()::text = (storage.foldername(name))[1]);
+
+drop policy if exists "Fleet owners upload checkin docs" on storage.objects;
+create policy "Fleet owners upload checkin docs"
+on storage.objects for insert
+with check (bucket_id = 'checkin-documents' and auth.uid()::text = (storage.foldername(name))[1]);
+
+drop policy if exists "Fleet owners read own checkin docs" on storage.objects;
+create policy "Fleet owners read own checkin docs"
+on storage.objects for select
+using (bucket_id = 'checkin-documents' and auth.uid()::text = (storage.foldername(name))[1]);
+
+drop policy if exists "Fleet owners delete own checkin docs" on storage.objects;
+create policy "Fleet owners delete own checkin docs"
+on storage.objects for delete
+using (bucket_id = 'checkin-documents' and auth.uid()::text = (storage.foldername(name))[1]);
+
+-- =========================================================
+-- ATTENDANCE (check-in + check-out -> single attendance row)
+-- =========================================================
+
+create table if not exists public.fleet_attendance (
+  id uuid primary key default gen_random_uuid(),
+  owner_profile_id uuid not null references public.profiles (id) on delete cascade,
+  vehicle_id uuid not null references public.fleet_vehicles (id) on delete cascade,
+  driver_id uuid references public.fleet_drivers (id) on delete set null,
+  work_date date not null,
+  check_in_at timestamptz,
+  check_out_at timestamptz,
+  check_in_checkin_id uuid references public.fleet_checkins (id) on delete set null,
+  check_out_checkin_id uuid references public.fleet_checkins (id) on delete set null,
+  status text not null default 'open' check (status in ('open','closed','missing_checkout')),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (owner_profile_id, vehicle_id, driver_id, work_date)
+);
+
+create index if not exists idx_fleet_attendance_owner on public.fleet_attendance (owner_profile_id);
+create index if not exists idx_fleet_attendance_vehicle on public.fleet_attendance (vehicle_id);
+create index if not exists idx_fleet_attendance_driver on public.fleet_attendance (driver_id);
+create index if not exists idx_fleet_attendance_date on public.fleet_attendance (work_date desc);
+create index if not exists idx_fleet_attendance_status on public.fleet_attendance (status);
+
+alter table public.fleet_attendance enable row level security;
+drop policy if exists "Users can manage own fleet attendance" on public.fleet_attendance;
+create policy "Users can manage own fleet attendance"
+on public.fleet_attendance for all
+using (auth.uid() = owner_profile_id)
+with check (auth.uid() = owner_profile_id);
+
+create or replace function public.fleet_sync_attendance_from_checkin()
+returns trigger
+language plpgsql
+security invoker
+as $$
+declare
+  v_work_date date;
+begin
+  v_work_date := (new.created_at at time zone 'utc')::date;
+
+  if new.check_type = 'check_in' then
+    insert into public.fleet_attendance (
+      owner_profile_id, vehicle_id, driver_id, work_date,
+      check_in_at, check_in_checkin_id, status
+    )
+    values (
+      new.owner_profile_id, new.vehicle_id, new.driver_id, v_work_date,
+      new.created_at, new.id, 'open'
+    )
+    on conflict (owner_profile_id, vehicle_id, driver_id, work_date)
+    do update set
+      check_in_at = coalesce(public.fleet_attendance.check_in_at, excluded.check_in_at),
+      check_in_checkin_id = coalesce(public.fleet_attendance.check_in_checkin_id, excluded.check_in_checkin_id),
+      updated_at = now();
+
+  elsif new.check_type = 'check_out' then
+    insert into public.fleet_attendance (
+      owner_profile_id, vehicle_id, driver_id, work_date,
+      check_out_at, check_out_checkin_id, status
+    )
+    values (
+      new.owner_profile_id, new.vehicle_id, new.driver_id, v_work_date,
+      new.created_at, new.id, 'closed'
+    )
+    on conflict (owner_profile_id, vehicle_id, driver_id, work_date)
+    do update set
+      check_out_at = excluded.check_out_at,
+      check_out_checkin_id = excluded.check_out_checkin_id,
+      status = 'closed',
+      updated_at = now();
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_fleet_sync_attendance_from_checkin on public.fleet_checkins;
+create trigger trg_fleet_sync_attendance_from_checkin
+after insert on public.fleet_checkins
+for each row execute procedure public.fleet_sync_attendance_from_checkin();
+
+-- =========================================================
+-- CHECK-IN ASSIGNMENTS (who can/should check in where)
+-- =========================================================
+
+create table if not exists public.fleet_checkin_assignments (
+  id uuid primary key default gen_random_uuid(),
+  owner_profile_id uuid not null references public.profiles (id) on delete cascade,
+  vehicle_id uuid not null references public.fleet_vehicles (id) on delete cascade,
+  driver_id uuid references public.fleet_drivers (id) on delete set null,
+  checkin_token text, -- optional: assignment tied to a specific QR/checkin token
+  valid_from timestamptz,
+  valid_to timestamptz,
+  is_active boolean not null default true,
+  metadata jsonb default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_fleet_checkin_assign_owner on public.fleet_checkin_assignments (owner_profile_id);
+create index if not exists idx_fleet_checkin_assign_vehicle on public.fleet_checkin_assignments (vehicle_id);
+create index if not exists idx_fleet_checkin_assign_driver on public.fleet_checkin_assignments (driver_id);
+create index if not exists idx_fleet_checkin_assign_token on public.fleet_checkin_assignments (checkin_token);
+create index if not exists idx_fleet_checkin_assign_active on public.fleet_checkin_assignments (is_active);
+
+alter table public.fleet_checkin_assignments enable row level security;
+drop policy if exists "Users can manage own fleet checkin assignments" on public.fleet_checkin_assignments;
+create policy "Users can manage own fleet checkin assignments"
+on public.fleet_checkin_assignments for all
+using (auth.uid() = owner_profile_id)
+with check (auth.uid() = owner_profile_id);
+
+-- =========================================================
+-- CHECK-IN DOCUMENTS (attach documents to a check-in; includes VEC)
+-- =========================================================
+
+create table if not exists public.fleet_checkin_documents (
+  id uuid primary key default gen_random_uuid(),
+  owner_profile_id uuid not null references public.profiles (id) on delete cascade,
+  checkin_id uuid not null references public.fleet_checkins (id) on delete cascade,
+  vehicle_id uuid references public.fleet_vehicles (id) on delete set null,
+  driver_id uuid references public.fleet_drivers (id) on delete set null,
+  document_type text not null, -- 'vec' | 'invoice' | 'permit' | 'photo' | 'other'
+  document_name text,
+  file_path text not null,
+  doc_link text, -- optional: cached signed/public URL
+  metadata jsonb default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_fleet_checkin_docs_owner on public.fleet_checkin_documents (owner_profile_id);
+create index if not exists idx_fleet_checkin_docs_checkin on public.fleet_checkin_documents (checkin_id);
+create index if not exists idx_fleet_checkin_docs_vehicle on public.fleet_checkin_documents (vehicle_id);
+create index if not exists idx_fleet_checkin_docs_driver on public.fleet_checkin_documents (driver_id);
+create index if not exists idx_fleet_checkin_docs_type on public.fleet_checkin_documents (document_type);
+
+alter table public.fleet_checkin_documents enable row level security;
+drop policy if exists "Users can manage own fleet checkin documents" on public.fleet_checkin_documents;
+create policy "Users can manage own fleet checkin documents"
+on public.fleet_checkin_documents for all
+using (auth.uid() = owner_profile_id)
+with check (auth.uid() = owner_profile_id);
+
+-- Convenience view for logs UI (filter + show VEC checkbox easily)
+create or replace view public.fleet_checkin_logs as
+select
+  c.id as checkin_id,
+  c.owner_profile_id,
+  c.vehicle_id,
+  c.driver_id,
+  c.check_type,
+  c.created_at,
+  c.trip_purpose,
+  c.trip_note,
+  exists (
+    select 1
+    from public.fleet_checkin_documents d
+    where d.checkin_id = c.id
+      and d.document_type = 'vec'
+  ) as has_vec,
+  (
+    select d.doc_link
+    from public.fleet_checkin_documents d
+    where d.checkin_id = c.id
+      and d.document_type = 'vec'
+    order by d.created_at desc
+    limit 1
+  ) as vec_doc_link
+from public.fleet_checkins c;
+
+-- Vehicle-first logs UX:
+-- 1) show vehicles list with last log + counts
+create or replace view public.fleet_vehicle_logs_summary as
+select
+  v.id as vehicle_id,
+  v.owner_profile_id,
+  v.vehicle_number,
+  v.label,
+  v.make_model,
+  max(l.created_at) as last_log_at,
+  count(l.checkin_id) as logs_total,
+  count(l.checkin_id) filter (where l.check_type = 'check_in') as checkins_total,
+  count(l.checkin_id) filter (where l.check_type = 'check_out') as checkouts_total,
+  count(l.checkin_id) filter (where l.has_vec) as logs_with_vec
+from public.fleet_vehicles v
+left join public.fleet_checkin_logs l
+  on l.vehicle_id = v.id
+ and l.owner_profile_id = v.owner_profile_id
+group by
+  v.id, v.owner_profile_id, v.vehicle_number, v.label, v.make_model;
+
+-- 2) easy drilldown view; filter by vehicle_id in your app query
+create or replace view public.fleet_vehicle_logs as
+select
+  l.*
+from public.fleet_checkin_logs l;
+
+-- =========================================================
+-- EXTRA LOGS (DIFF / AUDIT TRAIL)
+-- =========================================================
+
+create table if not exists public.change_logs (
+  id uuid primary key default gen_random_uuid(),
+  owner_profile_id uuid references public.profiles (id) on delete set null,
+  actor_profile_id uuid references public.profiles (id) on delete set null,
+  action text not null, -- 'insert' | 'update' | 'delete'
+  entity_type text not null,
+  entity_id text not null,
+  old_data jsonb,
+  new_data jsonb,
+  diff jsonb,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_change_logs_owner on public.change_logs (owner_profile_id);
+create index if not exists idx_change_logs_actor on public.change_logs (actor_profile_id);
+create index if not exists idx_change_logs_entity on public.change_logs (entity_type, entity_id);
+create index if not exists idx_change_logs_created on public.change_logs (created_at desc);
+
+alter table public.change_logs enable row level security;
+drop policy if exists "Users can view own change logs" on public.change_logs;
+create policy "Users can view own change logs"
+on public.change_logs for select
+using (auth.uid() = owner_profile_id);
+
+create or replace function public.jsonb_diff(a jsonb, b jsonb)
+returns jsonb
+language sql
+immutable
+as $$
+  select coalesce(
+    jsonb_object_agg(k, jsonb_build_object('from', a->k, 'to', b->k))
+    filter (where (a->k) is distinct from (b->k)),
+    '{}'::jsonb
+  )
+  from (
+    select jsonb_object_keys(coalesce(a, '{}'::jsonb)) as k
+    union
+    select jsonb_object_keys(coalesce(b, '{}'::jsonb)) as k
+  ) keys;
+$$;
+
+create or replace function public.log_change_row()
+returns trigger
+language plpgsql
+security invoker
+as $$
+declare
+  v_old jsonb;
+  v_new jsonb;
+  v_action text;
+  v_entity_id text;
+  v_owner uuid;
+begin
+  if tg_op = 'INSERT' then
+    v_action := 'insert';
+    v_old := null;
+    v_new := to_jsonb(new);
+  elsif tg_op = 'UPDATE' then
+    v_action := 'update';
+    v_old := to_jsonb(old);
+    v_new := to_jsonb(new);
+  else
+    v_action := 'delete';
+    v_old := to_jsonb(old);
+    v_new := null;
+  end if;
+
+  -- Determine entity id (best-effort)
+  v_entity_id := coalesce((v_new->>'id'), (v_old->>'id'), '');
+
+  -- Determine owner_profile_id (best-effort)
+  v_owner := nullif(coalesce((v_new->>'owner_profile_id'), (v_old->>'owner_profile_id')), '')::uuid;
+
+  insert into public.change_logs (
+    owner_profile_id,
+    actor_profile_id,
+    action,
+    entity_type,
+    entity_id,
+    old_data,
+    new_data,
+    diff
+  )
+  values (
+    v_owner,
+    auth.uid(),
+    v_action,
+    tg_table_name,
+    v_entity_id,
+    v_old,
+    v_new,
+    public.jsonb_diff(v_old, v_new)
+  );
+
+  if tg_op = 'DELETE' then
+    return old;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_audit_fleet_vehicles on public.fleet_vehicles;
+create trigger trg_audit_fleet_vehicles
+after insert or update or delete on public.fleet_vehicles
+for each row execute procedure public.log_change_row();
+
+drop trigger if exists trg_audit_fleet_drivers on public.fleet_drivers;
+create trigger trg_audit_fleet_drivers
+after insert or update or delete on public.fleet_drivers
+for each row execute procedure public.log_change_row();
+
+drop trigger if exists trg_audit_fleet_documents on public.fleet_documents;
+create trigger trg_audit_fleet_documents
+after insert or update or delete on public.fleet_documents
+for each row execute procedure public.log_change_row();
+
+drop trigger if exists trg_audit_fleet_checkins on public.fleet_checkins;
+create trigger trg_audit_fleet_checkins
+after insert or update or delete on public.fleet_checkins
+for each row execute procedure public.log_change_row();
+
+drop trigger if exists trg_audit_fleet_attendance on public.fleet_attendance;
+create trigger trg_audit_fleet_attendance
+after insert or update or delete on public.fleet_attendance
+for each row execute procedure public.log_change_row();
+
+drop trigger if exists trg_audit_fleet_checkin_assignments on public.fleet_checkin_assignments;
+create trigger trg_audit_fleet_checkin_assignments
+after insert or update or delete on public.fleet_checkin_assignments
+for each row execute procedure public.log_change_row();
+
+drop trigger if exists trg_audit_fleet_checkin_documents on public.fleet_checkin_documents;
+create trigger trg_audit_fleet_checkin_documents
+after insert or update or delete on public.fleet_checkin_documents
+for each row execute procedure public.log_change_row();
+
+-- =========================================================
+-- EXCEL -> DATA FEED (bulk import tracking; actual parsing happens in app/edge)
+-- =========================================================
+
+create table if not exists public.data_feeds (
+  id uuid primary key default gen_random_uuid(),
+  owner_profile_id uuid not null references public.profiles (id) on delete cascade,
+  feed_type text not null, -- e.g. 'drivers','vehicles','assignments','documents'
+  name text not null,
+  description text,
+  is_active boolean not null default true,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_data_feeds_owner on public.data_feeds (owner_profile_id);
+create index if not exists idx_data_feeds_type on public.data_feeds (feed_type);
+
+alter table public.data_feeds enable row level security;
+drop policy if exists "Users can manage own data feeds" on public.data_feeds;
+create policy "Users can manage own data feeds"
+on public.data_feeds for all
+using (auth.uid() = owner_profile_id)
+with check (auth.uid() = owner_profile_id);
+
+create table if not exists public.data_feed_imports (
+  id uuid primary key default gen_random_uuid(),
+  owner_profile_id uuid not null references public.profiles (id) on delete cascade,
+  feed_id uuid not null references public.data_feeds (id) on delete cascade,
+  source_file_path text not null, -- store uploaded excel in storage, then reference the path here
+  status text not null default 'uploaded' check (status in ('uploaded','processing','completed','failed')),
+  total_rows integer,
+  inserted_rows integer default 0,
+  updated_rows integer default 0,
+  failed_rows integer default 0,
+  column_mapping jsonb default '{}'::jsonb, -- user-defined mapping from Excel columns to DB fields
+  error_report jsonb default '{}'::jsonb,
+  created_at timestamptz not null default now(),
+  completed_at timestamptz
+);
+
+create index if not exists idx_data_feed_imports_owner on public.data_feed_imports (owner_profile_id);
+create index if not exists idx_data_feed_imports_feed on public.data_feed_imports (feed_id);
+create index if not exists idx_data_feed_imports_status on public.data_feed_imports (status);
+create index if not exists idx_data_feed_imports_created on public.data_feed_imports (created_at desc);
+
+alter table public.data_feed_imports enable row level security;
+drop policy if exists "Users can manage own data feed imports" on public.data_feed_imports;
+create policy "Users can manage own data feed imports"
+on public.data_feed_imports for all
+using (auth.uid() = owner_profile_id)
+with check (auth.uid() = owner_profile_id);
 
 -- =========================================================
 -- DONE

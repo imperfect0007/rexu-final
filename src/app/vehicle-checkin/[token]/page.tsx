@@ -14,6 +14,7 @@ import {
   ArrowLeft,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { supabase } from '@/lib/supabase';
 
 interface VehicleInfo {
   id: string;
@@ -25,6 +26,18 @@ interface VehicleInfo {
 interface DriverInfo {
   id: string;
   name: string;
+}
+
+interface VehicleDocument {
+  document_id: string;
+  vehicle_id: string;
+  document_type: string;
+  document_name: string | null;
+  file_path: string;
+  expiry_date: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 const FUEL_LEVELS = ['Full', '3/4', '1/2', '1/4', 'Empty'];
@@ -99,6 +112,9 @@ export default function VehicleCheckinPage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [docsLoading, setDocsLoading] = useState(false);
+  const [docs, setDocs] = useState<VehicleDocument[]>([]);
+  const [docsError, setDocsError] = useState<string | null>(null);
 
   useEffect(() => {
     void init();
@@ -114,7 +130,29 @@ export default function VehicleCheckinPage() {
     const data = await res.json();
     setVehicle(data.vehicle);
     setDrivers(data.drivers || []);
+    void loadDocuments();
     setLoading(false);
+  };
+
+  const loadDocuments = async () => {
+    setDocsLoading(true);
+    setDocsError(null);
+    try {
+      const { data, error } = await supabase.rpc('get_vehicle_documents_by_checkin_token', {
+        p_checkin_token: token,
+      });
+      if (error) {
+        console.error('Docs RPC error:', error);
+        setDocsError('Failed to load documents.');
+        return;
+      }
+      setDocs((data as VehicleDocument[]) || []);
+    } catch (e) {
+      console.error('Docs load error:', e);
+      setDocsError('Failed to load documents.');
+    } finally {
+      setDocsLoading(false);
+    }
   };
 
   const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -249,6 +287,71 @@ export default function VehicleCheckinPage() {
         <div className="rounded-xl bg-[#0F3D2E]/20 border border-[#145A3A]/30 p-4 text-xs text-[#B7BEC4]">
           Scan this QR from your fleet. Add photos and submit check-in or check-out — no sign-in required.
         </div>
+
+        <section className="rounded-2xl border border-white/10 bg-[#101518]/70 p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-bold text-white">Vehicle documents</p>
+              <p className="text-[11px] text-[#B7BEC4]">
+                Visible only from this check-in QR.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={loadDocuments}
+              disabled={docsLoading}
+              className="px-3 py-2 rounded-xl border border-[#3A3F45] bg-[#2B3136] text-xs font-semibold text-[#B7BEC4] hover:bg-[#3A3F45] hover:text-white transition disabled:opacity-50"
+            >
+              {docsLoading ? 'Loading…' : 'Refresh'}
+            </button>
+          </div>
+
+          {docsError && (
+            <div className="mt-3 p-3 rounded-xl bg-red-900/30 text-red-400 text-xs font-medium border border-red-800">
+              {docsError}
+            </div>
+          )}
+
+          {!docsLoading && !docsError && docs.length === 0 && (
+            <p className="mt-3 text-xs text-[#B7BEC4]/70">
+              No documents uploaded for this vehicle yet.
+            </p>
+          )}
+
+          {docs.length > 0 && (
+            <div className="mt-3 space-y-2">
+              {docs.map((d) => (
+                <div key={d.document_id} className="rounded-xl border border-white/10 bg-[#0B0F12]/40 p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-white truncate">
+                        {d.document_name || d.document_type}
+                      </p>
+                      <p className="text-[11px] text-[#B7BEC4]/70">
+                        {d.document_type.toUpperCase()}
+                        {d.expiry_date ? ` • Exp: ${new Date(d.expiry_date).toLocaleDateString('en-IN')}` : ''}
+                      </p>
+                    </div>
+                    <a
+                      className="shrink-0 text-xs font-semibold text-[#9AC57A] hover:underline"
+                      href="#"
+                      onClick={async (e) => {
+                        e.preventDefault();
+                        const { data } = await supabase.storage
+                          .from('fleet-documents')
+                          .createSignedUrl(d.file_path, 60 * 15);
+                        if (data?.signedUrl) window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
+                      }}
+                    >
+                      Open
+                    </a>
+                  </div>
+                  {d.notes && <p className="mt-2 text-xs text-[#B7BEC4]">{d.notes}</p>}
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
 
         {submitError && (
           <div className="p-3 rounded-xl bg-red-900/30 text-red-400 text-xs font-medium border border-red-800">{submitError}</div>
