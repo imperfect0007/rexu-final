@@ -29,7 +29,6 @@ import {
   Truck,
   ArrowLeft,
   FileText,
-  ClipboardCheck,
   ScrollText,
   Clock,
 } from 'lucide-react';
@@ -1126,12 +1125,6 @@ export default function DashboardPage(props: PageProps) {
                   {expiringDocs.length}
                 </span>
               )}
-            </Link>
-            <Link
-              href="/checkins"
-              className="flex items-center gap-3 px-5 py-2.5 text-sm text-[#B7BEC4] hover:bg-[#2B3136] hover:text-white border-l-[3px] border-transparent transition-colors"
-            >
-              <ClipboardCheck className="w-4 h-4" /> Check-in / out
             </Link>
             <Link
               href="/logs"
