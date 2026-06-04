@@ -5,6 +5,7 @@ import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { logFleetActivity } from '@/lib/fleetLogger';
 import { downloadQrEmergencyCard } from '@/lib/downloadQrCard';
+import { resolvePersonalQrToken } from '@/lib/resolvePersonalQrToken';
 import { useRouter } from 'next/navigation';
 import {
   Shield,
@@ -97,6 +98,7 @@ export default function DashboardPage(props: PageProps) {
   const [fleetDrivers, setFleetDrivers] = useState<FleetDriver[]>([]);
   const [loading, setLoading] = useState(true);
   const [qrToken, setQrToken] = useState<string | null>(null);
+  const [qrDownloading, setQrDownloading] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [isAddingContact, setIsAddingContact] = useState(false);
   const [newContact, setNewContact] = useState({ name: '', relation: '', phone: '' });
@@ -283,21 +285,11 @@ export default function DashboardPage(props: PageProps) {
         );
       }
 
-      // Fetch or generate QR token (tolerant of duplicate rows)
-      const { data: qrData, error: qrError } = await supabase
-        .from('qr_codes')
-        .select('token')
-        .eq('profile_id', user.id)
-        .limit(1)
-        .maybeSingle();
+      const existingToken = await resolvePersonalQrToken(supabase, user.id);
 
-      if (qrError && qrError.code !== 'PGRST116') {
-        console.error('Error fetching QR code:', qrError);
-      }
-
-      if (qrData) {
-        setQrToken(qrData.token);
-      } else if (profileData.is_paid) {
+      if (existingToken) {
+        setQrToken(existingToken);
+      } else if (effectiveProfile.is_paid) {
         // Generate new token if paid but no token exists
         const buf = new Uint8Array(16);
         crypto.getRandomValues(buf);
@@ -721,15 +713,23 @@ export default function DashboardPage(props: PageProps) {
 
   const handleDownloadQR = async () => {
     if (!qrToken) {
-      console.error('QR download requested but qrToken is missing');
+      window.alert('QR is not ready yet. Complete activation first.');
       return;
     }
+    if (qrDownloading) return;
 
+    setQrDownloading(true);
     try {
       await downloadQrEmergencyCard(qrToken);
     } catch (err) {
       console.error('Failed to download QR via API:', err);
-      downloadQrFromInlineSvg();
+      try {
+        downloadQrFromInlineSvg();
+      } catch {
+        window.alert('Could not download QR. Please try again in a moment.');
+      }
+    } finally {
+      setQrDownloading(false);
     }
   };
 
@@ -2154,11 +2154,21 @@ export default function DashboardPage(props: PageProps) {
                     <CheckCircle2 className="w-5 h-5" /> Active
                   </div>
                   <p className="text-sm text-neutral-500">Token: <span className="font-mono bg-neutral-100 px-2 py-0.5 rounded text-neutral-700">{qrToken}</span></p>
-                  <button 
-                    onClick={handleDownloadQR}
-                    className="w-full bg-neutral-100 text-neutral-700 py-3 rounded-xl font-bold hover:bg-neutral-200 transition-all flex items-center justify-center gap-2"
+                  <button
+                    type="button"
+                    onClick={() => void handleDownloadQR()}
+                    disabled={qrDownloading}
+                    className="w-full bg-neutral-100 text-neutral-700 py-3 rounded-xl font-bold hover:bg-neutral-200 transition-all flex items-center justify-center gap-2 disabled:opacity-60"
                   >
-                    <Download className="w-4 h-4" /> Download QR
+                    {qrDownloading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" /> Preparing download…
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-4 h-4" /> Download QR
+                      </>
+                    )}
                   </button>
                 </div>
               )}

@@ -332,19 +332,27 @@ export default function VehicleCheckinPage() {
                         {d.expiry_date ? ` • Exp: ${new Date(d.expiry_date).toLocaleDateString('en-IN')}` : ''}
                       </p>
                     </div>
-                    <a
-                      className="shrink-0 text-xs font-semibold text-[#9AC57A] hover:underline"
-                      href="#"
-                      onClick={async (e) => {
-                        e.preventDefault();
-                        const { data } = await supabase.storage
-                          .from('fleet-documents')
-                          .createSignedUrl(d.file_path, 60 * 15);
-                        if (data?.signedUrl) window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
+                    <button
+                      type="button"
+                      className="shrink-0 text-xs font-semibold text-[#9AC57A] hover:underline disabled:opacity-50"
+                      onClick={async () => {
+                        try {
+                          const res = await fetch(
+                            `/api/fleet/checkin-document-url?token=${encodeURIComponent(token)}&documentId=${encodeURIComponent(d.document_id)}`
+                          );
+                          const payload = await res.json();
+                          if (!res.ok || !payload.url) {
+                            window.alert(payload.error || 'Could not open document.');
+                            return;
+                          }
+                          window.open(payload.url, '_blank', 'noopener,noreferrer');
+                        } catch {
+                          window.alert('Could not open document. Please try again.');
+                        }
                       }}
                     >
                       Open
-                    </a>
+                    </button>
                   </div>
                   {d.notes && <p className="mt-2 text-xs text-[#B7BEC4]">{d.notes}</p>}
                 </div>
