@@ -1,7 +1,8 @@
-import Link from 'next/link';
-import Image from 'next/image';
-import { Shield, Lock, QrCode, ArrowLeft } from 'lucide-react';
+import { Lock, QrCode } from 'lucide-react';
 import { PageMotion } from '@/components/PageMotion';
+import { SiteNavbar } from '@/components/marketing/SiteNavbar';
+import { SparkSheet } from '@/components/marketing/SparkSheet';
+import { SectionTag } from '@/components/marketing/SparkSheet';
 
 export const metadata = {
   title: 'Security Policy | REXU',
@@ -10,57 +11,38 @@ export const metadata = {
 
 export default function SecurityPage() {
   return (
-    <PageMotion className="min-h-screen bg-gradient-to-b from-black via-[#101518] to-black">
-      <header className="bg-[#1F2428] border-b border-[#2B3136] sticky top-0 z-10">
-        <div className="max-w-3xl mx-auto px-4 h-14 flex items-center gap-4">
-          <Link
-            href="/"
-            className="flex items-center justify-center w-9 h-9 rounded-full border border-[#3A3F45] text-zinc-500 hover:bg-[#2B3136] hover:text-white transition-colors"
-            aria-label="Back to home"
-          >
-            <ArrowLeft className="w-4 h-4" />
-          </Link>
-          <div className="flex items-center gap-2">
-            <Image
-              src="/rexu-logo.png"
-              alt="REXU"
-              width={32}
-              height={32}
-              className="h-8 w-auto object-contain"
-            />
-            <h1 className="text-lg font-bold text-white">Security Policy</h1>
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-3xl mx-auto px-4 py-8 pb-16">
-        <p className="text-[#B7BEC4] text-sm mb-8">
+    <PageMotion className="min-h-screen text-neutral-900">
+      <SiteNavbar />
+      <main className="max-w-3xl mx-auto px-4 py-12 pb-16 sm:px-6">
+        <SectionTag>Security</SectionTag>
+        <h1 className="mt-6 text-3xl font-bold tracking-tight sm:text-4xl">Security Policy</h1>
+        <p className="text-neutral-600 text-sm mt-3 mb-10">
           REXU is built with security at every layer.
         </p>
 
-        <section className="space-y-6 mb-10">
-          <h2 className="text-base font-semibold text-white flex items-center gap-2">
-            <Lock className="w-4 h-4 text-[#9AC57A]" />
+        <SparkSheet className="mb-6 !p-6">
+          <h2 className="text-base font-semibold text-neutral-900 flex items-center gap-2">
+            <Lock className="w-4 h-4 text-[#6eb84a]" />
             How we keep things safe
           </h2>
-          <ul className="list-disc list-inside space-y-2 text-sm text-[#B7BEC4]">
+          <ul className="list-disc list-inside space-y-2 text-sm text-neutral-600 mt-4">
             <li>Encrypted data storage and secure servers</li>
             <li>Controlled access to information through system-level safeguards</li>
             <li>No sensitive data embedded directly in QR codes</li>
             <li>Ability to update or disable access instantly if needed</li>
           </ul>
-        </section>
+        </SparkSheet>
 
-        <section className="space-y-4 p-6 rounded-[28px] bg-[#101518]/90 border border-white/10">
-          <h2 className="text-base font-semibold text-white flex items-center gap-2">
-            <QrCode className="w-4 h-4 text-[#9AC57A]" />
+        <SparkSheet className="!p-6">
+          <h2 className="text-base font-semibold text-neutral-900 flex items-center gap-2">
+            <QrCode className="w-4 h-4 text-[#6eb84a]" />
             QR Safety
           </h2>
-          <ul className="space-y-2 text-sm text-[#B7BEC4]">
+          <ul className="space-y-2 text-sm text-neutral-600 mt-4">
             <li>QR codes only act as a secure reference, not as data containers</li>
             <li>Even if a QR is scanned by the wrong person, private data remains protected</li>
           </ul>
-        </section>
+        </SparkSheet>
       </main>
     </PageMotion>
   );

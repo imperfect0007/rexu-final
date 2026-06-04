@@ -1,5 +1,7 @@
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import { SiteNavbar } from '@/components/marketing/SiteNavbar';
+import { SparkSheet } from '@/components/marketing/SparkSheet';
 
 interface PolicyLayoutProps {
   title: string;
@@ -9,22 +11,27 @@ interface PolicyLayoutProps {
 
 export default function PolicyLayout({ title, lastUpdated, children }: PolicyLayoutProps) {
   return (
-    <div className="min-h-screen bg-black text-white">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-12 sm:py-20">
+    <div className="min-h-screen text-neutral-900">
+      <SiteNavbar />
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
         <Link
           href="/"
-          className="inline-flex items-center gap-2 text-sm text-zinc-400 hover:text-white transition-colors mb-8"
+          className="inline-flex items-center gap-2 text-sm text-neutral-500 hover:text-[#5a9c32] transition-colors mb-8"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to home
         </Link>
 
-        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-2">{title}</h1>
-        <p className="text-sm text-zinc-500 mb-10">Last updated: {lastUpdated}</p>
+        <SparkSheet className="!p-8 sm:!p-10">
+          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-2 text-neutral-900">
+            {title}
+          </h1>
+          <p className="text-sm text-neutral-500 mb-8">Last updated: {lastUpdated}</p>
 
-        <div className="prose prose-invert prose-zinc max-w-none prose-headings:font-semibold prose-headings:tracking-tight prose-h2:text-xl prose-h2:mt-10 prose-h2:mb-4 prose-h3:text-lg prose-h3:mt-8 prose-h3:mb-3 prose-p:text-zinc-300 prose-p:leading-relaxed prose-li:text-zinc-300 prose-strong:text-white prose-a:text-[#9AC57A] prose-a:no-underline hover:prose-a:underline">
-          {children}
-        </div>
+          <div className="prose prose-neutral max-w-none prose-headings:font-semibold prose-headings:text-neutral-900 prose-p:text-neutral-600 prose-li:text-neutral-600 prose-a:text-[#5a9c32] prose-a:no-underline hover:prose-a:underline">
+            {children}
+          </div>
+        </SparkSheet>
       </div>
     </div>
   );

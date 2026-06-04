@@ -1,7 +1,16 @@
 import type { Metadata } from "next";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import ErrorReporter from "@/components/ErrorReporter";
 import ConditionalFooter from "@/components/ConditionalFooter";
+import { InteractiveBackground } from "@/components/InteractiveBackground";
+import { CustomCursor } from "@/components/CustomCursor";
+
+const plusJakartaSans = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-plus-jakarta",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://rexu.in"),
@@ -32,7 +41,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="antialiased bg-background text-foreground">
+      <body className={`${plusJakartaSans.variable} antialiased bg-rexu-grid text-foreground`}>
+        <CustomCursor />
+        <InteractiveBackground />
         <ErrorReporter />
         <div className="min-h-screen flex flex-col">
           <div className="flex-1">{children}</div>

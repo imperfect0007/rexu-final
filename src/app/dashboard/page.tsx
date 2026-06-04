@@ -1034,8 +1034,11 @@ export default function DashboardPage(props: PageProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-[#9AC57A]" />
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="w-8 h-8 animate-spin text-[#6eb84a]" />
+          <p className="text-sm text-neutral-500 font-medium">Loading dashboard…</p>
+        </div>
       </div>
     );
   }
@@ -1047,19 +1050,19 @@ export default function DashboardPage(props: PageProps) {
     const activeQrCount = fleetVehicles.filter((v) => v.qr_token).length;
 
     return (
-      <div className="min-h-screen flex bg-[#1F2428]">
+      <div className="min-h-screen flex bg-neutral-50 bg-rexu-grid">
         {/* ── Sidebar ── */}
-        <aside className="hidden md:flex w-[220px] shrink-0 border-r border-[#2B3136] flex-col bg-[#1F2428] sticky top-0 h-screen overflow-y-auto">
+        <aside className="hidden md:flex w-[240px] shrink-0 border-r border-neutral-200 flex-col bg-white sticky top-0 h-screen overflow-y-auto shadow-sm">
           {/* Logo / profile */}
-          <div className="px-5 pt-4 pb-4 flex flex-col items-center text-center border-b border-[#2B3136]">
+          <div className="px-5 pt-6 pb-5 flex flex-col items-center text-center border-b border-neutral-100">
             <button
               type="button"
               onClick={() => router.push('/')}
-              className="self-start mb-3 w-8 h-8 rounded-full border border-[#3A3F45] flex items-center justify-center text-[#B7BEC4] hover:bg-[#2B3136] hover:text-white transition-colors"
+              className="self-start mb-4 w-8 h-8 rounded-full border border-neutral-200 flex items-center justify-center text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
             </button>
-            <div className="w-14 h-14 rounded-full mb-2 overflow-hidden border border-[#3A3F45] bg-[#2B3136] flex items-center justify-center">
+            <div className="w-14 h-14 rounded-full mb-3 overflow-hidden border-2 border-[#89d957]/40 bg-neutral-100 flex items-center justify-center">
               {profileAvatarUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={profileAvatarUrl} alt="Profile" className="w-full h-full object-cover" />
@@ -1067,37 +1070,37 @@ export default function DashboardPage(props: PageProps) {
                 <Image src="/rexu-logo.png" alt="Rexu" width={56} height={56} className="rounded-full" />
               )}
             </div>
-            <h2 className="font-bold text-sm text-white">{profile?.full_name || 'Rexu'}</h2>
-            <p className="text-[11px] text-[#B7BEC4]">Fleet Account</p>
+            <h2 className="font-bold text-sm text-neutral-900">{profile?.full_name || 'Rexu'}</h2>
+            <p className="text-[11px] text-[#6eb84a] font-semibold uppercase tracking-widest mt-0.5">Fleet Account</p>
             <button
               type="button"
               onClick={() => router.push('/profile')}
-              className="mt-2 inline-flex items-center gap-1 text-[11px] text-[#B7BEC4] hover:text-white transition-colors"
+              className="mt-2 inline-flex items-center gap-1 text-[11px] text-neutral-500 hover:text-neutral-900 transition-colors"
             >
               <Pencil className="w-3 h-3" /> Edit Profile
             </button>
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 py-4 space-y-1">
-            <p className="px-5 mb-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#B7BEC4]/60">
+          <nav className="flex-1 py-5 space-y-0.5 px-3">
+            <p className="px-3 mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-400">
               Fleet Management
             </p>
             <Link
               href="/dashboard"
-              className="flex items-center gap-3 px-5 py-2.5 text-sm font-medium text-[#9AC57A] bg-[#0F3D2E]/20 border-l-[3px] border-[#9AC57A]"
+              className="flex items-center gap-3 px-3 py-2.5 text-sm font-semibold text-[#6eb84a] bg-[#89d957]/10 rounded-xl border-l-[3px] border-[#6eb84a]"
             >
               <LayoutDashboard className="w-4 h-4" /> Fleet Dashboard
             </Link>
             <Link
               href="/fleet"
-              className="flex items-center gap-3 px-5 py-2.5 text-sm text-[#B7BEC4] hover:bg-[#2B3136] hover:text-white border-l-[3px] border-transparent transition-colors"
+              className="flex items-center gap-3 px-3 py-2.5 text-sm text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 rounded-xl border-l-[3px] border-transparent transition-colors"
             >
               <Truck className="w-4 h-4" /> Manage Vehicles
             </Link>
             <Link
               href="/drivers"
-              className="flex items-center gap-3 px-5 py-2.5 text-sm text-[#B7BEC4] hover:bg-[#2B3136] hover:text-white border-l-[3px] border-transparent transition-colors"
+              className="flex items-center gap-3 px-3 py-2.5 text-sm text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 rounded-xl border-l-[3px] border-transparent transition-colors"
             >
               <Users className="w-4 h-4" /> Manage Drivers
             </Link>
@@ -1107,61 +1110,61 @@ export default function DashboardPage(props: PageProps) {
                 const el = document.getElementById('assignments-section');
                 el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
               }}
-              className="w-full flex items-center gap-3 px-5 py-2.5 text-sm text-[#B7BEC4] hover:bg-[#2B3136] hover:text-white border-l-[3px] border-transparent transition-colors"
+              className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 rounded-xl border-l-[3px] border-transparent transition-colors"
             >
               <Link2 className="w-4 h-4" /> Assignments
             </button>
 
-            <p className="px-5 mt-6 mb-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#B7BEC4]/60">
+            <p className="px-3 mt-6 mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-400">
               Operations
             </p>
             <Link
               href="/documents"
-              className="flex items-center gap-3 px-5 py-2.5 text-sm text-[#B7BEC4] hover:bg-[#2B3136] hover:text-white border-l-[3px] border-transparent transition-colors"
+              className="flex items-center gap-3 px-3 py-2.5 text-sm text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 rounded-xl border-l-[3px] border-transparent transition-colors"
             >
               <FileText className="w-4 h-4" /> Documents
               {expiringDocs.length > 0 && (
-                <span className="ml-auto text-[10px] font-bold text-amber-400 bg-amber-950/40 border border-amber-500/30 rounded-full px-1.5 py-0.5 leading-none">
+                <span className="ml-auto text-[10px] font-bold text-amber-700 bg-amber-100 border border-amber-200 rounded-full px-1.5 py-0.5 leading-none">
                   {expiringDocs.length}
                 </span>
               )}
             </Link>
             <Link
               href="/logs"
-              className="flex items-center gap-3 px-5 py-2.5 text-sm text-[#B7BEC4] hover:bg-[#2B3136] hover:text-white border-l-[3px] border-transparent transition-colors"
+              className="flex items-center gap-3 px-3 py-2.5 text-sm text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 rounded-xl border-l-[3px] border-transparent transition-colors"
             >
               <ScrollText className="w-4 h-4" /> Activity Logs
             </Link>
 
-            <p className="px-5 mt-6 mb-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#B7BEC4]/60">
+            <p className="px-3 mt-6 mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-400">
               Account
             </p>
             <Link
               href="/profile"
-              className="flex items-center gap-3 px-5 py-2.5 text-sm text-[#B7BEC4] hover:bg-[#2B3136] hover:text-white border-l-[3px] border-transparent transition-colors"
+              className="flex items-center gap-3 px-3 py-2.5 text-sm text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 rounded-xl border-l-[3px] border-transparent transition-colors"
             >
               <Settings className="w-4 h-4" /> Settings
             </Link>
             <Link
               href="/security"
-              className="flex items-center gap-3 px-5 py-2.5 text-sm text-[#B7BEC4] hover:bg-[#2B3136] hover:text-white border-l-[3px] border-transparent transition-colors"
+              className="flex items-center gap-3 px-3 py-2.5 text-sm text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 rounded-xl border-l-[3px] border-transparent transition-colors"
             >
               <Shield className="w-4 h-4" /> Security
             </Link>
             <button
               type="button"
               onClick={handlePayment}
-              className="w-full flex items-center gap-3 px-5 py-2.5 text-sm text-[#B7BEC4] hover:bg-[#2B3136] hover:text-white border-l-[3px] border-transparent transition-colors"
+              className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 rounded-xl border-l-[3px] border-transparent transition-colors"
             >
               <CreditCard className="w-4 h-4" /> Billing &amp; Plans
             </button>
           </nav>
 
           {/* Bottom */}
-          <div className="border-t border-[#2B3136] px-5 py-4 space-y-3">
+          <div className="border-t border-neutral-100 px-5 py-4 space-y-3">
             <button
               type="button"
-              className="flex items-center gap-2 text-sm text-[#B7BEC4] hover:text-white transition-colors"
+              className="flex items-center gap-2 text-sm text-neutral-500 hover:text-neutral-900 transition-colors"
             >
               <HelpCircle className="w-4 h-4" /> Help &amp; Support
             </button>
@@ -1171,9 +1174,9 @@ export default function DashboardPage(props: PageProps) {
                 await supabase.auth.signOut();
                 router.push('/login');
               }}
-              className="flex items-center gap-2 text-sm text-[#B7BEC4] hover:text-red-400 transition-colors w-full"
+              className="flex items-center gap-2 text-sm text-neutral-500 hover:text-red-500 transition-colors w-full"
             >
-              <span className="w-6 h-6 rounded-full bg-[#2B3136] border border-[#3A3F45] text-white flex items-center justify-center text-[10px] font-bold shrink-0">
+              <span className="w-6 h-6 rounded-full bg-gradient-brand text-[#1a2e0f] flex items-center justify-center text-[10px] font-bold shrink-0">
                 {profile?.full_name?.[0]?.toUpperCase() || 'U'}
               </span>
               Logout
@@ -1184,37 +1187,37 @@ export default function DashboardPage(props: PageProps) {
         {/* ── Main content ── */}
         <div className="flex-1 flex flex-col min-h-screen">
           {/* Top header bar */}
-          <header className="h-16 shrink-0 border-b border-[#2B3136] flex items-center justify-between px-8 bg-[#1F2428] sticky top-0 z-10">
+          <header className="h-16 shrink-0 border-b border-neutral-200 flex items-center justify-between px-8 bg-white sticky top-0 z-10 shadow-sm">
             <div>
-              <h1 className="text-lg font-bold text-white leading-tight">
+              <h1 className="text-lg font-bold text-neutral-900 leading-tight">
                 Fleet Dashboard
               </h1>
-              <p className="text-xs text-[#B7BEC4]">Vehicles &amp; Drivers</p>
+              <p className="text-xs text-neutral-500">Vehicles &amp; Drivers</p>
             </div>
             <div className="flex items-center gap-3">
               <button
                 type="button"
-                className="p-2 rounded-lg hover:bg-[#2B3136] transition-colors"
+                className="p-2 rounded-lg hover:bg-neutral-100 transition-colors"
               >
-                <Bell className="w-5 h-5 text-[#B7BEC4]" />
+                <Bell className="w-5 h-5 text-neutral-400" />
               </button>
               <div className="relative">
                 <button
                   type="button"
                   onClick={() => setProfileMenuOpen((open) => !open)}
-                  className="h-8 px-2.5 rounded-lg bg-[#2B3136] border border-[#3A3F45] text-white text-[11px] font-bold tracking-wide flex items-center justify-center hover:bg-[#3A3F45] transition-colors"
+                  className="h-8 px-3 rounded-full bg-gradient-brand text-[#1a2e0f] text-[11px] font-bold tracking-wide flex items-center justify-center hover:opacity-90 transition-opacity"
                 >
-                  rexu
+                  {profile?.full_name?.[0]?.toUpperCase() || 'R'}
                 </button>
                 {profileMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-44 rounded-xl border border-[#3A3F45] bg-[#1F2428] shadow-lg py-1 text-sm z-20">
+                  <div className="absolute right-0 mt-2 w-44 rounded-2xl border border-neutral-200 bg-white shadow-xl py-1 text-sm z-20">
                     <button
                       type="button"
                       onClick={() => {
                         setProfileMenuOpen(false);
                         router.push('/profile');
                       }}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-left text-[#B7BEC4] hover:bg-[#2B3136] hover:text-white"
+                      className="w-full flex items-center gap-2 px-4 py-2.5 text-left text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
                     >
                       <User className="w-4 h-4" />
                       <span>Profile</span>
@@ -1226,7 +1229,7 @@ export default function DashboardPage(props: PageProps) {
                         await supabase.auth.signOut();
                         router.push('/login');
                       }}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-left text-red-400 hover:bg-red-950/30"
+                      className="w-full flex items-center gap-2 px-4 py-2.5 text-left text-red-500 hover:bg-red-50"
                     >
                       <LogOut className="w-4 h-4" />
                       <span>Logout</span>
@@ -1238,18 +1241,18 @@ export default function DashboardPage(props: PageProps) {
           </header>
 
           {/* Scrollable main area */}
-          <main className="flex-1 overflow-y-auto p-8 space-y-6 bg-gradient-to-b from-[#1F2428] via-[#101518] to-[#1F2428]">
+          <main className="flex-1 overflow-y-auto p-8 space-y-6 bg-neutral-50">
             {/* ── Document expiry alerts ── */}
             {expiringDocs.length > 0 && (
-              <div className="rounded-[28px] bg-amber-950/30 border border-amber-500/30 p-5 space-y-3">
+              <div className="rounded-2xl bg-amber-50 border border-amber-200 p-5 space-y-3">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-amber-300 text-sm font-semibold">
+                  <div className="flex items-center gap-2 text-amber-700 text-sm font-semibold">
                     <AlertTriangle className="w-4 h-4" />
                     Document Expiry Alerts ({expiringDocs.length})
                   </div>
                   <Link
                     href="/documents"
-                    className="text-xs text-amber-400 hover:text-amber-300 font-medium transition-colors"
+                    className="text-xs text-amber-600 hover:text-amber-800 font-medium transition-colors"
                   >
                     View all →
                   </Link>
@@ -1263,13 +1266,13 @@ export default function DashboardPage(props: PageProps) {
                     const isExpired = days < 0;
                     return (
                       <div key={doc.id} className="flex items-center justify-between text-xs">
-                        <span className="text-white/80">
+                        <span className="text-neutral-700">
                           {doc.document_name}
                           {doc.fleet_vehicles && (
-                            <span className="text-[#B7BEC4]/60"> · {doc.fleet_vehicles.vehicle_number}</span>
+                            <span className="text-neutral-400"> · {doc.fleet_vehicles.vehicle_number}</span>
                           )}
                         </span>
-                        <span className={isExpired ? 'text-red-400 font-semibold' : 'text-amber-400 font-semibold'}>
+                        <span className={isExpired ? 'text-red-500 font-semibold' : 'text-amber-600 font-semibold'}>
                           {isExpired ? `Expired ${Math.abs(days)}d ago` : `${days}d left`}
                         </span>
                       </div>
@@ -1280,46 +1283,53 @@ export default function DashboardPage(props: PageProps) {
             )}
 
             {/* ── Stats cards ── */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-              <div className="border border-white/10 rounded-[28px] bg-[#101518]/90 p-6 flex items-center justify-between">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+              <motion.div variants={sectionVariants} initial="hidden" animate="visible" className="glass-card rounded-2xl p-6 flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-[#B7BEC4] mb-1">Total Vehicles</p>
-                  <p className="text-3xl font-bold text-white">{fleetVehicles.length}</p>
+                  <p className="text-sm text-neutral-500 mb-1">Total Vehicles</p>
+                  <p className="text-3xl font-bold text-neutral-900">{fleetVehicles.length}</p>
                 </div>
-                <Truck className="w-6 h-6 text-[#B7BEC4]/40" />
-              </div>
-              <div className="border border-white/10 rounded-[28px] bg-[#101518]/90 p-6 flex items-center justify-between">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-brand flex items-center justify-center">
+                  <Truck className="w-6 h-6 text-[#1a2e0f]" />
+                </div>
+              </motion.div>
+              <motion.div variants={sectionVariants} initial="hidden" animate="visible" className="glass-card rounded-2xl p-6 flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-[#B7BEC4] mb-1">Total Drivers</p>
-                  <p className="text-3xl font-bold text-white">{fleetDrivers.length}</p>
+                  <p className="text-sm text-neutral-500 mb-1">Total Drivers</p>
+                  <p className="text-3xl font-bold text-neutral-900">{fleetDrivers.length}</p>
                 </div>
-                <Users className="w-6 h-6 text-[#B7BEC4]/40" />
-              </div>
-              <div className="border border-white/10 rounded-[28px] bg-[#101518]/90 p-6 flex items-center justify-between">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-brand flex items-center justify-center">
+                  <Users className="w-6 h-6 text-[#1a2e0f]" />
+                </div>
+              </motion.div>
+              <motion.div variants={sectionVariants} initial="hidden" animate="visible" className="glass-card rounded-2xl p-6 flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-[#B7BEC4] mb-1">Active QR Codes</p>
-                  <p className="text-3xl font-bold text-[#9AC57A]">{activeQrCount}</p>
+                  <p className="text-sm text-neutral-500 mb-1">Active QR Codes</p>
+                  <p className="text-3xl font-bold text-[#6eb84a]">{activeQrCount}</p>
                 </div>
-                <QrCode className="w-6 h-6 text-[#9AC57A]/40" />
-              </div>
+                <div className="w-12 h-12 rounded-2xl bg-gradient-brand flex items-center justify-center">
+                  <QrCode className="w-6 h-6 text-[#1a2e0f]" />
+                </div>
+              </motion.div>
             </div>
 
             {/* ── Driver · Vehicle Assignments ── */}
-            <section
+            <motion.section
               id="assignments-section"
-              className="bg-[#101518]/90 rounded-[28px] p-6 border border-white/10 space-y-4"
+              variants={sectionVariants} initial="hidden" animate="visible"
+              className="glass-card rounded-2xl p-6 space-y-4"
             >
               <div>
-                <h2 className="text-base font-bold text-white">
+                <h2 className="text-base font-bold text-neutral-900">
                   Driver · Vehicle Assignments
                 </h2>
-                <p className="text-xs text-[#B7BEC4] mt-0.5">
+                <p className="text-xs text-neutral-500 mt-0.5">
                   Vehicles stay fixed · Drivers can change
                 </p>
               </div>
 
               {fleetDrivers.length > 0 && fleetVehicles.length > 0 ? (
-                <div className="rounded-xl border border-white/5 divide-y divide-white/5">
+                <div className="rounded-xl border border-neutral-200 divide-y divide-neutral-100">
                   {fleetVehicles.map((vehicle) => {
                     const assignedDriver = fleetDrivers.find(
                       (d) => d.assigned_vehicle_id === vehicle.id
@@ -1327,27 +1337,27 @@ export default function DashboardPage(props: PageProps) {
                     return (
                       <div
                         key={vehicle.id}
-                        className="px-4 py-3 flex items-center justify-between gap-4 hover:bg-white/[0.02] transition-colors"
+                        className="px-4 py-3 flex items-center justify-between gap-4 hover:bg-neutral-50 transition-colors"
                       >
                         <div className="flex flex-col">
-                          <span className="font-bold text-sm text-white">
+                          <span className="font-bold text-sm text-neutral-900">
                             {vehicle.vehicle_number}
                           </span>
                           {assignedDriver ? (
                             <>
-                              <span className="text-xs text-[#B7BEC4]">
+                              <span className="text-xs text-neutral-600">
                                 {assignedDriver.name}
                               </span>
-                              <span className="text-xs text-[#B7BEC4]/60 font-mono">
+                              <span className="text-xs text-neutral-400 font-mono">
                                 {assignedDriver.phone}
                               </span>
                             </>
                           ) : (
-                            <span className="text-xs text-[#B7BEC4]/50">No driver assigned</span>
+                            <span className="text-xs text-neutral-400">No driver assigned</span>
                           )}
                         </div>
                         <select
-                          className="px-3 py-1.5 rounded-lg border border-[#3A3F45] bg-[#2B3136] text-sm text-white"
+                          className="px-3 py-1.5 rounded-lg border border-neutral-200 bg-white text-sm text-neutral-900 focus:ring-2 focus:ring-[#89d957]/40 focus:border-[#6eb84a] outline-none"
                           value={assignedDriver?.id ?? ''}
                           onChange={(e) => {
                             const newDriverId = e.target.value;
@@ -1372,29 +1382,29 @@ export default function DashboardPage(props: PageProps) {
                   })}
                 </div>
               ) : (
-                <p className="text-xs text-[#B7BEC4]/50">
+                <p className="text-xs text-neutral-400">
                   Add at least one vehicle and one driver to start assigning.
                 </p>
               )}
-            </section>
+            </motion.section>
 
             {/* ── Fleet Vehicles & Drivers side by side ── */}
             <div className="grid md:grid-cols-2 gap-6">
               {/* Fleet Vehicles */}
-              <section className="bg-[#101518]/90 rounded-[28px] p-6 border border-white/10 space-y-4">
+              <motion.section variants={sectionVariants} initial="hidden" animate="visible" className="glass-card rounded-2xl p-6 space-y-4">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <h2 className="text-base font-bold text-white">
+                    <h2 className="text-base font-bold text-neutral-900">
                       Fleet Vehicles
                     </h2>
-                    <p className="text-xs text-[#B7BEC4] mt-0.5">
+                    <p className="text-xs text-neutral-500 mt-0.5">
                       Add vehicles, then activate QR codes
                     </p>
                   </div>
                   <button
                     type="button"
                     onClick={() => setIsVehicleModalOpen(true)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#145A3A] text-white text-xs font-semibold hover:bg-[#1F7A5A] active:scale-[0.97] transition"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-brand text-[#1a2e0f] text-xs font-semibold hover:opacity-90 active:scale-[0.97] transition"
                   >
                     <Plus className="w-3 h-3" />
                     <span>Add Vehicle</span>
@@ -1405,7 +1415,7 @@ export default function DashboardPage(props: PageProps) {
                   <button
                     type="button"
                     onClick={handlePayment}
-                    className="inline-flex items-center gap-1.5 text-xs text-[#B7BEC4] hover:text-white transition-colors"
+                    className="inline-flex items-center gap-1.5 text-xs text-neutral-500 hover:text-neutral-900 transition-colors"
                   >
                     <Shield className="w-3.5 h-3.5" />
                     <span>Proceed to QR Activation</span>
@@ -1413,25 +1423,25 @@ export default function DashboardPage(props: PageProps) {
                   <button
                     type="button"
                     onClick={() => router.push('/fleet')}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-[#3A3F45] text-xs font-medium text-[#B7BEC4] hover:bg-[#2B3136] hover:text-white transition"
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-neutral-200 text-xs font-medium text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 transition"
                   >
                     Manage vehicles
                   </button>
                 </div>
 
                 {fleetVehicles.length > 0 ? (
-                  <div className="rounded-xl border border-white/5 divide-y divide-white/5">
+                  <div className="rounded-xl border border-neutral-200 divide-y divide-neutral-100">
                     {fleetVehicles.map((v) => (
                       <div
                         key={v.id}
-                        className="px-4 py-3 flex items-center justify-between gap-3 hover:bg-white/[0.02] transition-colors"
+                        className="px-4 py-3 flex items-center justify-between gap-3 hover:bg-neutral-50 transition-colors"
                       >
                         <div className="flex flex-col">
-                          <span className="font-bold text-sm text-white">
+                          <span className="font-bold text-sm text-neutral-900">
                             {v.vehicle_number}
                           </span>
                           {(v.label || v.make_model) && (
-                            <span className="text-xs text-[#B7BEC4]/60">
+                            <span className="text-xs text-neutral-400">
                               {[v.label, v.make_model].filter(Boolean).join(' · ')}
                             </span>
                           )}
@@ -1439,13 +1449,13 @@ export default function DashboardPage(props: PageProps) {
                         <div className="flex items-center gap-2">
                           {v.qr_token ? (
                             <>
-                              <span className="text-[10px] uppercase tracking-wider font-semibold text-[#9AC57A] bg-[#0F3D2E]/30 border border-[#145A3A]/40 rounded-full px-2 py-0.5">
+                              <span className="text-[10px] uppercase tracking-wider font-semibold text-[#6eb84a] bg-[#89d957]/10 border border-[#89d957]/30 rounded-full px-2 py-0.5">
                                 QR Ready
                               </span>
                               <button
                                 type="button"
                                 onClick={() => v.qr_token && handleDownloadVehicleQr(v.qr_token)}
-                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#145A3A] text-white text-xs font-medium hover:bg-[#1F7A5A] transition-colors"
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-gradient-brand text-[#1a2e0f] text-xs font-medium hover:opacity-90 transition-colors"
                               >
                                 <Download className="w-3 h-3" />
                                 Download
@@ -1455,7 +1465,7 @@ export default function DashboardPage(props: PageProps) {
                             <button
                               type="button"
                               onClick={() => handleGenerateVehicleQr(v.id)}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-[#3A3F45] text-xs font-medium text-[#B7BEC4] hover:bg-[#2B3136] hover:text-white transition-colors"
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-neutral-200 text-xs font-medium text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 transition-colors"
                             >
                               <QrCode className="w-3 h-3" />
                               Generate QR
@@ -1466,20 +1476,20 @@ export default function DashboardPage(props: PageProps) {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-xs text-[#B7BEC4]/50">
+                  <p className="text-xs text-neutral-400">
                     No vehicles added yet. Use &quot;Add Vehicle&quot; to register your first vehicle.
                   </p>
                 )}
-              </section>
+              </motion.section>
 
               {/* Drivers & Assignments */}
-              <section className="bg-[#101518]/90 rounded-[28px] p-6 border border-white/10 space-y-4">
+              <motion.section variants={sectionVariants} initial="hidden" animate="visible" className="glass-card rounded-2xl p-6 space-y-4">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <h2 className="text-base font-bold text-white">
+                    <h2 className="text-base font-bold text-neutral-900">
                       Drivers &amp; Assignments
                     </h2>
-                    <p className="text-xs text-[#B7BEC4] mt-0.5">
+                    <p className="text-xs text-neutral-500 mt-0.5">
                       Add drivers and assign to vehicles
                     </p>
                   </div>
@@ -1487,7 +1497,7 @@ export default function DashboardPage(props: PageProps) {
                     <button
                       type="button"
                       onClick={() => setIsDriverModalOpen(true)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#145A3A] text-white text-xs font-semibold hover:bg-[#1F7A5A] active:scale-[0.97] transition"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-brand text-[#1a2e0f] text-xs font-semibold hover:opacity-90 active:scale-[0.97] transition"
                     >
                       <Plus className="w-3 h-3" />
                       <span>Add Driver</span>
@@ -1495,7 +1505,7 @@ export default function DashboardPage(props: PageProps) {
                     <button
                       type="button"
                       onClick={() => router.push('/drivers')}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-[#3A3F45] text-xs font-medium text-[#B7BEC4] hover:bg-[#2B3136] hover:text-white transition"
+                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-neutral-200 text-xs font-medium text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 transition"
                     >
                       Manage Drivers
                     </button>
@@ -1503,27 +1513,27 @@ export default function DashboardPage(props: PageProps) {
                 </div>
 
                 {fleetDrivers.length > 0 ? (
-                  <div className="rounded-xl border border-white/5 divide-y divide-white/5">
+                  <div className="rounded-xl border border-neutral-200 divide-y divide-neutral-100">
                     {fleetDrivers.map((driver) => {
                       const assignedVehicle = fleetVehicles.find(
                         (v) => v.id === driver.assigned_vehicle_id
                       );
                       return (
-                        <div key={driver.id} className="px-4 py-3 hover:bg-white/[0.02] transition-colors">
-                          <div className="flex flex-col">
-                            <span className="font-bold text-sm text-white">
+                        <div key={driver.id} className="px-4 py-3 hover:bg-neutral-50 transition-colors">
+                          <div className="flex flex-col gap-0.5">
+                            <span className="font-bold text-sm text-neutral-900">
                               {driver.name}
                             </span>
-                            <span className="text-xs text-[#B7BEC4]/60 font-mono">
+                            <span className="text-xs text-neutral-400 font-mono">
                               {driver.phone}
                             </span>
                             {driver.blood_group && (
-                              <span className="text-xs text-[#B7BEC4]">
+                              <span className="text-xs text-neutral-600">
                                 Blood group: {driver.blood_group}
                               </span>
                             )}
                             {assignedVehicle && (
-                              <span className="text-xs text-[#B7BEC4]">
+                              <span className="text-xs text-[#6eb84a] font-medium">
                                 Assigned to: {assignedVehicle.vehicle_number}
                               </span>
                             )}
@@ -1533,11 +1543,11 @@ export default function DashboardPage(props: PageProps) {
                     })}
                   </div>
                 ) : (
-                  <p className="text-xs text-[#B7BEC4]/50">
+                  <p className="text-xs text-neutral-400">
                     No drivers added yet. Use &quot;Add Driver&quot; to create your first driver.
                   </p>
                 )}
-              </section>
+              </motion.section>
             </div>
           </main>
         </div>
@@ -1554,37 +1564,37 @@ export default function DashboardPage(props: PageProps) {
         {isVehicleModalOpen && (
           <div className="fixed inset-0 z-40 flex items-center justify-center p-4">
             <div
-              className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+              className="absolute inset-0 bg-black/30 backdrop-blur-sm"
               onClick={() => setIsVehicleModalOpen(false)}
             />
-            <div className="relative bg-[#1F2428] rounded-[28px] w-full max-w-md p-6 shadow-2xl border border-white/10">
-              <div className="flex items-center justify-between mb-4">
+            <div className="relative bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl border border-neutral-200">
+              <div className="flex items-center justify-between mb-5">
                 <div>
-                  <h2 className="text-lg font-semibold text-white">
+                  <h2 className="text-lg font-bold text-neutral-900">
                     Add Vehicle
                   </h2>
-                  <p className="text-xs text-[#B7BEC4]">
+                  <p className="text-xs text-neutral-500">
                     Save your vehicle details first, then activate its QR.
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setIsVehicleModalOpen(false)}
-                  className="p-2 text-[#B7BEC4] hover:text-white transition-colors"
+                  className="p-2 text-neutral-400 hover:text-neutral-900 transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
               {vehicleError && (
-                <div className="mb-3 text-xs text-red-400">
+                <div className="mb-3 text-xs text-red-500 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
                   {vehicleError}
                 </div>
               )}
 
               <form onSubmit={handleCreateVehicle} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-medium text-[#B7BEC4] mb-1.5">
+                  <label className="block text-xs font-medium text-neutral-600 mb-1.5">
                     Vehicle Number
                   </label>
                   <input
@@ -1592,31 +1602,31 @@ export default function DashboardPage(props: PageProps) {
                     required
                     value={vehicleNumber}
                     onChange={(e) => setVehicleNumber(e.target.value.toUpperCase())}
-                    className="w-full px-4 py-2.5 rounded-xl border border-[#3A3F45] bg-[#2B3136] text-sm text-white placeholder:text-[#B7BEC4]/40 focus:outline-none focus:ring-2 focus:ring-[#145A3A]/40 focus:border-[#145A3A] transition"
+                    className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 bg-white text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#89d957]/40 focus:border-[#6eb84a] transition"
                     placeholder="KA01AB1234"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-[#B7BEC4] mb-1.5">
+                  <label className="block text-xs font-medium text-neutral-600 mb-1.5">
                     Label (optional)
                   </label>
                   <input
                     type="text"
                     value={vehicleLabel}
                     onChange={(e) => setVehicleLabel(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl border border-[#3A3F45] bg-[#2B3136] text-sm text-white placeholder:text-[#B7BEC4]/40 focus:outline-none focus:ring-2 focus:ring-[#145A3A]/40 focus:border-[#145A3A] transition"
+                    className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 bg-white text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#89d957]/40 focus:border-[#6eb84a] transition"
                     placeholder="E.g. Cab #21, Delivery Bike 3"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-[#B7BEC4] mb-1.5">
+                  <label className="block text-xs font-medium text-neutral-600 mb-1.5">
                     Make &amp; Model (optional)
                   </label>
                   <input
                     type="text"
                     value={vehicleMakeModel}
                     onChange={(e) => setVehicleMakeModel(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl border border-[#3A3F45] bg-[#2B3136] text-sm text-white placeholder:text-[#B7BEC4]/40 focus:outline-none focus:ring-2 focus:ring-[#145A3A]/40 focus:border-[#145A3A] transition"
+                    className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 bg-white text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#89d957]/40 focus:border-[#6eb84a] transition"
                     placeholder="E.g. Tata Ace, Honda Activa"
                   />
                 </div>
@@ -1624,7 +1634,7 @@ export default function DashboardPage(props: PageProps) {
                 <button
                   type="submit"
                   disabled={vehicleSaving}
-                  className="w-full mt-2 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-[#145A3A] text-white text-sm font-semibold hover:bg-[#1F7A5A] active:scale-[0.98] transition disabled:opacity-50"
+                  className="w-full mt-2 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-gradient-brand text-[#1a2e0f] text-sm font-semibold hover:opacity-90 active:scale-[0.98] transition disabled:opacity-50"
                 >
                   {vehicleSaving ? (
                     <>
@@ -1643,35 +1653,35 @@ export default function DashboardPage(props: PageProps) {
         {isDriverModalOpen && (
           <div className="fixed inset-0 z-40 flex items-center justify-center p-4">
             <div
-              className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+              className="absolute inset-0 bg-black/30 backdrop-blur-sm"
               onClick={() => setIsDriverModalOpen(false)}
             />
-            <div className="relative bg-[#1F2428] rounded-[28px] w-full max-w-md p-6 shadow-2xl border border-white/10">
-              <div className="flex items-center justify-between mb-4">
+            <div className="relative bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl border border-neutral-200">
+              <div className="flex items-center justify-between mb-5">
                 <div>
-                  <h2 className="text-lg font-semibold text-white">
+                  <h2 className="text-lg font-bold text-neutral-900">
                     Add Driver
                   </h2>
-                  <p className="text-xs text-[#B7BEC4]">
+                  <p className="text-xs text-neutral-500">
                     Save driver details and optionally link them to a vehicle later.
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setIsDriverModalOpen(false)}
-                  className="p-2 text-[#B7BEC4] hover:text-white transition-colors"
+                  className="p-2 text-neutral-400 hover:text-neutral-900 transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
               {driverError && (
-                <div className="mb-3 text-xs text-red-400">{driverError}</div>
+                <div className="mb-3 text-xs text-red-500 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{driverError}</div>
               )}
 
               <form onSubmit={handleCreateDriver} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-medium text-[#B7BEC4] mb-1.5">
+                  <label className="block text-xs font-medium text-neutral-600 mb-1.5">
                     Driver name
                   </label>
                   <input
@@ -1679,12 +1689,12 @@ export default function DashboardPage(props: PageProps) {
                     required
                     value={driverName}
                     onChange={(e) => setDriverName(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl border border-[#3A3F45] bg-[#2B3136] text-sm text-white placeholder:text-[#B7BEC4]/40 focus:outline-none focus:ring-2 focus:ring-[#145A3A]/40 focus:border-[#145A3A] transition"
+                    className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 bg-white text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#89d957]/40 focus:border-[#6eb84a] transition"
                     placeholder="E.g. Ramesh"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-[#B7BEC4] mb-1.5">
+                  <label className="block text-xs font-medium text-neutral-600 mb-1.5">
                     Phone
                   </label>
                   <input
@@ -1692,31 +1702,31 @@ export default function DashboardPage(props: PageProps) {
                     required
                     value={driverPhone}
                     onChange={(e) => setDriverPhone(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl border border-[#3A3F45] bg-[#2B3136] text-sm text-white placeholder:text-[#B7BEC4]/40 focus:outline-none focus:ring-2 focus:ring-[#145A3A]/40 focus:border-[#145A3A] transition"
+                    className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 bg-white text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#89d957]/40 focus:border-[#6eb84a] transition"
                     placeholder="+91 98765 43210"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-[#B7BEC4] mb-1.5">
+                  <label className="block text-xs font-medium text-neutral-600 mb-1.5">
                     Blood group (optional)
                   </label>
                   <input
                     type="text"
                     value={driverBloodGroup}
                     onChange={(e) => setDriverBloodGroup(e.target.value.toUpperCase())}
-                    className="w-full px-4 py-2.5 rounded-xl border border-[#3A3F45] bg-[#2B3136] text-sm uppercase text-white placeholder:text-[#B7BEC4]/40 focus:outline-none focus:ring-2 focus:ring-[#145A3A]/40 focus:border-[#145A3A] transition"
+                    className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 bg-white text-sm uppercase text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#89d957]/40 focus:border-[#6eb84a] transition"
                     placeholder="O+"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-[#B7BEC4] mb-1.5">
+                  <label className="block text-xs font-medium text-neutral-600 mb-1.5">
                     Notes (optional)
                   </label>
                   <textarea
                     value={driverNotes}
                     onChange={(e) => setDriverNotes(e.target.value)}
                     rows={2}
-                    className="w-full px-4 py-2.5 rounded-xl border border-[#3A3F45] bg-[#2B3136] text-sm text-white placeholder:text-[#B7BEC4]/40 focus:outline-none focus:ring-2 focus:ring-[#145A3A]/40 focus:border-[#145A3A] transition"
+                    className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 bg-white text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#89d957]/40 focus:border-[#6eb84a] transition"
                     placeholder="E.g. Night shift driver, speaks Kannada and Hindi"
                   />
                 </div>
@@ -1724,7 +1734,7 @@ export default function DashboardPage(props: PageProps) {
                 <button
                   type="submit"
                   disabled={driverSaving}
-                  className="w-full mt-2 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-[#145A3A] text-white text-sm font-semibold hover:bg-[#1F7A5A] active:scale-[0.98] transition disabled:opacity-50"
+                  className="w-full mt-2 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-gradient-brand text-[#1a2e0f] text-sm font-semibold hover:opacity-90 active:scale-[0.98] transition disabled:opacity-50"
                 >
                   {driverSaving ? (
                     <>
@@ -1744,24 +1754,24 @@ export default function DashboardPage(props: PageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-black via-[#101518] to-black text-white pb-20">
+    <div className="min-h-screen bg-white bg-rexu-grid pb-20">
       {/* Header */}
       <motion.header
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35, ease: [0.33, 1, 0.68, 1] }}
-        className="bg-[#1F2428] border-b border-[#2B3136] sticky top-0 z-10"
+        transition={{ duration: 0.35, ease: [0.33, 1, 0.68, 1] as const }}
+        className="bg-white border-b border-neutral-200 sticky top-0 z-10 shadow-sm"
       >
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="bg-[#145A3A] p-1.5 rounded-full">
-              <Shield className="w-5 h-5 text-white" />
+          <div className="flex items-center gap-3">
+            <div className="bg-gradient-brand p-2 rounded-xl">
+              <Shield className="w-5 h-5 text-[#1a2e0f]" />
             </div>
             <div className="flex flex-col">
-              <span className="font-bold text-white">Dashboard</span>
-              {profile?.account_type === 'commercial' && (
-                <span className="text-[11px] uppercase tracking-[0.2em] text-[#9AC57A]">
-                  B2B · Fleet mode
+              <span className="font-bold text-neutral-900">My Dashboard</span>
+              {profile?.full_name && (
+                <span className="text-[11px] text-neutral-500">
+                  {profile.full_name}
                 </span>
               )}
             </div>
@@ -1770,19 +1780,19 @@ export default function DashboardPage(props: PageProps) {
             <button
               type="button"
               onClick={() => setProfileMenuOpen((open) => !open)}
-              className="h-8 px-2.5 rounded-lg bg-[#2B3136] border border-[#3A3F45] text-white text-[11px] font-bold tracking-wide flex items-center justify-center hover:bg-[#3A3F45] transition-colors"
+              className="h-8 w-8 rounded-full bg-gradient-brand text-[#1a2e0f] text-sm font-bold flex items-center justify-center hover:opacity-90 transition-opacity"
             >
-              rexu
+              {profile?.full_name?.[0]?.toUpperCase() || 'R'}
             </button>
             {profileMenuOpen && (
-              <div className="absolute right-0 mt-2 w-44 rounded-xl border border-[#3A3F45] bg-[#1F2428] shadow-lg py-1 text-sm z-20">
+              <div className="absolute right-0 mt-2 w-48 rounded-2xl border border-neutral-200 bg-white shadow-xl py-1 text-sm z-20">
                 <button
                   type="button"
                   onClick={() => {
                     setProfileMenuOpen(false);
                     router.push('/profile');
                   }}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-left text-[#B7BEC4] hover:bg-[#2B3136] hover:text-white"
+                  className="w-full flex items-center gap-2 px-4 py-2.5 text-left text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
                 >
                   <User className="w-4 h-4" />
                   <span>Profile</span>
@@ -1796,7 +1806,7 @@ export default function DashboardPage(props: PageProps) {
                       el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
                     }
                   }}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-left text-[#B7BEC4] hover:bg-[#2B3136] hover:text-white"
+                  className="w-full flex items-center gap-2 px-4 py-2.5 text-left text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
                 >
                   <QrCode className="w-4 h-4" />
                   <span>Your QR</span>
@@ -1808,7 +1818,7 @@ export default function DashboardPage(props: PageProps) {
                     await supabase.auth.signOut();
                     router.push('/login');
                   }}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-left text-red-400 hover:bg-red-950/30"
+                  className="w-full flex items-center gap-2 px-4 py-2.5 text-left text-red-500 hover:bg-red-50"
                 >
                   <LogOut className="w-4 h-4" />
                   <span>Logout</span>
@@ -1827,27 +1837,27 @@ export default function DashboardPage(props: PageProps) {
       >
         {/* Welcome Card */}
         <motion.section variants={sectionVariants} initial="hidden" animate="visible">
-          <div className="bg-[#101518]/90 rounded-[28px] p-8 border border-white/10">
-            <h1 className="text-2xl font-bold text-white mb-2">
-              Hello, {profile?.full_name}!
+          <div className="glass-card rounded-2xl p-8 bg-gradient-to-r from-[#89d957]/10 to-[#c9e265]/5">
+            <h1 className="text-2xl font-bold text-neutral-900 mb-2">
+              Hello, {profile?.full_name}! 👋
             </h1>
-            <p className="text-[#B7BEC4]">Manage your emergency contacts and vehicle QR code.</p>
+            <p className="text-neutral-600">Manage your emergency contacts and vehicle QR code.</p>
           </div>
         </motion.section>
 
         {/* Prompt Google OAuth users to add mobile number */}
         {profile && !profile.mobile && (
           <motion.section variants={sectionVariants} initial="hidden" animate="visible">
-            <div className="bg-amber-950/40 rounded-[28px] p-6 border border-amber-500/30 space-y-3">
-              <div className="flex items-center gap-2 text-amber-300 text-sm font-semibold">
+            <div className="bg-amber-50 rounded-2xl p-6 border border-amber-200 space-y-3">
+              <div className="flex items-center gap-2 text-amber-700 text-sm font-semibold">
                 <Phone className="w-4 h-4" />
                 Add your mobile number
               </div>
-              <p className="text-xs text-amber-200/70">
+              <p className="text-xs text-amber-600">
                 We need your mobile number for emergency alerts and OTP verification. This wasn&apos;t provided during Google sign-in.
               </p>
               {mobileError && (
-                <p className="text-xs text-red-400">{mobileError}</p>
+                <p className="text-xs text-red-500">{mobileError}</p>
               )}
               <div className="flex gap-2">
                 <input
@@ -1855,12 +1865,12 @@ export default function DashboardPage(props: PageProps) {
                   value={mobileInput}
                   onChange={(e) => setMobileInput(e.target.value)}
                   placeholder="+91 98765 43210"
-                  className="flex-1 px-4 py-2.5 rounded-xl border border-amber-500/30 bg-[#1E2328] text-sm text-white placeholder:text-[#B7BEC4]/40 focus:outline-none focus:ring-2 focus:ring-amber-500/40 transition"
+                  className="flex-1 px-4 py-2.5 rounded-xl border border-amber-200 bg-white text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-amber-400/40 transition"
                 />
                 <button
                   onClick={handleSaveMobile}
                   disabled={savingMobile || !mobileInput.trim()}
-                  className="px-5 py-2.5 rounded-xl bg-amber-600 text-white text-sm font-semibold hover:bg-amber-700 active:scale-[0.98] transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-5 py-2.5 rounded-xl bg-amber-500 text-white text-sm font-semibold hover:bg-amber-600 active:scale-[0.98] transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {savingMobile ? 'Saving...' : 'Save'}
                 </button>
@@ -1871,32 +1881,32 @@ export default function DashboardPage(props: PageProps) {
 
         {/* Emergency Contacts overview (between welcome and profile) */}
         {contacts.length > 0 && (
-          <motion.section variants={sectionVariants} initial="hidden" animate="visible" className="bg-[#101518]/90 rounded-[28px] p-6 border border-white/10 space-y-4">
+          <motion.section variants={sectionVariants} initial="hidden" animate="visible" className="glass-card rounded-2xl p-6 space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-white flex items-center gap-2">
-                <Phone className="w-4 h-4 text-[#9AC57A]" /> Emergency Contacts
+              <h2 className="text-sm font-semibold text-neutral-900 flex items-center gap-2">
+                <Phone className="w-4 h-4 text-[#6eb84a]" /> Emergency Contacts
               </h2>
-              <span className="text-[11px] text-[#B7BEC4]/60 uppercase tracking-[0.18em]">
+              <span className="text-[11px] text-neutral-500 uppercase tracking-[0.18em]">
                 Saved ({contacts.length})
               </span>
             </div>
-            <div className="rounded-xl border border-white/5 divide-y divide-white/5">
+            <div className="rounded-xl border border-neutral-200 divide-y divide-neutral-100">
               {contacts.map((contact) => (
-                <div key={contact.id} className="px-3 py-3 flex items-center justify-between gap-3 hover:bg-white/[0.02] transition-colors">
+                <div key={contact.id} className="px-3 py-3 flex items-center justify-between gap-3 hover:bg-neutral-50 transition-colors">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-[#0F3D2E]/30 border border-[#145A3A]/40 flex items-center justify-center text-[#9AC57A] text-sm font-bold">
+                    <div className="w-8 h-8 rounded-full bg-gradient-brand flex items-center justify-center text-[#1a2e0f] text-sm font-bold">
                       {contact.name[0]}
                     </div>
                     <div>
-                      <div className="text-sm font-medium text-white">
+                      <div className="text-sm font-medium text-neutral-900">
                         {contact.name}
                       </div>
-                      <div className="text-[11px] text-[#B7BEC4]/60 uppercase tracking-wider">
+                      <div className="text-[11px] text-neutral-500 uppercase tracking-wider">
                         {contact.relation}
                       </div>
                     </div>
                   </div>
-                  <div className="text-[11px] font-mono text-[#B7BEC4]">{contact.phone}</div>
+                  <div className="text-[11px] font-mono text-neutral-500">{contact.phone}</div>
                 </div>
               ))}
             </div>
@@ -1909,19 +1919,19 @@ export default function DashboardPage(props: PageProps) {
           variants={sectionVariants}
           initial="hidden"
           animate="visible"
-          className="bg-[#101518]/90 rounded-[28px] p-8 border border-white/10 space-y-6"
+          className="glass-card rounded-2xl p-8 space-y-6"
         >
           <div className="flex items-center justify-between gap-4">
-            <h2 className="text-xl font-bold text-white flex items-center gap-2">
-              <User className="w-5 h-5 text-[#9AC57A]" /> Emergency Profile
+            <h2 className="text-xl font-bold text-neutral-900 flex items-center gap-2">
+              <User className="w-5 h-5 text-[#6eb84a]" /> Emergency Profile
             </h2>
-            <span className="text-xs uppercase tracking-[0.2em] text-[#B7BEC4]/60">
+            <span className="text-xs uppercase tracking-[0.2em] text-neutral-400">
               Basic details
             </span>
           </div>
 
           {emergencyError && (
-            <div className="p-3 rounded-lg bg-red-950/30 text-red-400 text-xs font-medium border border-red-900/40">
+            <div className="p-3 rounded-lg bg-red-50 text-red-600 text-xs font-medium border border-red-200">
               {emergencyError}
             </div>
           )}
@@ -1929,19 +1939,19 @@ export default function DashboardPage(props: PageProps) {
           <div className="grid md:grid-cols-2 gap-6">
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-[#B7BEC4] mb-1.5">
+                <label className="block text-xs font-medium text-neutral-600 mb-1.5">
                   Name
                 </label>
                 <input
                   type="text"
                   value={profile?.full_name || ''}
                   disabled
-                  className="w-full px-4 py-2.5 rounded-xl border border-[#3A3F45] bg-[#2B3136]/60 text-sm text-[#B7BEC4]"
+                  className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 bg-neutral-50 text-sm text-neutral-500"
                   placeholder="Your full name"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-[#B7BEC4] mb-1.5">
+                <label className="block text-xs font-medium text-neutral-600 mb-1.5">
                   Mobile Number
                 </label>
                 <input
@@ -1949,7 +1959,7 @@ export default function DashboardPage(props: PageProps) {
                   required
                   value={formGuardianPhone}
                   onChange={(e) => setFormGuardianPhone(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-[#3A3F45] bg-[#2B3136] text-sm text-white placeholder:text-[#B7BEC4]/40 focus:outline-none focus:ring-2 focus:ring-[#145A3A]/40 focus:border-[#145A3A] transition"
+                  className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 bg-white text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#89d957]/40 focus:border-[#6eb84a] transition"
                   placeholder="+91 98765 43210"
                 />
               </div>
@@ -1958,14 +1968,14 @@ export default function DashboardPage(props: PageProps) {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-[#B7BEC4] mb-1.5">
+                  <label className="block text-xs font-medium text-neutral-600 mb-1.5">
                     Blood Group
                   </label>
                   <select
                     required
                     value={formBloodGroup}
                     onChange={(e) => setFormBloodGroup(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl border border-[#3A3F45] bg-[#2B3136] text-sm text-white uppercase focus:outline-none focus:ring-2 focus:ring-[#145A3A]/40 focus:border-[#145A3A] transition"
+                    className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 bg-white text-sm text-neutral-900 uppercase focus:outline-none focus:ring-2 focus:ring-[#89d957]/40 focus:border-[#6eb84a] transition"
                   >
                     <option value="" disabled>
                       Select
@@ -1981,7 +1991,7 @@ export default function DashboardPage(props: PageProps) {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-[#B7BEC4] mb-1.5">
+                  <label className="block text-xs font-medium text-neutral-600 mb-1.5">
                     Age
                   </label>
                   <input
@@ -1990,19 +2000,19 @@ export default function DashboardPage(props: PageProps) {
                     max={120}
                     value={formAge}
                     onChange={(e) => setFormAge(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl border border-[#3A3F45] bg-[#2B3136] text-sm text-white placeholder:text-[#B7BEC4]/40 focus:outline-none focus:ring-2 focus:ring-[#145A3A]/40 focus:border-[#145A3A] transition"
+                    className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 bg-white text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#89d957]/40 focus:border-[#6eb84a] transition"
                     placeholder="32"
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium text-[#B7BEC4] mb-1.5">
+                <label className="block text-xs font-medium text-neutral-600 mb-1.5">
                   Language
                 </label>
                 <select
                   value={formLanguageNote}
                   onChange={(e) => setFormLanguageNote(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-[#3A3F45] bg-[#2B3136] text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#145A3A]/40 focus:border-[#145A3A] transition"
+                  className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 bg-white text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#89d957]/40 focus:border-[#6eb84a] transition"
                 >
                   <option value="" disabled>
                     Select preferred language
@@ -2028,9 +2038,9 @@ export default function DashboardPage(props: PageProps) {
                   type="checkbox"
                   checked={formOrganDonor}
                   onChange={(e) => setFormOrganDonor(e.target.checked)}
-                  className="w-4 h-4 rounded border-[#3A3F45] bg-[#2B3136] accent-[#145A3A]"
+                  className="w-4 h-4 rounded border-neutral-300 accent-[#6eb84a]"
                 />
-                <label htmlFor="organ-donor" className="text-xs text-[#B7BEC4]">
+                <label htmlFor="organ-donor" className="text-xs text-neutral-600">
                   Mark as organ donor
                 </label>
               </div>
@@ -2039,12 +2049,12 @@ export default function DashboardPage(props: PageProps) {
         </motion.section>
 
         {/* Emergency Medical Info */}
-        <motion.section variants={sectionVariants} initial="hidden" animate="visible" className="bg-[#101518]/90 rounded-[28px] p-8 border border-white/10 space-y-6">
+        <motion.section variants={sectionVariants} initial="hidden" animate="visible" className="glass-card rounded-2xl p-8 space-y-6">
           <div className="flex items-center justify-between gap-4">
-            <h2 className="text-xl font-bold text-white flex items-center gap-2">
-              <HeartPulse className="w-5 h-5 text-[#9AC57A]" /> Medical Information
+            <h2 className="text-xl font-bold text-neutral-900 flex items-center gap-2">
+              <HeartPulse className="w-5 h-5 text-[#6eb84a]" /> Medical Information
             </h2>
-            <span className="text-xs uppercase tracking-[0.2em] text-[#B7BEC4]/60">
+            <span className="text-xs uppercase tracking-[0.2em] text-neutral-400">
               Critical medical details
             </span>
           </div>
@@ -2052,26 +2062,26 @@ export default function DashboardPage(props: PageProps) {
           <form onSubmit={handleSaveEmergencyProfile} className="grid md:grid-cols-2 gap-6">
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-[#B7BEC4] mb-1.5">
+                <label className="block text-xs font-medium text-neutral-600 mb-1.5">
                   Allergies (highlighted in red on scan page)
                 </label>
                 <textarea
                   value={formAllergies}
                   onChange={(e) => setFormAllergies(e.target.value)}
                   rows={2}
-                  className="w-full px-4 py-2.5 rounded-xl border border-[#3A3F45] bg-[#2B3136] text-sm text-white placeholder:text-[#B7BEC4]/40 focus:outline-none focus:ring-2 focus:ring-[#145A3A]/40 focus:border-[#145A3A] transition"
+                  className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 bg-white text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#89d957]/40 focus:border-[#6eb84a] transition"
                   placeholder="E.g. Cannot tolerate anesthesia, allergic to penicillin"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-[#B7BEC4] mb-1.5">
+                <label className="block text-xs font-medium text-neutral-600 mb-1.5">
                   Medical Conditions
                 </label>
                 <textarea
                   value={formMedicalConditions}
                   onChange={(e) => setFormMedicalConditions(e.target.value)}
                   rows={2}
-                  className="w-full px-4 py-2.5 rounded-xl border border-[#3A3F45] bg-[#2B3136] text-sm text-white placeholder:text-[#B7BEC4]/40 focus:outline-none focus:ring-2 focus:ring-[#145A3A]/40 focus:border-[#145A3A] transition"
+                  className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 bg-white text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#89d957]/40 focus:border-[#6eb84a] transition"
                   placeholder="E.g. Diabetes, hypertension, epilepsy"
                 />
               </div>
@@ -2079,26 +2089,26 @@ export default function DashboardPage(props: PageProps) {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-[#B7BEC4] mb-1.5">
+                <label className="block text-xs font-medium text-neutral-600 mb-1.5">
                   Medications
                 </label>
                 <textarea
                   value={formMedications}
                   onChange={(e) => setFormMedications(e.target.value)}
                   rows={2}
-                  className="w-full px-4 py-2.5 rounded-xl border border-[#3A3F45] bg-[#2B3136] text-sm text-white placeholder:text-[#B7BEC4]/40 focus:outline-none focus:ring-2 focus:ring-[#145A3A]/40 focus:border-[#145A3A] transition"
+                  className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 bg-white text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#89d957]/40 focus:border-[#6eb84a] transition"
                   placeholder="E.g. On blood thinners, insulin"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-[#B7BEC4] mb-1.5">
+                <label className="block text-xs font-medium text-neutral-600 mb-1.5">
                   Critical Emergency Instructions (shown prominently)
                 </label>
                 <textarea
                   value={formEmergencyInstruction}
                   onChange={(e) => setFormEmergencyInstruction(e.target.value)}
                   rows={3}
-                  className="w-full px-4 py-2.5 rounded-xl border border-[#3A3F45] bg-[#2B3136] text-sm text-white placeholder:text-[#B7BEC4]/40 focus:outline-none focus:ring-2 focus:ring-[#145A3A]/40 focus:border-[#145A3A] transition"
+                  className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 bg-white text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#89d957]/40 focus:border-[#6eb84a] transition"
                   placeholder="E.g. Contact guardian before surgery. Do not administer general anesthesia without prior evaluation."
                 />
               </div>
@@ -2108,7 +2118,7 @@ export default function DashboardPage(props: PageProps) {
               <button
                 type="submit"
                 disabled={savingEmergencyProfile}
-                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-[#145A3A] text-white text-sm font-semibold hover:bg-[#1F7A5A] active:scale-[0.98] transition disabled:opacity-50"
+                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-gradient-brand text-[#1a2e0f] text-sm font-semibold hover:opacity-90 active:scale-[0.98] transition disabled:opacity-50"
               >
                 {savingEmergencyProfile ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -2123,19 +2133,19 @@ export default function DashboardPage(props: PageProps) {
         <motion.div variants={sectionVariants} initial="hidden" animate="visible" className="grid md:grid-cols-2 gap-8">
           {/* QR Status & Payment */}
           <section className="space-y-6" id="qr-section">
-            <div className="bg-[#101518]/90 rounded-[28px] p-8 border border-white/10 relative overflow-hidden">
-              <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                <QrCode className="w-5 h-5 text-[#9AC57A]" /> QR Status
+            <div className="glass-card rounded-2xl p-8 relative overflow-hidden">
+              <h2 className="text-xl font-bold text-neutral-900 mb-6 flex items-center gap-2">
+                <QrCode className="w-5 h-5 text-[#6eb84a]" /> QR Status
               </h2>
 
               {!profile?.is_paid ? (
                 <div className="space-y-6">
-                  <div className="p-6 rounded-2xl bg-amber-900/20 border border-amber-900/30">
+                  <div className="p-6 rounded-2xl bg-amber-50 border border-amber-200">
                     <div className="flex gap-4">
-                      <AlertTriangle className="w-6 h-6 text-amber-400 shrink-0" />
+                      <AlertTriangle className="w-6 h-6 text-amber-500 shrink-0" />
                       <div>
-                        <h3 className="font-bold text-amber-400">QR Not Active</h3>
-                        <p className="text-sm text-amber-500/80 mt-1">
+                        <h3 className="font-bold text-amber-700">QR Not Active</h3>
+                        <p className="text-sm text-amber-600 mt-1">
                           Activate your REXU QR by paying a one-time fee of ₹299.
                         </p>
                       </div>
@@ -2143,14 +2153,14 @@ export default function DashboardPage(props: PageProps) {
                   </div>
                   <button 
                     onClick={handlePayment}
-                    className="w-full bg-[#145A3A] text-white py-4 rounded-2xl font-bold hover:bg-[#1F7A5A] transition-all active:scale-95"
+                    className="w-full bg-gradient-brand text-[#1a2e0f] py-4 rounded-2xl font-bold hover:opacity-90 transition-all active:scale-95"
                   >
-                    Pay ₹299 & Activate QR
+                    Pay ₹299 &amp; Activate QR
                   </button>
                 </div>
               ) : (
                 <div className="text-center space-y-6">
-                  <div className="mx-auto w-fit p-4 bg-white rounded-3xl border-8 border-white/10 shadow-inner">
+                  <div className="mx-auto w-fit p-4 bg-white rounded-3xl border-4 border-[#89d957]/20 shadow-lg">
                     <QRCodeSVG 
                       ref={qrRef}
                       value={`${process.env.NEXT_PUBLIC_APP_URL || 'https://rexu.in'}/e/${qrToken}`} 
@@ -2158,13 +2168,13 @@ export default function DashboardPage(props: PageProps) {
                       level="H"
                     />
                   </div>
-                  <div className="flex items-center justify-center gap-2 text-[#9AC57A] font-bold">
+                  <div className="flex items-center justify-center gap-2 text-[#6eb84a] font-bold">
                     <CheckCircle2 className="w-5 h-5" /> Active
                   </div>
-                  <p className="text-sm text-[#B7BEC4]">Token: <span className="font-mono bg-[#2B3136] px-2 py-0.5 rounded text-white">{qrToken}</span></p>
+                  <p className="text-sm text-neutral-500">Token: <span className="font-mono bg-neutral-100 px-2 py-0.5 rounded text-neutral-700">{qrToken}</span></p>
                   <button 
                     onClick={handleDownloadQR}
-                    className="w-full bg-[#2B3136] text-white py-3 rounded-xl font-bold hover:bg-[#3A3F45] transition-all flex items-center justify-center gap-2"
+                    className="w-full bg-neutral-100 text-neutral-700 py-3 rounded-xl font-bold hover:bg-neutral-200 transition-all flex items-center justify-center gap-2"
                   >
                     <Download className="w-4 h-4" /> Download QR
                   </button>
@@ -2175,15 +2185,15 @@ export default function DashboardPage(props: PageProps) {
 
           {/* Emergency Contacts */}
           <section className="space-y-6">
-            <div className="bg-[#101518]/90 rounded-[28px] p-8 border border-white/10">
+            <div className="glass-card rounded-2xl p-8">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                  <Phone className="w-5 h-5 text-[#9AC57A]" /> Contacts
+                <h2 className="text-xl font-bold text-neutral-900 flex items-center gap-2">
+                  <Phone className="w-5 h-5 text-[#6eb84a]" /> Contacts
                 </h2>
                 {!isAddingContact && contacts.length < 3 && profile?.is_paid && (
                   <button 
                     onClick={() => setIsAddingContact(true)}
-                    className="p-2 bg-[#0F3D2E]/30 text-[#9AC57A] rounded-xl hover:bg-[#0F3D2E]/50 transition-colors"
+                    className="p-2 bg-[#89d957]/10 text-[#6eb84a] rounded-xl hover:bg-[#89d957]/20 transition-colors"
                   >
                     <Plus className="w-5 h-5" />
                   </button>
@@ -2192,30 +2202,30 @@ export default function DashboardPage(props: PageProps) {
 
               {/* Compact summary of Emergency Profile in this card */}
               {(guardianPhone || bloodGroup || age || languageNote || emergencyInstruction) && (
-                <div className="mb-6 rounded-xl border border-white/5 bg-[#2B3136]/50 p-4 space-y-2">
+                <div className="mb-6 rounded-xl border border-neutral-200 bg-neutral-50 p-4 space-y-2">
                   <div className="flex items-center justify-between gap-3">
-                    <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#B7BEC4]/60">
+                    <span className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-500">
                       Emergency profile summary
                     </span>
                     <div className="flex items-center gap-2">
                       {bloodGroup && (
-                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[#0F3D2E]/30 border border-[#145A3A]/40 text-[#9AC57A]">
+                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[#89d957]/10 border border-[#89d957]/30 text-[#6eb84a]">
                           {bloodGroup}
                         </span>
                       )}
                       <button
                         type="button"
                         onClick={scrollToEmergencyProfile}
-                        className="inline-flex items-center gap-1 px-2 py-1 rounded-xl text-[11px] font-medium text-[#9AC57A] bg-[#0F3D2E]/20 hover:bg-[#0F3D2E]/40 transition-colors"
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded-xl text-[11px] font-medium text-[#6eb84a] bg-[#89d957]/10 hover:bg-[#89d957]/20 transition-colors"
                       >
                         Edit
                       </button>
                     </div>
                   </div>
-                  <div className="grid grid-cols-1 gap-2 text-xs text-[#B7BEC4]">
+                  <div className="grid grid-cols-1 gap-2 text-xs text-neutral-600">
                     {guardianPhone && (
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-[11px] uppercase tracking-[0.16em] text-[#B7BEC4]/60">
+                        <span className="text-[11px] uppercase tracking-[0.16em] text-neutral-400">
                           Guardian
                         </span>
                         <span className="font-mono">{guardianPhone}</span>
@@ -2223,7 +2233,7 @@ export default function DashboardPage(props: PageProps) {
                     )}
                     {age && (
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-[11px] uppercase tracking-[0.16em] text-[#B7BEC4]/60">
+                        <span className="text-[11px] uppercase tracking-[0.16em] text-neutral-400">
                           Age
                         </span>
                         <span>{age} yrs</span>
@@ -2231,7 +2241,7 @@ export default function DashboardPage(props: PageProps) {
                     )}
                     {languageNote && (
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-[11px] uppercase tracking-[0.16em] text-[#B7BEC4]/60">
+                        <span className="text-[11px] uppercase tracking-[0.16em] text-neutral-400">
                           Language
                         </span>
                         <span className="truncate max-w-[220px] text-right">{languageNote}</span>
@@ -2239,10 +2249,10 @@ export default function DashboardPage(props: PageProps) {
                     )}
                     {emergencyInstruction && (
                       <div className="mt-1">
-                        <p className="text-[11px] uppercase tracking-[0.16em] text-[#B7BEC4]/60 mb-1">
+                        <p className="text-[11px] uppercase tracking-[0.16em] text-neutral-400 mb-1">
                           Critical note
                         </p>
-                        <p className="text-xs text-white/80 line-clamp-2">
+                        <p className="text-xs text-neutral-700 line-clamp-2">
                           {emergencyInstruction}
                         </p>
                       </div>
@@ -2253,15 +2263,15 @@ export default function DashboardPage(props: PageProps) {
 
               {!profile?.is_paid ? (
                 <div className="text-center py-12">
-                  <div className="bg-[#2B3136] w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Phone className="w-8 h-8 text-[#B7BEC4]/40" />
+                  <div className="bg-neutral-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Phone className="w-8 h-8 text-neutral-300" />
                   </div>
-                  <p className="text-[#B7BEC4] text-sm">Activate your QR to add contacts.</p>
+                  <p className="text-neutral-500 text-sm">Activate your QR to add contacts.</p>
                 </div>
               ) : (
                 <div className="space-y-4">
                   {contacts.length > 0 && (
-                    <div className="rounded-xl border border-white/5 divide-y divide-white/5">
+                    <div className="rounded-xl border border-neutral-200 divide-y divide-neutral-100">
                       {contacts.map((contact) =>
                         editingContactId === contact.id ? (
                           <form
@@ -2270,13 +2280,13 @@ export default function DashboardPage(props: PageProps) {
                             className="px-4 py-3 space-y-3"
                           >
                             <div className="flex items-center justify-between mb-1">
-                              <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#B7BEC4]/60">
+                              <span className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-500">
                                 Edit contact
                               </span>
                               <button
                                 type="button"
                                 onClick={handleCancelEditContact}
-                                className="text-xs text-[#B7BEC4] hover:text-red-400"
+                                className="text-xs text-neutral-500 hover:text-red-500"
                               >
                                 Cancel
                               </button>
@@ -2284,7 +2294,7 @@ export default function DashboardPage(props: PageProps) {
                             <input
                               placeholder="Contact Name"
                               required
-                              className="w-full px-4 py-2 rounded-lg border border-[#3A3F45] bg-[#2B3136] text-white placeholder:text-[#B7BEC4]/40 focus:outline-none focus:ring-2 focus:ring-[#145A3A]/40 focus:border-[#145A3A] transition"
+                              className="w-full px-4 py-2 rounded-lg border border-neutral-200 bg-white text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#89d957]/40 focus:border-[#6eb84a] transition"
                               value={editingContact.name}
                               onChange={(e) =>
                                 setEditingContact((prev) => ({ ...prev, name: e.target.value }))
@@ -2293,7 +2303,7 @@ export default function DashboardPage(props: PageProps) {
                             <input
                               placeholder="Relation (e.g. Father)"
                               required
-                              className="w-full px-4 py-2 rounded-lg border border-[#3A3F45] bg-[#2B3136] text-white placeholder:text-[#B7BEC4]/40 focus:outline-none focus:ring-2 focus:ring-[#145A3A]/40 focus:border-[#145A3A] transition"
+                              className="w-full px-4 py-2 rounded-lg border border-neutral-200 bg-white text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#89d957]/40 focus:border-[#6eb84a] transition"
                               value={editingContact.relation}
                               onChange={(e) =>
                                 setEditingContact((prev) => ({ ...prev, relation: e.target.value }))
@@ -2303,7 +2313,7 @@ export default function DashboardPage(props: PageProps) {
                               placeholder="Phone Number"
                               required
                               type="tel"
-                              className="w-full px-4 py-2 rounded-lg border border-[#3A3F45] bg-[#2B3136] text-white placeholder:text-[#B7BEC4]/40 focus:outline-none focus:ring-2 focus:ring-[#145A3A]/40 focus:border-[#145A3A] transition"
+                              className="w-full px-4 py-2 rounded-lg border border-neutral-200 bg-white text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#89d957]/40 focus:border-[#6eb84a] transition"
                               value={editingContact.phone}
                               onChange={(e) =>
                                 setEditingContact((prev) => ({ ...prev, phone: e.target.value }))
@@ -2313,7 +2323,7 @@ export default function DashboardPage(props: PageProps) {
                               <button
                                 type="submit"
                                 disabled={savingContactEdit}
-                                className="flex-1 bg-[#145A3A] text-white py-2 rounded-lg font-bold hover:bg-[#1F7A5A] disabled:opacity-50 transition"
+                                className="flex-1 bg-gradient-brand text-[#1a2e0f] py-2 rounded-lg font-bold hover:opacity-90 disabled:opacity-50 transition"
                               >
                                 {savingContactEdit ? (
                                   <Loader2 className="w-4 h-4 animate-spin mx-auto" />
@@ -2326,34 +2336,34 @@ export default function DashboardPage(props: PageProps) {
                         ) : (
                           <div
                             key={contact.id}
-                            className="px-4 py-3 flex items-center justify-between gap-4 hover:bg-white/[0.02] transition-colors"
+                            className="px-4 py-3 flex items-center justify-between gap-4 hover:bg-neutral-50 transition-colors"
                           >
                             <div className="flex items-center gap-4">
-                              <div className="w-10 h-10 rounded-full bg-[#0F3D2E]/30 border border-[#145A3A]/40 flex items-center justify-center text-[#9AC57A] font-bold">
+                              <div className="w-10 h-10 rounded-full bg-gradient-brand flex items-center justify-center text-[#1a2e0f] font-bold">
                                 {contact.name[0]}
                               </div>
                               <div>
-                                <div className="font-bold text-white">
+                                <div className="font-bold text-neutral-900">
                                   {contact.name}
                                 </div>
-                                <div className="text-xs text-[#B7BEC4]/60 uppercase tracking-wider">
+                                <div className="text-xs text-neutral-500 uppercase tracking-wider">
                                   {contact.relation}
                                 </div>
-                                <div className="text-xs text-[#B7BEC4]">{contact.phone}</div>
+                                <div className="text-xs text-neutral-400">{contact.phone}</div>
                               </div>
                             </div>
                             <div className="flex flex-col items-end gap-1">
                               <button
                                 type="button"
                                 onClick={() => handleStartEditContact(contact)}
-                                className="text-xs text-[#B7BEC4] hover:text-white transition-colors"
+                                className="text-xs text-neutral-500 hover:text-neutral-900 transition-colors"
                               >
                                 Edit
                               </button>
                               <button
                                 type="button"
                                 onClick={() => handleDeleteContact(contact.id)}
-                                className="text-xs text-red-400 hover:text-red-300 transition-colors"
+                                className="text-xs text-red-500 hover:text-red-700 transition-colors"
                               >
                                 Delete
                               </button>
@@ -2365,18 +2375,18 @@ export default function DashboardPage(props: PageProps) {
                   )}
 
                   {isAddingContact && (
-                    <form onSubmit={handleAddContact} className="p-6 rounded-2xl border-2 border-dashed border-[#3A3F45] space-y-4">
+                    <form onSubmit={handleAddContact} className="p-6 rounded-2xl border-2 border-dashed border-neutral-200 space-y-4">
                       <input
                         placeholder="Contact Name"
                         required
-                        className="w-full px-4 py-2 rounded-lg border border-[#3A3F45] bg-[#2B3136] text-white placeholder:text-[#B7BEC4]/40 focus:outline-none focus:ring-2 focus:ring-[#145A3A]/40 focus:border-[#145A3A] transition"
+                        className="w-full px-4 py-2 rounded-lg border border-neutral-200 bg-white text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#89d957]/40 focus:border-[#6eb84a] transition"
                         value={newContact.name}
                         onChange={e => setNewContact({...newContact, name: e.target.value})}
                       />
                       <input
                         placeholder="Relation (e.g. Father)"
                         required
-                        className="w-full px-4 py-2 rounded-lg border border-[#3A3F45] bg-[#2B3136] text-white placeholder:text-[#B7BEC4]/40 focus:outline-none focus:ring-2 focus:ring-[#145A3A]/40 focus:border-[#145A3A] transition"
+                        className="w-full px-4 py-2 rounded-lg border border-neutral-200 bg-white text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#89d957]/40 focus:border-[#6eb84a] transition"
                         value={newContact.relation}
                         onChange={e => setNewContact({...newContact, relation: e.target.value})}
                       />
@@ -2384,7 +2394,7 @@ export default function DashboardPage(props: PageProps) {
                         placeholder="Phone Number"
                         required
                         type="tel"
-                        className="w-full px-4 py-2 rounded-lg border border-[#3A3F45] bg-[#2B3136] text-white placeholder:text-[#B7BEC4]/40 focus:outline-none focus:ring-2 focus:ring-[#145A3A]/40 focus:border-[#145A3A] transition"
+                        className="w-full px-4 py-2 rounded-lg border border-neutral-200 bg-white text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#89d957]/40 focus:border-[#6eb84a] transition"
                         value={newContact.phone}
                         onChange={e => setNewContact({...newContact, phone: e.target.value})}
                       />
@@ -2392,14 +2402,14 @@ export default function DashboardPage(props: PageProps) {
                         <button 
                           type="submit" 
                           disabled={savingContact}
-                          className="flex-1 bg-[#145A3A] text-white py-2 rounded-lg font-bold hover:bg-[#1F7A5A] disabled:opacity-50 transition"
+                          className="flex-1 bg-gradient-brand text-[#1a2e0f] py-2 rounded-lg font-bold hover:opacity-90 disabled:opacity-50 transition"
                         >
                           {savingContact ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Save Contact'}
                         </button>
                         <button 
                           type="button" 
                           onClick={() => setIsAddingContact(false)}
-                          className="px-4 py-2 text-[#B7BEC4] font-medium hover:text-white transition-colors"
+                          className="px-4 py-2 text-neutral-500 font-medium hover:text-neutral-900 transition-colors"
                         >
                           Cancel
                         </button>
@@ -2408,7 +2418,7 @@ export default function DashboardPage(props: PageProps) {
                   )}
 
                   {contacts.length === 0 && !isAddingContact && (
-                    <p className="text-center py-8 text-[#B7BEC4]/60 text-sm italic">No emergency contacts added yet.</p>
+                    <p className="text-center py-8 text-neutral-400 text-sm italic">No emergency contacts added yet.</p>
                   )}
                 </div>
               )}

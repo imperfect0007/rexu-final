@@ -1,4 +1,4 @@
-# QRgency – QR + Emergency
+#Rexu 2.0 - with more loaded features
 
 Production-quality MVP for instant emergency information via QR codes on vehicles, helmets, and commercial fleets.
 
@@ -34,6 +34,7 @@ Production-quality MVP for instant emergency information via QR codes on vehicle
 - **Bulk QR generation** for all vehicles
 - Per-vehicle QR download
 - Dedicated fleet management pages at `/fleet` and `/drivers`
+- and many more
 
 ### Admin Panel
 - Login via `admins` table (bcrypt-hashed passwords, JWT session)

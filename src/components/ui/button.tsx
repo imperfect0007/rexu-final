@@ -11,18 +11,16 @@ const buttonVariants = cva(
       variant: {
         // Primary, authoritative action
         default:
-          "bg-primary text-primary-foreground hover:bg-[#145A3A] active:bg-[#1E6F4E]",
+          "bg-gradient-brand text-[#1a2e0f] hover:opacity-90 shadow-sm",
         destructive:
-          "bg-destructive text-white shadow-xs hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
-        // Secondary / outline CTA
+          "bg-destructive text-white shadow-xs hover:bg-destructive/90 focus-visible:ring-destructive/20",
         outline:
-          "border border-[#145A3A] text-[#145A3A] bg-transparent hover:bg-[#145A3A] hover:text-white",
+          "border border-[#89d957] text-[#5a9c32] bg-transparent hover:bg-[#89d957]/10",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-[#3A4147]",
+          "bg-secondary text-secondary-foreground hover:bg-neutral-100",
         ghost:
-          "hover:bg-[#2B3136] text-foreground",
-        // Inline link style
-        link: "text-[#7FB8A0] hover:text-[#A3D9C5] underline-offset-4",
+          "hover:bg-neutral-100 text-foreground",
+        link: "text-[#5a9c32] hover:text-[#6eb84a] underline-offset-4",
       },
       size: {
         default: "h-9 px-4 py-2 has-[>svg]:px-3",

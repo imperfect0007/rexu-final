@@ -2,141 +2,112 @@
 
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { Shield } from 'lucide-react';
+import { Plus } from 'lucide-react';
+import { Shield } from "lucide-react";
 
 export default function ConditionalFooter() {
   const pathname = usePathname();
-  const isAuthPage = pathname?.includes('/login') || pathname?.includes('/register');
+  const isAuthPage =
+    pathname?.includes('/login') || pathname?.includes('/register');
 
   if (isAuthPage) {
     return null;
   }
 
   return (
-    <>
-      {/* Global footer */}
-      <footer className="relative overflow-hidden border-t border-zinc-900 bg-black">
-        {/* Watermark text in the background */}
-        <div className="pointer-events-none select-none absolute inset-x-0 bottom-[-1.5rem] text-center text-[96px] sm:text-[140px] font-black tracking-tight text-zinc-800/50">
-          REXU
+    <footer className="border-t border-neutral-200 bg-white/90 px-4 py-12 sm:px-6">
+      <div className="mx-auto max-w-6xl">
+        <div className="flex flex-col items-start justify-between gap-10 lg:flex-row lg:items-center">
+          <Link href="/" className="flex items-center gap-2">
+            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-brand">
+              <Plus className="h-4 w-4 text-[#1a2e0f]" strokeWidth={2.5} />
+            </span>
+            <img src="/rexu-logo.png" alt="REXU" className="h-9 w-auto" />
+          </Link>
+
+          <nav className="flex flex-wrap gap-6 text-sm font-medium text-neutral-600">
+            <Link href="/about" className="hover:text-neutral-900">
+              About
+            </Link>
+            <Link href="/#features" className="hover:text-neutral-900">
+              How it works
+            </Link>
+            <Link href="/#pricing" className="hover:text-neutral-900">
+              Pricing
+            </Link>
+            <Link href="/#faq" className="hover:text-neutral-900">
+              FAQs
+            </Link>
+            <Link href="/contact" className="hover:text-neutral-900">
+              Contact
+            </Link>
+          </nav>
         </div>
-      </footer>
 
-      {/* Footer content section */}
-      <div className="bg-black relative overflow-hidden">
-        {/* Logo background with low visibility */}
-        <div
-          className="pointer-events-none select-none absolute inset-0 bg-center bg-no-repeat opacity-[0.65]"
-          style={{
-            backgroundImage: 'url(/rexu-logo.png)',
-            backgroundSize: 'contain',
-          }}
-        />
-
-        {/* Black transparent overlay */}
-        <div className="absolute inset-0 bg-black/70 z-[1]" />
-
-        <div className="relative z-[2] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:py-14">
-          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-10">
-            {/* Brand + copyright */}
-            <div className="space-y-4 w-full lg:w-auto flex flex-col items-center lg:items-start">
-              <div className="flex items-center gap-3">
-                <div className="bg-zinc-900 border border-zinc-700/70 p-2 rounded-xl">
-                  <Shield className="w-5 h-5 text-white" />
-                </div>
-              </div>
-              <p className="text-xs text-zinc-500 text-center lg:text-left">
-                © {new Date().getFullYear()} REXU. All rights reserved.
-              </p>
+        <div className="mt-10 grid gap-8 border-t border-neutral-100 pt-10 sm:grid-cols-2 md:grid-cols-4 text-sm">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
+              Pages
+            </p>
+            <div className="mt-3 flex flex-col gap-2 text-neutral-600">
+              <Link href="/" className="hover:text-neutral-900">
+                Home
+              </Link>
+              <Link href="/about" className="hover:text-neutral-900">
+                About
+              </Link>
             </div>
-
-            {/* Link columns */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-8 text-sm text-zinc-300">
-              <div className="space-y-3">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">
-                  Pages
-                </p>
-                <div className="space-y-1.5 flex flex-col">
-                  <Link href="/" className="block hover:text-zinc-50 transition-colors">
-                    Home
-                  </Link>
-                  <Link href="/#features" className="block hover:text-zinc-50 transition-colors">
-                    How it works
-                  </Link>
-                  <Link href="/#pricing" className="block hover:text-zinc-50 transition-colors">
-                    Pricing
-                  </Link>
-                  <Link href="/about" className="block hover:text-zinc-50 transition-colors">
-                    About
-                  </Link>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">
-                  Socials
-                </p>
-                <div className="space-y-1.5 flex flex-col">
-                  <a
-                    href="https://instagram.com/rexu.app"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="block hover:text-zinc-50 transition-colors"
-                  >
-                    Instagram
-                  </a>
-                  <a
-                    // TODO: Replace with your real WhatsApp number
-                    href="https://wa.me/919876543210"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="block hover:text-zinc-50 transition-colors"
-                  >
-                    WhatsApp
-                  </a>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">
-                  Legal
-                </p>
-                <div className="space-y-1.5 flex flex-col">
-                  <Link href="/privacy" className="block hover:text-zinc-50 transition-colors">
-                    Privacy Policy
-                  </Link>
-                  <Link href="/terms" className="block hover:text-zinc-50 transition-colors">
-                    Terms &amp; Conditions
-                  </Link>
-                  <Link href="/refund" className="block hover:text-zinc-50 transition-colors">
-                    Refund Policy
-                  </Link>
-                  <Link href="/shipping" className="block hover:text-zinc-50 transition-colors">
-                    Shipping &amp; Delivery
-                  </Link>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">
-                  Account
-                </p>
-                <div className="space-y-1.5 flex flex-col">
-                  <Link href="/register" className="block hover:text-zinc-50 transition-colors">
-                    Sign up
-                  </Link>
-                  <Link href="/login" className="block hover:text-zinc-50 transition-colors">
-                    Login
-                  </Link>
-                  <Link href="/contact" className="block hover:text-zinc-50 transition-colors">
-                    Contact Us
-                  </Link>
-                </div>
-              </div>
+          </div>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
+              Legal
+            </p>
+            <div className="mt-3 flex flex-col gap-2 text-neutral-600">
+              <Link href="/privacy" className="hover:text-neutral-900">
+                Privacy
+              </Link>
+              <Link href="/terms" className="hover:text-neutral-900">
+                Terms
+              </Link>
+              <Link href="/refund" className="hover:text-neutral-900">
+                Refund
+              </Link>
+            </div>
+          </div>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
+              Account
+            </p>
+            <div className="mt-3 flex flex-col gap-2 text-neutral-600">
+              <Link href="/register" className="hover:text-neutral-900">
+                Sign up
+              </Link>
+              <Link href="/login" className="hover:text-neutral-900">
+                Login
+              </Link>
+            </div>
+          </div>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
+              Social
+            </p>
+            <div className="mt-3 flex flex-col gap-2 text-neutral-600">
+              <a
+                href="https://www.instagram.com/rexu.india/"
+                target="_blank"
+                rel="noreferrer"
+                className="hover:text-neutral-900"
+              >
+                Instagram
+              </a>
             </div>
           </div>
         </div>
+
+        <p className="mt-10 text-center text-xs text-neutral-400 sm:text-left">
+          © {new Date().getFullYear()} REXU. All rights reserved.
+        </p>
       </div>
-    </>
+    </footer>
   );
 }

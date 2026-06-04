@@ -1,6 +1,20 @@
 import type { NextConfig } from "next";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const appRoot = path.dirname(fileURLToPath(import.meta.url));
 
 const nextConfig: NextConfig = {
+  turbopack: {
+    root: appRoot,
+    resolveAlias: {
+      tailwindcss: path.join(appRoot, "node_modules/tailwindcss"),
+      "@tailwindcss/postcss": path.join(
+        appRoot,
+        "node_modules/@tailwindcss/postcss"
+      ),
+    },
+  },
   images: {
     remotePatterns: [
       {
@@ -27,15 +41,6 @@ const nextConfig: NextConfig = {
         },
         { key: 'CDN-Cache-Control', value: 'public, max-age=60' },
         { key: 'Vercel-CDN-Cache-Control', value: 'public, max-age=60' },
-      ],
-    },
-    {
-      source: '/_next/static/:path*',
-      headers: [
-        {
-          key: 'Cache-Control',
-          value: 'public, max-age=31536000, immutable',
-        },
       ],
     },
     {
