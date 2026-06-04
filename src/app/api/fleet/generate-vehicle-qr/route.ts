@@ -59,8 +59,16 @@ export async function POST(request: Request) {
 
     if (qrError) {
       console.error('Failed to insert qr_codes row for vehicle:', qrError);
+      const isOneQrPerProfileLimit =
+        qrError.code === '23505' &&
+        (qrError.message?.includes('uq_qr_codes_profile_id') ||
+          qrError.details?.includes('profile_id'));
       return NextResponse.json(
-        { error: 'Failed to create QR for vehicle' },
+        {
+          error: isOneQrPerProfileLimit
+            ? 'Database still limits one QR per account. Run scripts/migrations/20250605_allow_multiple_qr_codes_per_profile.sql in Supabase, then try again.'
+            : 'Failed to create QR for vehicle',
+        },
         { status: 500 }
       );
     }

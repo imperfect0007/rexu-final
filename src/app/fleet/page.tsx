@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { logFleetActivity } from '@/lib/fleetLogger';
+import { downloadQrEmergencyCard } from '@/lib/downloadQrCard';
 import {
   Shield,
   Plus,
@@ -279,6 +280,7 @@ export default function FleetManagerPage() {
       }
 
       setFleetVehicles((prev) => [data as FleetVehicle, ...prev]);
+      void handleGenerateVehicleQr(data.id);
 
       await logFleetActivity({
         action: 'vehicle_added',
@@ -324,6 +326,7 @@ export default function FleetManagerPage() {
       const data = await res.json();
       if (!res.ok) {
         console.error('FleetManager: failed to generate vehicle QR:', data.error);
+        window.alert(data.error ?? 'Failed to generate QR for this vehicle.');
         return;
       }
       if (!data.token) return;
@@ -333,27 +336,16 @@ export default function FleetManagerPage() {
       );
     } catch (err) {
       console.error('FleetManager: generateVehicleQr client error:', err);
+      window.alert('Failed to generate QR. Please try again.');
     }
   };
 
   const handleDownloadVehicleQr = async (token: string) => {
     try {
-      const res = await fetch(`/api/qr/${token}`);
-      if (!res.ok) {
-        console.error('FleetManager: vehicle QR download API error', await res.text());
-        return;
-      }
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'rexu-emergency-card.svg';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+      await downloadQrEmergencyCard(token);
     } catch (err) {
       console.error('FleetManager: failed to download vehicle QR:', err);
+      window.alert('Could not download QR. Generate the QR first, then try again.');
     }
   };
 

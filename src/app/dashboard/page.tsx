@@ -4,6 +4,7 @@ import * as React from 'react';
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { logFleetActivity } from '@/lib/fleetLogger';
+import { downloadQrEmergencyCard } from '@/lib/downloadQrCard';
 import { useRouter } from 'next/navigation';
 import {
   Shield,
@@ -725,27 +726,9 @@ export default function DashboardPage(props: PageProps) {
     }
 
     try {
-      const res = await fetch(`/api/qr/${qrToken}`);
-      if (!res.ok) {
-        // If the storage-backed PNG is missing (e.g. QR not yet uploaded),
-        // fall back to downloading the on-screen SVG version instead.
-        const errorText = await res.text();
-        console.error('QR download API error', errorText);
-        downloadQrFromInlineSvg();
-        return;
-      }
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'rexu-qr.png';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+      await downloadQrEmergencyCard(qrToken);
     } catch (err) {
       console.error('Failed to download QR via API:', err);
-      // As a safety net, attempt client-side export if the API path fails.
       downloadQrFromInlineSvg();
     }
   };
@@ -822,6 +805,7 @@ export default function DashboardPage(props: PageProps) {
       const data = await res.json();
       if (!res.ok) {
         console.error('Failed to generate vehicle QR:', data.error);
+        window.alert(data.error ?? 'Failed to generate QR for this vehicle.');
         return;
       }
       if (!data.token) return;
@@ -832,27 +816,16 @@ export default function DashboardPage(props: PageProps) {
       );
     } catch (err) {
       console.error('generateVehicleQr client error:', err);
+      window.alert('Failed to generate QR. Please try again.');
     }
   };
 
   const handleDownloadVehicleQr = async (token: string) => {
     try {
-      const res = await fetch(`/api/qr/${token}`);
-      if (!res.ok) {
-        console.error('Vehicle QR download API error', await res.text());
-        return;
-      }
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'rexu-vehicle-qr.png';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+      await downloadQrEmergencyCard(token);
     } catch (err) {
       console.error('Failed to download vehicle QR:', err);
+      window.alert('Could not download QR. Generate the QR first, then try again.');
     }
   };
 
@@ -880,17 +853,26 @@ export default function DashboardPage(props: PageProps) {
     try {
       // Requires a `fleet_vehicles` table with at least:
       // owner_profile_id (uuid), vehicle_number (text), label (text), make_model (text).
-      const { error } = await supabase.from('fleet_vehicles').insert({
-        owner_profile_id: profile.id,
-        vehicle_number: vehicleNumber.trim(),
-        label: vehicleLabel.trim() || null,
-        make_model: vehicleMakeModel.trim() || null,
-      });
+      const { data: newVehicle, error } = await supabase
+        .from('fleet_vehicles')
+        .insert({
+          owner_profile_id: profile.id,
+          vehicle_number: vehicleNumber.trim(),
+          label: vehicleLabel.trim() || null,
+          make_model: vehicleMakeModel.trim() || null,
+        })
+        .select()
+        .single();
 
       if (error) {
         console.error('Failed to create fleet vehicle:', error);
         setVehicleError(error.message ?? 'Failed to save vehicle.');
         return;
+      }
+
+      if (newVehicle) {
+        setFleetVehicles((prev) => [newVehicle as FleetVehicle, ...prev]);
+        void handleGenerateVehicleQr(newVehicle.id);
       }
 
       await logFleetActivity({
