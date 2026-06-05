@@ -52,7 +52,7 @@ const heroItemVariants = {
   },
 };
 
-const brands = ['SafeRide', 'FleetOne', 'Guardian', 'QuickDeliver', 'RoadSafe', 'ProtectQR'];
+const brands = ['Safewheels', 'FleetOne', 'Guardian', 'QuickDeliver', 'RoadSafe', 'ProtectQR'];
 
 const features = [
   {
@@ -205,7 +205,7 @@ export default function Home(props: HomePageProps) {
             {features.map(({ icon: Icon, title, desc }) => (
               <motion.div key={title} variants={staggerChildVariants}>
                 <SparkSheet className="h-full text-center !p-8">
-                  <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-brand">
+                  <div className="flex justify-center mb-4">
                     <Icon className="h-7 w-7 text-[#1a2e0f]" />
                   </div>
                   <h3 className="text-lg font-bold text-neutral-900">{title}</h3>
@@ -225,14 +225,8 @@ export default function Home(props: HomePageProps) {
         staggerDelay={0.1}
       >
         <div className="mx-auto max-w-5xl">
-          <div className="text-center mb-14">
+          <div className="text-center mb-1">
             <SectionTag>Process</SectionTag>
-            <h2 className="mt-6 text-3xl font-bold text-neutral-900 sm:text-4xl">
-              How it works
-            </h2>
-            <p className="mt-3 text-neutral-600">
-              Simple steps designed for real emergencies.
-            </p>
           </div>
           <HowItWorksToggle />
         </div>
@@ -255,7 +249,7 @@ export default function Home(props: HomePageProps) {
           <div className="mt-12 grid gap-8 md:grid-cols-2">
             <motion.div variants={staggerChildVariants}>
               <SparkSheet className="flex h-full flex-col !p-8">
-                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-brand">
+                <div className="mb-4 flex h-12 w-12 items-center justify-center">
                   <User className="h-6 w-6 text-[#1a2e0f]" />
                 </div>
                 <h3 className="text-xl font-bold">Individuals & Families</h3>
@@ -287,7 +281,7 @@ export default function Home(props: HomePageProps) {
                 <span className="absolute right-6 top-6 rounded-full bg-gradient-brand px-3 py-1 text-xs font-bold text-[#1a2e0f]">
                   For Business
                 </span>
-                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-brand">
+                <div className="mb-4 flex h-12 w-12 items-center justify-center">
                   <Truck className="h-6 w-6 text-[#1a2e0f]" />
                 </div>
                 <h3 className="text-xl font-bold">Commercial Fleets</h3>
@@ -322,9 +316,12 @@ export default function Home(props: HomePageProps) {
       </MotionSection>
 
       <TeamSection />
+
+
+      <InstagramSection />
       <TestimonialsSection />
       <FAQSection />
-      <InstagramSection />
+
       <CTABanner />
     </div>
   );
