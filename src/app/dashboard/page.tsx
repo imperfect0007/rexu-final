@@ -4,6 +4,8 @@ import * as React from 'react';
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { logFleetActivity } from '@/lib/fleetLogger';
+import { downloadQrEmergencyCard } from '@/lib/downloadQrCard';
+import { resolvePersonalQrToken } from '@/lib/resolvePersonalQrToken';
 import { useRouter } from 'next/navigation';
 import {
   Shield,
@@ -96,6 +98,7 @@ export default function DashboardPage(props: PageProps) {
   const [fleetDrivers, setFleetDrivers] = useState<FleetDriver[]>([]);
   const [loading, setLoading] = useState(true);
   const [qrToken, setQrToken] = useState<string | null>(null);
+  const [qrDownloading, setQrDownloading] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [isAddingContact, setIsAddingContact] = useState(false);
   const [newContact, setNewContact] = useState({ name: '', relation: '', phone: '' });
@@ -282,21 +285,11 @@ export default function DashboardPage(props: PageProps) {
         );
       }
 
-      // Fetch or generate QR token (tolerant of duplicate rows)
-      const { data: qrData, error: qrError } = await supabase
-        .from('qr_codes')
-        .select('token')
-        .eq('profile_id', user.id)
-        .limit(1)
-        .maybeSingle();
+      const existingToken = await resolvePersonalQrToken(supabase, user.id);
 
-      if (qrError && qrError.code !== 'PGRST116') {
-        console.error('Error fetching QR code:', qrError);
-      }
-
-      if (qrData) {
-        setQrToken(qrData.token);
-      } else if (profileData.is_paid) {
+      if (existingToken) {
+        setQrToken(existingToken);
+      } else if (effectiveProfile.is_paid) {
         // Generate new token if paid but no token exists
         const buf = new Uint8Array(16);
         crypto.getRandomValues(buf);
@@ -720,33 +713,23 @@ export default function DashboardPage(props: PageProps) {
 
   const handleDownloadQR = async () => {
     if (!qrToken) {
-      console.error('QR download requested but qrToken is missing');
+      window.alert('QR is not ready yet. Complete activation first.');
       return;
     }
+    if (qrDownloading) return;
 
+    setQrDownloading(true);
     try {
-      const res = await fetch(`/api/qr/${qrToken}`);
-      if (!res.ok) {
-        // If the storage-backed PNG is missing (e.g. QR not yet uploaded),
-        // fall back to downloading the on-screen SVG version instead.
-        const errorText = await res.text();
-        console.error('QR download API error', errorText);
-        downloadQrFromInlineSvg();
-        return;
-      }
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'rexu-qr.png';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+      await downloadQrEmergencyCard(qrToken);
     } catch (err) {
       console.error('Failed to download QR via API:', err);
-      // As a safety net, attempt client-side export if the API path fails.
-      downloadQrFromInlineSvg();
+      try {
+        downloadQrFromInlineSvg();
+      } catch {
+        window.alert('Could not download QR. Please try again in a moment.');
+      }
+    } finally {
+      setQrDownloading(false);
     }
   };
 
@@ -822,6 +805,7 @@ export default function DashboardPage(props: PageProps) {
       const data = await res.json();
       if (!res.ok) {
         console.error('Failed to generate vehicle QR:', data.error);
+        window.alert(data.error ?? 'Failed to generate QR for this vehicle.');
         return;
       }
       if (!data.token) return;
@@ -832,27 +816,16 @@ export default function DashboardPage(props: PageProps) {
       );
     } catch (err) {
       console.error('generateVehicleQr client error:', err);
+      window.alert('Failed to generate QR. Please try again.');
     }
   };
 
   const handleDownloadVehicleQr = async (token: string) => {
     try {
-      const res = await fetch(`/api/qr/${token}`);
-      if (!res.ok) {
-        console.error('Vehicle QR download API error', await res.text());
-        return;
-      }
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'rexu-vehicle-qr.png';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+      await downloadQrEmergencyCard(token);
     } catch (err) {
       console.error('Failed to download vehicle QR:', err);
+      window.alert('Could not download QR. Generate the QR first, then try again.');
     }
   };
 
@@ -880,17 +853,26 @@ export default function DashboardPage(props: PageProps) {
     try {
       // Requires a `fleet_vehicles` table with at least:
       // owner_profile_id (uuid), vehicle_number (text), label (text), make_model (text).
-      const { error } = await supabase.from('fleet_vehicles').insert({
-        owner_profile_id: profile.id,
-        vehicle_number: vehicleNumber.trim(),
-        label: vehicleLabel.trim() || null,
-        make_model: vehicleMakeModel.trim() || null,
-      });
+      const { data: newVehicle, error } = await supabase
+        .from('fleet_vehicles')
+        .insert({
+          owner_profile_id: profile.id,
+          vehicle_number: vehicleNumber.trim(),
+          label: vehicleLabel.trim() || null,
+          make_model: vehicleMakeModel.trim() || null,
+        })
+        .select()
+        .single();
 
       if (error) {
         console.error('Failed to create fleet vehicle:', error);
         setVehicleError(error.message ?? 'Failed to save vehicle.');
         return;
+      }
+
+      if (newVehicle) {
+        setFleetVehicles((prev) => [newVehicle as FleetVehicle, ...prev]);
+        void handleGenerateVehicleQr(newVehicle.id);
       }
 
       await logFleetActivity({
@@ -2172,11 +2154,21 @@ export default function DashboardPage(props: PageProps) {
                     <CheckCircle2 className="w-5 h-5" /> Active
                   </div>
                   <p className="text-sm text-neutral-500">Token: <span className="font-mono bg-neutral-100 px-2 py-0.5 rounded text-neutral-700">{qrToken}</span></p>
-                  <button 
-                    onClick={handleDownloadQR}
-                    className="w-full bg-neutral-100 text-neutral-700 py-3 rounded-xl font-bold hover:bg-neutral-200 transition-all flex items-center justify-center gap-2"
+                  <button
+                    type="button"
+                    onClick={() => void handleDownloadQR()}
+                    disabled={qrDownloading}
+                    className="w-full bg-neutral-100 text-neutral-700 py-3 rounded-xl font-bold hover:bg-neutral-200 transition-all flex items-center justify-center gap-2 disabled:opacity-60"
                   >
-                    <Download className="w-4 h-4" /> Download QR
+                    {qrDownloading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" /> Preparing download…
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-4 h-4" /> Download QR
+                      </>
+                    )}
                   </button>
                 </div>
               )}

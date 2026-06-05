@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { logFleetActivity } from '@/lib/fleetLogger';
+import { downloadQrEmergencyCard, downloadBlobAsFile } from '@/lib/downloadQrCard';
 import {
   Shield,
   Plus,
@@ -279,6 +280,7 @@ export default function FleetManagerPage() {
       }
 
       setFleetVehicles((prev) => [data as FleetVehicle, ...prev]);
+      void handleGenerateVehicleQr(data.id);
 
       await logFleetActivity({
         action: 'vehicle_added',
@@ -324,6 +326,7 @@ export default function FleetManagerPage() {
       const data = await res.json();
       if (!res.ok) {
         console.error('FleetManager: failed to generate vehicle QR:', data.error);
+        window.alert(data.error ?? 'Failed to generate QR for this vehicle.');
         return;
       }
       if (!data.token) return;
@@ -333,27 +336,16 @@ export default function FleetManagerPage() {
       );
     } catch (err) {
       console.error('FleetManager: generateVehicleQr client error:', err);
+      window.alert('Failed to generate QR. Please try again.');
     }
   };
 
   const handleDownloadVehicleQr = async (token: string) => {
     try {
-      const res = await fetch(`/api/qr/${token}`);
-      if (!res.ok) {
-        console.error('FleetManager: vehicle QR download API error', await res.text());
-        return;
-      }
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'rexu-emergency-card.svg';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+      await downloadQrEmergencyCard(token);
     } catch (err) {
       console.error('FleetManager: failed to download vehicle QR:', err);
+      window.alert('Could not download QR. Generate the QR first, then try again.');
     }
   };
 
@@ -401,23 +393,33 @@ export default function FleetManagerPage() {
 
       const res = await fetch(
         `/api/fleet/checkin-qr-image?vehicleId=${encodeURIComponent(vehicleId)}`,
-        { headers: { Authorization: `Bearer ${accessToken}` } }
+        { headers: { Authorization: `Bearer ${accessToken}` }, cache: 'no-store' }
       );
       if (!res.ok) {
         console.error('FleetManager: check-in QR download error', await res.text());
+        window.alert('Could not download check-in QR. Generate it first, then try again.');
         return;
       }
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'rexu-checkin-card.svg';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+      await downloadBlobAsFile(await res.blob(), 'rexu-checkin-card.svg');
     } catch (err) {
       console.error('FleetManager: download check-in QR:', err);
+      window.alert('Could not download check-in QR. Please try again.');
+    }
+  };
+
+  const handleFleetDocOpen = async (filePath: string) => {
+    try {
+      const { data, error } = await supabase.storage
+        .from('fleet-documents')
+        .createSignedUrl(filePath, 300);
+      if (error || !data?.signedUrl) {
+        window.alert('Could not open document. Please try again.');
+        return;
+      }
+      window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
+    } catch (err) {
+      console.error('Doc open:', err);
+      window.alert('Could not open document.');
     }
   };
 
@@ -711,16 +713,21 @@ export default function FleetManagerPage() {
       const { data, error } = await supabase.storage
         .from('fleet-documents')
         .createSignedUrl(filePath, 300);
-      if (error || !data?.signedUrl) return;
+      if (error || !data?.signedUrl) {
+        window.alert('Could not download document.');
+        return;
+      }
       const a = document.createElement('a');
       a.href = data.signedUrl;
       a.download = name;
       a.target = '_blank';
+      a.rel = 'noopener';
       document.body.appendChild(a);
       a.click();
       a.remove();
     } catch (err) {
       console.error('Doc download:', err);
+      window.alert('Could not download document.');
     }
   };
 
@@ -1022,12 +1029,13 @@ export default function FleetManagerPage() {
                                     >
                                       <Upload className="w-3 h-3" /> Upload
                                     </button>
-                                    <Link
-                                      href={`/documents?vehicle=${v.id}`}
+                                    <button
+                                      type="button"
+                                      onClick={() => router.push(`/documents?vehicle=${v.id}`)}
                                       className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-[#3A3F45] text-[10px] font-medium text-[#B7BEC4] hover:bg-[#2B3136] hover:text-white"
                                     >
                                       Open documents page
-                                    </Link>
+                                    </button>
                                   </div>
                                 </div>
                                 {vDocs.length > 0 ? (
@@ -1050,6 +1058,13 @@ export default function FleetManagerPage() {
                                               })}`}
                                           </p>
                                         </div>
+                                        <button
+                                          type="button"
+                                          onClick={() => void handleFleetDocOpen(d.file_path)}
+                                          className="px-2 py-1 rounded-lg text-[10px] font-semibold text-[#9AC57A] hover:bg-[#2B3136]"
+                                        >
+                                          Open
+                                        </button>
                                         <button
                                           type="button"
                                           onClick={() => handleFleetDocDownload(d.file_path, d.document_name)}

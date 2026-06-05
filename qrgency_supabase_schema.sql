@@ -267,9 +267,8 @@ create index if not exists idx_qr_codes_profile_id
 create index if not exists idx_qr_codes_token
   on public.qr_codes (token);
 
--- enforce at most one QR per profile to prevent double activation
-create unique index if not exists uq_qr_codes_profile_id
-  on public.qr_codes (profile_id);
+-- Multiple QR tokens per profile are allowed (fleet: one token per vehicle).
+-- Activation still creates at most one row via complete_activation(); fleet APIs add more.
 
 -- =========================================================
 -- PAYMENTS (Optional: Stripe / audit history)

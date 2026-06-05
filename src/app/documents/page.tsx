@@ -261,6 +261,23 @@ function DocumentsPageContent() {
     }
   };
 
+  const handleOpen = async (filePath: string) => {
+    try {
+      const { data, error } = await supabase.storage
+        .from('fleet-documents')
+        .createSignedUrl(filePath, 300);
+
+      if (error || !data?.signedUrl) {
+        window.alert('Could not open document.');
+        return;
+      }
+      window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
+    } catch (err) {
+      console.error('Open error:', err);
+      window.alert('Could not open document.');
+    }
+  };
+
   const handleDownload = async (filePath: string, name: string) => {
     try {
       const { data, error } = await supabase.storage
@@ -268,7 +285,7 @@ function DocumentsPageContent() {
         .createSignedUrl(filePath, 300);
 
       if (error || !data?.signedUrl) {
-        console.error('Download error:', error);
+        window.alert('Could not download document.');
         return;
       }
 
@@ -276,11 +293,13 @@ function DocumentsPageContent() {
       a.href = data.signedUrl;
       a.download = name;
       a.target = '_blank';
+      a.rel = 'noopener';
       document.body.appendChild(a);
       a.click();
       a.remove();
     } catch (err) {
       console.error('Download error:', err);
+      window.alert('Could not download document.');
     }
   };
 
@@ -566,6 +585,13 @@ function DocumentsPageContent() {
                     </div>
 
                     <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => void handleOpen(doc.file_path)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#3A3F45] text-[#B7BEC4] text-[11px] font-medium hover:bg-[#2B3136] hover:text-white transition-colors"
+                      >
+                        Open
+                      </button>
                       <button
                         type="button"
                         onClick={() => handleDownload(doc.file_path, doc.document_name)}
