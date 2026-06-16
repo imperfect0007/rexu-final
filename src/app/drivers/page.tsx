@@ -18,6 +18,7 @@ import {
   Truck,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { SiteNavbar } from '@/components/marketing/SiteNavbar';
 
 interface FleetVehicle {
   id: string;
@@ -227,8 +228,8 @@ export default function DriverManagerPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-[#9AC57A]" />
+      <div className="min-h-screen bg-white bg-rexu-grid flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-[#89d957]" />
       </div>
     );
   }
@@ -247,31 +248,33 @@ export default function DriverManagerPage() {
     : fleetDrivers;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-black via-[#101518] to-black text-white pb-20">
+    <div className="min-h-screen flex flex-col font-sans">
+      <SiteNavbar />
+      <div className="flex-1 bg-white bg-rexu-grid text-neutral-900 pb-20">
       {/* ── Header ── */}
       <motion.header
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, ease: [0.33, 1, 0.68, 1] as [number, number, number, number] }}
-        className="bg-[#1F2428] border-b border-[#2B3136] sticky top-0 z-10"
+        className="bg-white/85 backdrop-blur-md border-b border-neutral-200/50 sticky top-[72px] z-10"
       >
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => router.push('/dashboard')}
-              className="w-9 h-9 rounded-full border border-[#3A3F45] flex items-center justify-center text-[#B7BEC4] hover:bg-[#2B3136] hover:text-white transition-colors"
+              className="w-9 h-9 rounded-full border border-neutral-200 flex items-center justify-center text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900 transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
             </button>
-            <div className="bg-[#145A3A] p-1.5 rounded-full">
-              <Shield className="w-5 h-5 text-white" />
+            <div className="bg-[#89d957]/10 p-1.5 rounded-xl border border-[#89d957]/20">
+              <Shield className="w-5 h-5 text-[#5a9c32]" />
             </div>
             <div className="flex flex-col">
-              <span className="font-bold text-white leading-tight">
+              <span className="font-bold text-neutral-800 leading-tight">
                 Driver Manager
               </span>
-              <span className="text-[10px] uppercase tracking-[0.2em] text-[#B7BEC4]">
+              <span className="text-[10px] uppercase tracking-[0.2em] text-neutral-400">
                 Drivers
               </span>
             </div>
@@ -280,21 +283,21 @@ export default function DriverManagerPage() {
             <button
               type="button"
               onClick={() => setProfileMenuOpen((open) => !open)}
-              className="h-8 px-2.5 rounded-lg bg-[#2B3136] border border-[#3A3F45] text-white text-[11px] font-bold tracking-wide flex items-center justify-center hover:bg-[#3A3F45] transition-colors"
+              className="h-8 px-2.5 rounded-lg bg-neutral-50 border border-neutral-200 text-neutral-700 text-[11px] font-bold tracking-wide flex items-center justify-center hover:bg-neutral-100 transition-colors"
             >
               rexu
             </button>
             {profileMenuOpen && (
-              <div className="absolute right-0 mt-2 w-44 rounded-xl border border-[#3A3F45] bg-[#1F2428] shadow-lg py-1 text-sm z-20">
+              <div className="absolute right-0 mt-2 w-44 rounded-xl border border-neutral-200/60 bg-white shadow-xl py-1 text-sm z-20">
                 <button
                   type="button"
                   onClick={() => {
                     setProfileMenuOpen(false);
                     router.push('/dashboard');
                   }}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-left text-[#B7BEC4] hover:bg-[#2B3136] hover:text-white"
+                  className="w-full flex items-center gap-2 px-3 py-2 text-left text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 transition-colors"
                 >
-                  <Shield className="w-4 h-4" />
+                  <Shield className="w-4 h-4 text-neutral-400" />
                   <span>Back to dashboard</span>
                 </button>
                 <button
@@ -303,9 +306,9 @@ export default function DriverManagerPage() {
                     setProfileMenuOpen(false);
                     router.push('/profile');
                   }}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-left text-[#B7BEC4] hover:bg-[#2B3136] hover:text-white"
+                  className="w-full flex items-center gap-2 px-3 py-2 text-left text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 transition-colors"
                 >
-                  <User className="w-4 h-4" />
+                  <User className="w-4 h-4 text-neutral-400" />
                   <span>Profile</span>
                 </button>
               </div>
@@ -321,46 +324,46 @@ export default function DriverManagerPage() {
         className="max-w-5xl mx-auto px-4 py-8 space-y-6"
       >
         {/* ── Welcome card with stats ── */}
-        <section className="bg-[#101518]/90 rounded-[28px] p-8 border border-white/10">
+        <section className="bg-white rounded-[24px] p-8 shadow-sm border border-neutral-200/50">
           <div className="flex items-start justify-between gap-6">
             <div>
-              <h1 className="text-2xl font-bold text-white mb-2">
+              <h1 className="text-2xl font-bold text-neutral-900 mb-2">
                 Welcome, {profileName}
               </h1>
-              <p className="text-[#B7BEC4] text-sm max-w-lg leading-relaxed">
+              <p className="text-neutral-500 text-sm max-w-lg leading-relaxed">
                 Manage all your drivers, their contact information, and vehicle assignments from
                 a single place.
               </p>
             </div>
             <div className="flex items-center gap-3 shrink-0">
-              <div className="flex flex-col items-center justify-center px-5 py-3 rounded-xl border border-[#3A3F45] bg-[#2B3136] min-w-[72px]">
-                <span className="text-2xl font-bold text-white">{fleetDrivers.length}</span>
-                <span className="text-[10px] uppercase tracking-[0.18em] text-[#B7BEC4] font-semibold">Drivers</span>
+              <div className="flex flex-col items-center justify-center px-5 py-3 rounded-xl border border-neutral-200 bg-neutral-50 min-w-[72px]">
+                <span className="text-2xl font-bold text-neutral-800">{fleetDrivers.length}</span>
+                <span className="text-[10px] uppercase tracking-[0.18em] text-neutral-400 font-semibold">Drivers</span>
               </div>
-              <div className="flex flex-col items-center justify-center px-5 py-3 rounded-xl bg-[#0F3D2E]/30 border border-[#145A3A]/40 min-w-[72px]">
-                <span className="text-2xl font-bold text-[#9AC57A]">{assignedCount}</span>
-                <span className="text-[10px] uppercase tracking-[0.18em] text-[#9AC57A] font-semibold">Assigned</span>
+              <div className="flex flex-col items-center justify-center px-5 py-3 rounded-xl bg-[#89d957]/10 border border-[#89d957]/20 min-w-[72px]">
+                <span className="text-2xl font-bold text-[#5a9c32]">{assignedCount}</span>
+                <span className="text-[10px] uppercase tracking-[0.18em] text-[#5a9c32] font-semibold">Assigned</span>
               </div>
             </div>
           </div>
         </section>
 
         {/* ── Drivers section ── */}
-        <section className="bg-[#101518]/90 rounded-[28px] p-6 border border-white/10 space-y-5">
+        <section className="bg-white rounded-[24px] p-6 shadow-sm border border-neutral-200/50 space-y-5">
           {/* Title row */}
           <div className="flex items-center justify-between gap-3">
             <div>
-              <h2 className="text-lg font-bold text-white">
+              <h2 className="text-lg font-bold text-neutral-800">
                 Drivers
               </h2>
-              <p className="text-sm text-[#B7BEC4] mt-0.5">
+              <p className="text-sm text-neutral-400 mt-0.5">
                 Add, manage and assign drivers to vehicles
               </p>
             </div>
             <button
               type="button"
               onClick={() => setIsDriverModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#145A3A] text-white text-sm font-semibold hover:bg-[#1F7A5A] active:scale-[0.97] transition"
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#89d957] to-[#74c346] text-white text-sm font-semibold hover:opacity-95 shadow-sm active:scale-[0.97] transition"
             >
               <Plus className="w-4 h-4" />
               <span>Add Driver</span>
@@ -369,19 +372,19 @@ export default function DriverManagerPage() {
 
           {/* Search bar */}
           <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#B7BEC4]/60" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search by name, phone, or blood group..."
-              className="w-full pl-11 pr-4 py-3 rounded-xl border border-[#3A3F45] bg-[#2B3136] text-sm text-white placeholder:text-[#B7BEC4]/50 focus:outline-none focus:ring-2 focus:ring-[#145A3A]/40 focus:border-[#145A3A] transition"
+              className="w-full pl-11 pr-4 py-3 rounded-xl border border-neutral-200 bg-neutral-50 text-sm text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#89d957]/30 focus:border-[#89d957] transition"
             />
           </div>
 
           {/* Driver list */}
           {filteredDrivers.length > 0 ? (
-            <div className="rounded-xl border border-white/5 divide-y divide-white/5">
+            <div className="rounded-xl border border-neutral-200/60 divide-y divide-neutral-200/60">
               {filteredDrivers.map((driver) => {
                 const assignedVehicle = fleetVehicles.find(
                   (v) => v.id === driver.assigned_vehicle_id
@@ -389,43 +392,43 @@ export default function DriverManagerPage() {
                 return (
                   <div
                     key={driver.id}
-                    className="px-4 py-4 flex items-center gap-4 hover:bg-white/[0.02] transition-colors"
+                    className="px-4 py-4 flex items-center gap-4 hover:bg-neutral-50/50 transition-colors"
                   >
                     {/* Avatar */}
-                    <div className="w-10 h-10 rounded-full bg-[#2B3136] border border-[#3A3F45] flex items-center justify-center shrink-0">
-                      <User className="w-5 h-5 text-[#B7BEC4]" />
+                    <div className="w-10 h-10 rounded-xl bg-neutral-50 border border-neutral-200 flex items-center justify-center shrink-0">
+                      <User className="w-5 h-5 text-neutral-500" />
                     </div>
 
                     {/* Info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="font-bold text-sm text-white">
+                        <span className="font-bold text-sm text-neutral-800">
                           {driver.name}
                         </span>
                         {assignedVehicle && (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#9AC57A] bg-[#0F3D2E]/30 border border-[#145A3A]/40 rounded-full px-2 py-0.5">
-                            <span className="w-1.5 h-1.5 rounded-full bg-[#9AC57A]" />
+                          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#5a9c32] bg-[#89d957]/10 border border-[#89d957]/20 rounded-full px-2 py-0.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#89d957]" />
                             Assigned
                           </span>
                         )}
                       </div>
-                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[#B7BEC4]">
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-neutral-500">
                         <span className="inline-flex items-center gap-1">
-                          <Phone className="w-3 h-3" /> {driver.phone}
+                          <Phone className="w-3 h-3 text-neutral-400" /> {driver.phone}
                         </span>
                         {driver.blood_group && (
                           <span className="inline-flex items-center gap-1">
-                            <Droplets className="w-3 h-3" /> {driver.blood_group}
+                            <Droplets className="w-3 h-3 text-neutral-400" /> {driver.blood_group}
                           </span>
                         )}
                         {assignedVehicle && (
                           <span className="inline-flex items-center gap-1">
-                            <Truck className="w-3 h-3" /> {assignedVehicle.vehicle_number}
+                            <Truck className="w-3 h-3 text-neutral-400" /> {assignedVehicle.vehicle_number}
                           </span>
                         )}
                       </div>
                       {driver.notes && (
-                        <p className="text-xs text-[#B7BEC4]/60 mt-1 line-clamp-1">{driver.notes}</p>
+                        <p className="text-xs text-neutral-400 mt-1 line-clamp-1">{driver.notes}</p>
                       )}
                     </div>
 
@@ -433,7 +436,7 @@ export default function DriverManagerPage() {
                     <button
                       type="button"
                       onClick={() => handleDeleteDriver(driver.id)}
-                      className="p-2 rounded-lg text-[#B7BEC4]/40 hover:text-red-400 hover:bg-red-950/30 transition-colors shrink-0"
+                      className="p-2 rounded-lg text-neutral-300 hover:text-red-600 hover:bg-red-50 transition-colors shrink-0"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -442,7 +445,7 @@ export default function DriverManagerPage() {
               })}
             </div>
           ) : (
-            <p className="text-sm text-[#B7BEC4]/60 py-4 text-center">
+            <p className="text-sm text-neutral-400 py-4 text-center">
               {searchQuery.trim()
                 ? 'No drivers match your search.'
                 : 'No drivers added yet. Use "Add Driver" to register your first driver.'}
@@ -451,7 +454,7 @@ export default function DriverManagerPage() {
 
           {/* Footer count */}
           {fleetDrivers.length > 0 && (
-            <p className="text-xs text-[#B7BEC4]/50 pt-1">
+            <p className="text-xs text-neutral-400 pt-1">
               Showing {filteredDrivers.length} of {fleetDrivers.length} drivers
             </p>
           )}
@@ -462,35 +465,35 @@ export default function DriverManagerPage() {
       {isDriverModalOpen && (
         <div className="fixed inset-0 z-40 flex items-center justify-center p-4">
           <div
-            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            className="absolute inset-0 bg-neutral-900/60 backdrop-blur-sm"
             onClick={() => setIsDriverModalOpen(false)}
           />
-          <div className="relative bg-[#1F2428] rounded-[28px] w-full max-w-md p-6 shadow-2xl border border-white/10">
+          <div className="relative bg-white rounded-[24px] w-full max-w-md p-6 shadow-2xl border border-neutral-200/60">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-lg font-semibold text-white">
+                <h2 className="text-lg font-semibold text-neutral-800">
                   Add Driver
                 </h2>
-                <p className="text-xs text-[#B7BEC4]">
+                <p className="text-xs text-neutral-400">
                   Save driver details and optionally assign them to a vehicle later.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setIsDriverModalOpen(false)}
-                className="p-2 text-[#B7BEC4] hover:text-white transition-colors"
+                className="p-2 text-neutral-400 hover:text-neutral-700 transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             {driverError && (
-              <div className="mb-3 text-xs text-red-400">{driverError}</div>
+              <div className="mb-3 text-xs text-red-500">{driverError}</div>
             )}
 
             <form onSubmit={handleCreateDriver} className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-[#B7BEC4] mb-1.5">
+                <label className="block text-xs font-medium text-neutral-500 mb-1.5">
                   Driver name
                 </label>
                 <input
@@ -498,12 +501,12 @@ export default function DriverManagerPage() {
                   required
                   value={driverName}
                   onChange={(e) => setDriverName(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-[#3A3F45] bg-[#2B3136] text-sm text-white placeholder:text-[#B7BEC4]/40 focus:outline-none focus:ring-2 focus:ring-[#145A3A]/40 focus:border-[#145A3A] transition"
+                  className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 bg-neutral-50 text-sm text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#89d957]/30 focus:border-[#89d957] transition"
                   placeholder="E.g. Ramesh"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-[#B7BEC4] mb-1.5">
+                <label className="block text-xs font-medium text-neutral-500 mb-1.5">
                   Phone
                 </label>
                 <input
@@ -511,31 +514,31 @@ export default function DriverManagerPage() {
                   required
                   value={driverPhone}
                   onChange={(e) => setDriverPhone(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-[#3A3F45] bg-[#2B3136] text-sm text-white placeholder:text-[#B7BEC4]/40 focus:outline-none focus:ring-2 focus:ring-[#145A3A]/40 focus:border-[#145A3A] transition"
+                  className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 bg-neutral-50 text-sm text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#89d957]/30 focus:border-[#89d957] transition"
                   placeholder="+91 98765 43210"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-[#B7BEC4] mb-1.5">
+                <label className="block text-xs font-medium text-neutral-500 mb-1.5">
                   Blood group (optional)
                 </label>
                 <input
                   type="text"
                   value={driverBloodGroup}
                   onChange={(e) => setDriverBloodGroup(e.target.value.toUpperCase())}
-                  className="w-full px-4 py-2.5 rounded-xl border border-[#3A3F45] bg-[#2B3136] text-sm uppercase text-white placeholder:text-[#B7BEC4]/40 focus:outline-none focus:ring-2 focus:ring-[#145A3A]/40 focus:border-[#145A3A] transition"
+                  className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 bg-neutral-50 text-sm uppercase text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#89d957]/30 focus:border-[#89d957] transition"
                   placeholder="O+"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-[#B7BEC4] mb-1.5">
+                <label className="block text-xs font-medium text-neutral-500 mb-1.5">
                   Notes (optional)
                 </label>
                 <textarea
                   value={driverNotes}
                   onChange={(e) => setDriverNotes(e.target.value)}
                   rows={2}
-                  className="w-full px-4 py-2.5 rounded-xl border border-[#3A3F45] bg-[#2B3136] text-sm text-white placeholder:text-[#B7BEC4]/40 focus:outline-none focus:ring-2 focus:ring-[#145A3A]/40 focus:border-[#145A3A] transition"
+                  className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 bg-neutral-50 text-sm text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#89d957]/30 focus:border-[#89d957] transition"
                   placeholder="E.g. Night shift driver, speaks Kannada and Hindi"
                 />
               </div>
@@ -543,7 +546,7 @@ export default function DriverManagerPage() {
               <button
                 type="submit"
                 disabled={driverSaving}
-                className="w-full mt-2 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-[#145A3A] text-white text-sm font-semibold hover:bg-[#1F7A5A] active:scale-[0.98] transition disabled:opacity-50"
+                className="w-full mt-2 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-[#89d957] to-[#74c346] text-white text-sm font-semibold hover:opacity-95 shadow-sm active:scale-[0.98] transition disabled:opacity-50"
               >
                 {driverSaving ? (
                   <>
@@ -558,6 +561,7 @@ export default function DriverManagerPage() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

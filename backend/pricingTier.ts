@@ -5,10 +5,8 @@ import { supabaseAdmin } from './supabaseAdminClient';
  * how many activations have already been completed.
  *
  * Tiers:
- *   1–100   → free (0 paise)
- *   101–500 → ₹99  (9900 paise)
- *   501–1000 → ₹199 (19900 paise)
- *   >1000   → ₹299 (29900 paise)
+ *   1–100 → ₹349 (34900 paise) (Inaugural offer)
+ *   >100  → ₹499 (49900 paise) (Standard rate)
  */
 export async function getActivationPricing(): Promise<{
   activationIndex: number;
@@ -24,13 +22,9 @@ export async function getActivationPricing(): Promise<{
 
   let amountPaise: number;
   if (activationIndex <= 100) {
-    amountPaise = 0;
-  } else if (activationIndex <= 500) {
-    amountPaise = 9900;
-  } else if (activationIndex <= 1000) {
-    amountPaise = 19900;
+    amountPaise = 34900; // ₹349 inaugural rate
   } else {
-    amountPaise = 29900;
+    amountPaise = 49900; // ₹499 standard rate
   }
 
   return { activationIndex, amountPaise, isFree: amountPaise === 0 };

@@ -2,10 +2,9 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import Marquee from 'react-fast-marquee';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
-  QrCode,
+  ArrowUpRight,
   PhoneOff,
   ShieldCheck,
   Smartphone,
@@ -14,18 +13,12 @@ import {
   Heart,
   User,
   Truck,
-  CheckCircle2,
-  LayoutDashboard,
-  CreditCard,
 } from 'lucide-react';
-import { MotionSection, staggerChildVariants, FadeUp } from '@/components/MotionSection';
+import { MotionSection, staggerChildVariants } from '@/components/MotionSection';
 import { HowItWorksToggle } from '@/components/marketing/HowItWorksToggle';
 import { SiteNavbar } from '@/components/marketing/SiteNavbar';
 import { GradientButton } from '@/components/marketing/GradientButton';
-import { SectionTag, SparkSheet } from '@/components/marketing/SparkSheet';
-import { DataSheets } from '@/components/marketing/DataSheets';
-import { TeamSection } from '@/components/marketing/TeamSection';
-import { TestimonialsSection } from '@/components/marketing/TestimonialsSection';
+import { SectionTag } from '@/components/marketing/SparkSheet';
 import { FAQSection } from '@/components/marketing/FAQSection';
 import { CTABanner } from '@/components/marketing/CTABanner';
 import { InstagramSection } from '@/components/marketing/InstagramSection';
@@ -52,23 +45,39 @@ const heroItemVariants = {
   },
 };
 
-const brands = ['Safewheels', 'FleetOne', 'Guardian', 'QuickDeliver', 'RoadSafe', 'ProtectQR'];
+const individualProducts = [
+  {
+    id: 'personal-sticker',
+    name: 'Personal Helmet QR Safety Sticker',
+    price: '₹349* (MRP ₹499)',
+    image: '/productgalu/1.png',
+  },
+  {
+    id: 'keychain-bundle',
+    name: 'Scooter QR Safety Sticker',
+    price: 'From ₹349* (MRP ₹499)',
+    image: '/productgalu/2.png',
+  },
+  {
+    id: 'helmet-shield',
+    name: 'Cars and LMVs QR Safety Sticker',
+    price: 'From ₹349* (MRP ₹499)',
+    image: '/productgalu/3.png',
+  },
+];
 
-const features = [
+const commercialProducts = [
   {
-    icon: QrCode,
-    title: 'Instant QR Scanning',
-    desc: 'Anyone scans with their phone camera — no app install required.',
+    id: 'fleet-starter',
+    name: 'Fleet Starter Dashboard',
+    price: 'From ₹1,999/mo',
+    image: '/instagram/post4.png',
   },
   {
-    icon: PhoneOff,
-    title: 'Privacy First',
-    desc: 'Your phone number stays hidden. Only emergency contacts are reachable.',
-  },
-  {
-    icon: ShieldCheck,
-    title: 'Works When You Can\'t',
-    desc: 'If you cannot speak, your QR shares the right info in seconds.',
+    id: 'fleet-enterprise',
+    name: 'Enterprise Custom Fleet',
+    price: 'Custom Pricing',
+    image: '/instagram/post5.png',
   },
 ];
 
@@ -81,12 +90,17 @@ export default function Home(props: HomePageProps) {
   if (props.params) React.use(props.params);
   if (props.searchParams) React.use(props.searchParams);
 
+  const [productMode, setProductMode] = React.useState<'individual' | 'commercial'>('individual');
+
+  const activeProducts = productMode === 'individual' ? individualProducts : commercialProducts;
+
   return (
-    <div className="min-h-screen text-neutral-900">
+    <div className="relative min-h-screen text-neutral-900 overflow-x-clip bg-rexu-grid bg-white">
       <SiteNavbar />
 
       {/* Hero */}
       <section className="relative px-4 pb-16 pt-8 sm:px-6 lg:pb-24">
+        {/* Floating background blur orbs */}
         <motion.div
           animate={{
             x: [0, 45, -30, 25, 0],
@@ -149,28 +163,9 @@ export default function Home(props: HomePageProps) {
         </div>
       </section>
 
-      {/* Trusted by */}
-      <FadeUp delay={0.1}>
-        <section className="border-y border-neutral-100 bg-white/60 py-10">
-          <p className="mb-6 text-center text-xs font-semibold uppercase tracking-[0.2em] text-neutral-500">
-            Trusted by safety-focused teams
-          </p>
-          <Marquee speed={35} gradient={false}>
-            {brands.map((name) => (
-              <span
-                key={name}
-                className="mx-8 text-lg font-semibold text-neutral-300"
-              >
-                {name}
-              </span>
-            ))}
-          </Marquee>
-        </section>
-      </FadeUp>
-
-      {/* About + data sheets */}
+      {/* About Us (Centered Layout) */}
       <MotionSection className="px-4 py-20 sm:px-6" stagger staggerDelay={0.12}>
-        <div className="mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-2">
+        <div className="mx-auto max-w-3xl text-center">
           <motion.div variants={staggerChildVariants}>
             <SectionTag>About us</SectionTag>
             <h2 className="mt-6 text-3xl font-bold tracking-tight text-neutral-900 sm:text-4xl">
@@ -182,144 +177,131 @@ export default function Home(props: HomePageProps) {
               vehicles, and ID cards. Built for individuals and fleets who take safety
               seriously.
             </p>
-            <div className="mt-8">
+            <div className="mt-8 flex justify-center">
               <GradientButton href="/about">Learn more</GradientButton>
             </div>
           </motion.div>
-          <motion.div variants={staggerChildVariants}>
-            <DataSheets />
-          </motion.div>
         </div>
       </MotionSection>
 
-      {/* Features */}
-      <MotionSection className="px-4 py-16 sm:px-6" stagger staggerDelay={0.08}>
-        <div className="mx-auto max-w-6xl">
-          <div className="text-center">
-            <SectionTag>Why REXU</SectionTag>
-            <h2 className="mt-6 text-3xl font-bold text-neutral-900 sm:text-4xl">
-              What is <span className="text-gradient-brand">REXU</span>?
-            </h2>
-          </div>
-          <div className="mt-12 grid gap-6 md:grid-cols-3">
-            {features.map(({ icon: Icon, title, desc }) => (
-              <motion.div key={title} variants={staggerChildVariants}>
-                <SparkSheet className="h-full text-center !p-8">
-                  <div className="flex justify-center mb-4">
-                    <Icon className="h-7 w-7 text-[#1a2e0f]" />
-                  </div>
-                  <h3 className="text-lg font-bold text-neutral-900">{title}</h3>
-                  <p className="mt-2 text-sm text-neutral-600">{desc}</p>
-                </SparkSheet>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </MotionSection>
+      {/* Instagram Section (Social Media directly after About Us) */}
+      <InstagramSection />
 
       {/* How it works */}
-      <MotionSection
-        id="features"
-        className="px-4 py-20 sm:px-6"
-        stagger
-        staggerDelay={0.1}
-      >
-        <div className="mx-auto max-w-5xl">
-          <div className="text-center mb-1">
-            <SectionTag>Process</SectionTag>
-          </div>
-          <HowItWorksToggle />
-        </div>
-      </MotionSection>
+      <div id="features" className="relative w-full">
+        <HowItWorksToggle />
+      </div>
 
-      {/* Pricing */}
+      {/* Solutions / Pricing Catalog Grid */}
       <MotionSection
-        id="pricing"
+        id="solutions"
         className="px-4 py-20 sm:px-6"
         stagger
         staggerDelay={0.08}
       >
         <div className="mx-auto max-w-5xl">
           <motion.div className="text-center" variants={staggerChildVariants}>
-            <SectionTag>Pricing</SectionTag>
+            <SectionTag>Solutions</SectionTag>
             <h2 className="mt-6 text-3xl font-bold text-neutral-900 sm:text-4xl">
-              Choose your <span className="text-gradient-brand">plan</span>
+              Our <span className="text-gradient-brand">Products</span>
             </h2>
-          </motion.div>
-          <div className="mt-12 grid gap-8 md:grid-cols-2">
-            <motion.div variants={staggerChildVariants}>
-              <SparkSheet className="flex h-full flex-col !p-8">
-                <div className="mb-4 flex h-12 w-12 items-center justify-center">
-                  <User className="h-6 w-6 text-[#1a2e0f]" />
-                </div>
-                <h3 className="text-xl font-bold">Individuals & Families</h3>
-                <p className="mt-2 text-sm text-neutral-600">From ₹299 — one-time setup</p>
-                <ul className="mt-6 flex-1 space-y-3 text-sm text-neutral-700">
-                  {[
-                    'Personal safety profile',
-                    'Family emergency contacts',
-                    'Optional medical info',
-                    'One QR per person or vehicle',
-                  ].map((text) => (
-                    <li key={text} className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 shrink-0 text-[#6eb84a]" />
-                      {text}
-                    </li>
-                  ))}
-                </ul>
-                <Link
-                  href="/register"
-                  className="mt-8 block rounded-full bg-gradient-brand py-3.5 text-center text-sm font-semibold text-[#1a2e0f] transition-opacity hover:opacity-90"
-                >
-                  Get started
-                </Link>
-              </SparkSheet>
-            </motion.div>
 
-            <motion.div variants={staggerChildVariants}>
-              <SparkSheet className="relative flex h-full flex-col border-2 border-[#89d957]/40 !p-8">
-                <span className="absolute right-6 top-6 rounded-full bg-gradient-brand px-3 py-1 text-xs font-bold text-[#1a2e0f]">
-                  For Business
-                </span>
-                <div className="mb-4 flex h-12 w-12 items-center justify-center">
-                  <Truck className="h-6 w-6 text-[#1a2e0f]" />
-                </div>
-                <h3 className="text-xl font-bold">Commercial Fleets</h3>
-                <p className="mt-2 text-sm text-neutral-600">Dashboard + bulk QR management</p>
-                <ul className="mt-6 flex-1 space-y-3 text-sm text-neutral-700">
-                  {[
-                    'Admin dashboard',
-                    'Multiple vehicles & drivers',
-                    'Daily driver assignment',
-                    'Bulk QR generation',
-                  ].map((text) => (
-                    <li key={text} className="flex items-center gap-2">
-                      <LayoutDashboard className="h-4 w-4 shrink-0 text-[#6eb84a]" />
-                      {text}
-                    </li>
-                  ))}
-                  <li className="flex items-center gap-2">
-                    <CreditCard className="h-4 w-4 shrink-0 text-[#6eb84a]" />
-                    Consolidated fleet billing
-                  </li>
-                </ul>
-                <Link
-                  href="/login"
-                  className="mt-8 block rounded-full border-2 border-[#89d957] py-3.5 text-center text-sm font-semibold text-[#5a9c32] transition-colors hover:bg-[#89d957]/10"
+            {/* Pill Toggle for Products Catalog */}
+            <div className="relative flex w-full max-w-xs mx-auto mt-8 justify-center rounded-full bg-neutral-950/5 p-1 border border-neutral-200/50 backdrop-blur-md">
+              <div className="absolute inset-0 -z-20 rounded-full bg-gradient-brand opacity-25 blur-sm" />
+              {[
+                { id: 'individual', label: 'Individual' },
+                { id: 'commercial', label: 'Commercial' },
+              ].map((item) => {
+                const isActive = productMode === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => setProductMode(item.id as 'individual' | 'commercial')}
+                    className="relative flex-1 rounded-full py-2 text-sm font-semibold transition-colors duration-300 z-10 text-neutral-500 hover:text-neutral-800 focus:outline-none cursor-pointer"
+                  >
+                    {isActive && (
+                      <motion.div
+                        layoutId="active-product-bubble"
+                        className="absolute inset-0 rounded-full bg-gradient-brand text-neutral-900 border border-white/40 shadow-sm shadow-[#89d957]/10"
+                        transition={{
+                          type: 'spring',
+                          stiffness: 150,
+                          damping: 18,
+                          mass: 0.85
+                        }}
+                        style={{ zIndex: -1 }}
+                      />
+                    )}
+                    <span className={isActive ? 'text-neutral-900 font-bold' : ''}>
+                      {item.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Description after switching to selected part */}
+            <motion.p
+              key={productMode}
+              initial={{ opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-4 text-sm text-neutral-600 max-w-md mx-auto leading-relaxed"
+            >
+              {productMode === 'individual'
+                ? 'High-durability QR decals, smart tags, and reflective shields designed to protect solo riders, daily commuters, and active families.'
+                : 'Centralized administration consoles, bulk deployment tools, and real-time incident logs engineered to scale for commercial transport fleets.'}
+            </motion.p>
+          </motion.div>
+
+          {/* Catalog Grid exactly like Instagram Posts */}
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-6 max-w-4xl mx-auto mt-12 justify-center">
+            <AnimatePresence mode="popLayout">
+              {activeProducts.map((product) => (
+                <motion.div
+                  key={product.id}
+                  layout
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.45, ease }}
+                  className="group relative aspect-square overflow-hidden rounded-2xl border border-neutral-100 bg-neutral-50 shadow-sm cursor-pointer"
                 >
-                  Fleet sign in
-                </Link>
-              </SparkSheet>
-            </motion.div>
+                  <Link href={`/products/${product.id}`} className="block w-full h-full">
+                    {/* Image */}
+                    <img
+                      src={product.image}
+                      alt={product.name}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                    {/* Hover overlay */}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/55 opacity-0 group-hover:opacity-100 transition-opacity duration-300 backdrop-blur-[3px] p-4 text-center">
+                      <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white/20 text-white shadow-lg backdrop-blur-md transition-transform duration-300 scale-90 group-hover:scale-100">
+                        <ArrowUpRight className="h-6 w-6" />
+                      </div>
+                      <h3 className="mt-3 text-sm font-bold text-white leading-tight">
+                        {product.name}
+                      </h3>
+                      <span className="mt-1 text-xs font-semibold text-[#89d957]">
+                        {product.price}
+                      </span>
+                      <span className="mt-4 text-[10px] font-bold text-white/75 tracking-wider uppercase bg-white/10 px-3.5 py-1.5 rounded-full">
+                        View Details
+                      </span>
+                    </div>
+                  </Link>
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </div>
+          {productMode === 'individual' && (
+            <p className="mt-8 text-[10px] text-neutral-500 text-center leading-normal">
+              * Inaugural offer of ₹349 per sticker is valid for up to 100 vehicles/profiles. For fleets exceeding 100, standard rates (₹499) apply.
+            </p>
+          )}
         </div>
       </MotionSection>
 
-      <TeamSection />
-
-
-      <InstagramSection />
-      <TestimonialsSection />
       <FAQSection />
 
       <CTABanner />

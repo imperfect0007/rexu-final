@@ -39,6 +39,7 @@ import Image from 'next/image';
 import { QRCodeSVG } from 'qrcode.react';
 import { PaymentModal } from '@/components/PaymentModal';
 import { motion } from 'framer-motion';
+import { SiteNavbar } from '@/components/marketing/SiteNavbar';
 
 interface Profile {
   id: string;
@@ -1032,9 +1033,11 @@ export default function DashboardPage(props: PageProps) {
     const activeQrCount = fleetVehicles.filter((v) => v.qr_token).length;
 
     return (
-      <div className="min-h-screen flex bg-neutral-50 bg-rexu-grid">
+      <div className="min-h-screen flex flex-col font-sans">
+        <SiteNavbar />
+        <div className="flex-1 flex bg-white bg-rexu-grid text-neutral-900">
         {/* ── Sidebar ── */}
-        <aside className="hidden md:flex w-[240px] shrink-0 border-r border-neutral-200 flex-col bg-white sticky top-0 h-screen overflow-y-auto shadow-sm">
+        <aside className="hidden md:flex w-[240px] shrink-0 border-r border-neutral-200 flex-col bg-white sticky top-[72px] h-[calc(100vh-72px)] overflow-y-auto shadow-sm z-40">
           {/* Logo / profile */}
           <div className="px-5 pt-6 pb-5 flex flex-col items-center text-center border-b border-neutral-100">
             <button
@@ -1064,27 +1067,27 @@ export default function DashboardPage(props: PageProps) {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 py-5 space-y-0.5 px-3">
+          <nav className="flex-1 py-5 space-y-1 px-3">
             <p className="px-3 mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-400">
               Fleet Management
             </p>
             <Link
               href="/dashboard"
-              className="flex items-center gap-3 px-3 py-2.5 text-sm font-semibold text-[#6eb84a] bg-[#89d957]/10 rounded-xl border-l-[3px] border-[#6eb84a]"
+              className="flex items-center gap-3 px-3.5 py-2.5 text-sm font-bold text-neutral-900 bg-white shadow-sm border border-neutral-100/80 rounded-xl transition-all"
             >
-              <LayoutDashboard className="w-4 h-4" /> Fleet Dashboard
+              <LayoutDashboard className="w-4 h-4 text-[#6eb84a]" /> Fleet Dashboard
             </Link>
             <Link
               href="/fleet"
-              className="flex items-center gap-3 px-3 py-2.5 text-sm text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 rounded-xl border-l-[3px] border-transparent transition-colors"
+              className="flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900 rounded-xl transition-all group"
             >
-              <Truck className="w-4 h-4" /> Manage Vehicles
+              <Truck className="w-4 h-4 text-neutral-400 group-hover:text-neutral-900 transition-colors" /> Manage Vehicles
             </Link>
             <Link
               href="/drivers"
-              className="flex items-center gap-3 px-3 py-2.5 text-sm text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 rounded-xl border-l-[3px] border-transparent transition-colors"
+              className="flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900 rounded-xl transition-all group"
             >
-              <Users className="w-4 h-4" /> Manage Drivers
+              <Users className="w-4 h-4 text-neutral-400 group-hover:text-neutral-900 transition-colors" /> Manage Drivers
             </Link>
             <button
               type="button"
@@ -1092,9 +1095,9 @@ export default function DashboardPage(props: PageProps) {
                 const el = document.getElementById('assignments-section');
                 el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
               }}
-              className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 rounded-xl border-l-[3px] border-transparent transition-colors"
+              className="w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900 rounded-xl transition-all group focus:outline-none cursor-pointer"
             >
-              <Link2 className="w-4 h-4" /> Assignments
+              <Link2 className="w-4 h-4 text-neutral-400 group-hover:text-neutral-900 transition-colors" /> Assignments
             </button>
 
             <p className="px-3 mt-6 mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-400">
@@ -1102,9 +1105,9 @@ export default function DashboardPage(props: PageProps) {
             </p>
             <Link
               href="/documents"
-              className="flex items-center gap-3 px-3 py-2.5 text-sm text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 rounded-xl border-l-[3px] border-transparent transition-colors"
+              className="flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900 rounded-xl transition-all group"
             >
-              <FileText className="w-4 h-4" /> Documents
+              <FileText className="w-4 h-4 text-neutral-400 group-hover:text-neutral-900 transition-colors" /> Documents
               {expiringDocs.length > 0 && (
                 <span className="ml-auto text-[10px] font-bold text-amber-700 bg-amber-100 border border-amber-200 rounded-full px-1.5 py-0.5 leading-none">
                   {expiringDocs.length}
@@ -1113,9 +1116,9 @@ export default function DashboardPage(props: PageProps) {
             </Link>
             <Link
               href="/logs"
-              className="flex items-center gap-3 px-3 py-2.5 text-sm text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 rounded-xl border-l-[3px] border-transparent transition-colors"
+              className="flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900 rounded-xl transition-all group"
             >
-              <ScrollText className="w-4 h-4" /> Activity Logs
+              <ScrollText className="w-4 h-4 text-neutral-400 group-hover:text-neutral-900 transition-colors" /> Activity Logs
             </Link>
 
             <p className="px-3 mt-6 mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-400">
@@ -1123,22 +1126,22 @@ export default function DashboardPage(props: PageProps) {
             </p>
             <Link
               href="/profile"
-              className="flex items-center gap-3 px-3 py-2.5 text-sm text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 rounded-xl border-l-[3px] border-transparent transition-colors"
+              className="flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900 rounded-xl transition-all group"
             >
-              <Settings className="w-4 h-4" /> Settings
+              <Settings className="w-4 h-4 text-neutral-400 group-hover:text-neutral-900 transition-colors" /> Settings
             </Link>
             <Link
               href="/security"
-              className="flex items-center gap-3 px-3 py-2.5 text-sm text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 rounded-xl border-l-[3px] border-transparent transition-colors"
+              className="flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900 rounded-xl transition-all group"
             >
-              <Shield className="w-4 h-4" /> Security
+              <Shield className="w-4 h-4 text-neutral-400 group-hover:text-neutral-900 transition-colors" /> Security
             </Link>
             <button
               type="button"
               onClick={handlePayment}
-              className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 rounded-xl border-l-[3px] border-transparent transition-colors"
+              className="w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900 rounded-xl transition-all group focus:outline-none cursor-pointer"
             >
-              <CreditCard className="w-4 h-4" /> Billing &amp; Plans
+              <CreditCard className="w-4 h-4 text-neutral-400 group-hover:text-neutral-900 transition-colors" /> Billing &amp; Plans
             </button>
           </nav>
 
@@ -1158,7 +1161,7 @@ export default function DashboardPage(props: PageProps) {
               }}
               className="flex items-center gap-2 text-sm text-neutral-500 hover:text-red-500 transition-colors w-full"
             >
-              <span className="w-6 h-6 rounded-full bg-gradient-brand text-[#1a2e0f] flex items-center justify-center text-[10px] font-bold shrink-0">
+              <span className="w-6 h-6 rounded-full bg-neutral-100 text-neutral-700 flex items-center justify-center text-[10px] font-bold shrink-0">
                 {profile?.full_name?.[0]?.toUpperCase() || 'U'}
               </span>
               Logout
@@ -1167,9 +1170,9 @@ export default function DashboardPage(props: PageProps) {
         </aside>
 
         {/* ── Main content ── */}
-        <div className="flex-1 flex flex-col min-h-screen">
+        <div className="flex-1 flex flex-col min-h-[calc(100vh-72px)]">
           {/* Top header bar */}
-          <header className="h-16 shrink-0 border-b border-neutral-200 flex items-center justify-between px-8 bg-white sticky top-0 z-10 shadow-sm">
+          <header className="shrink-0 border-b border-neutral-200 flex items-center justify-between px-8 py-5 bg-transparent">
             <div>
               <h1 className="text-lg font-bold text-neutral-900 leading-tight">
                 Fleet Dashboard
@@ -1187,7 +1190,7 @@ export default function DashboardPage(props: PageProps) {
                 <button
                   type="button"
                   onClick={() => setProfileMenuOpen((open) => !open)}
-                  className="h-8 px-3 rounded-full bg-gradient-brand text-[#1a2e0f] text-[11px] font-bold tracking-wide flex items-center justify-center hover:opacity-90 transition-opacity"
+                  className="h-8 px-3 rounded-full bg-neutral-100 text-neutral-700 text-[11px] font-bold tracking-wide flex items-center justify-center border border-neutral-200/80 hover:bg-neutral-200 hover:text-neutral-900 transition-colors cursor-pointer"
                 >
                   {profile?.full_name?.[0]?.toUpperCase() || 'R'}
                 </button>
@@ -1223,7 +1226,7 @@ export default function DashboardPage(props: PageProps) {
           </header>
 
           {/* Scrollable main area */}
-          <main className="flex-1 overflow-y-auto p-8 space-y-6 bg-neutral-50">
+          <main className="flex-1 p-8 space-y-6 bg-transparent text-neutral-900">
             {/* ── Document expiry alerts ── */}
             {expiringDocs.length > 0 && (
               <div className="rounded-2xl bg-amber-50 border border-amber-200 p-5 space-y-3">
@@ -1266,31 +1269,48 @@ export default function DashboardPage(props: PageProps) {
 
             {/* ── Stats cards ── */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-              <motion.div variants={sectionVariants} initial="hidden" animate="visible" className="glass-card rounded-2xl p-6 flex items-center justify-between">
+              <motion.div
+                variants={sectionVariants}
+                initial="hidden"
+                animate="visible"
+                className="bg-white border border-neutral-200/50 rounded-2xl p-6 flex items-center justify-between shadow-[0_8px_30px_rgb(0,0,0,0.02)] transition-all duration-300 hover:scale-[1.01] hover:shadow-md cursor-pointer group"
+              >
                 <div>
                   <p className="text-sm text-neutral-500 mb-1">Total Vehicles</p>
                   <p className="text-3xl font-bold text-neutral-900">{fleetVehicles.length}</p>
                 </div>
-                <div className="w-12 h-12 rounded-2xl bg-gradient-brand flex items-center justify-center">
-                  <Truck className="w-6 h-6 text-[#1a2e0f]" />
+                <div className="w-12 h-12 rounded-2xl bg-neutral-100 text-neutral-600 flex items-center justify-center group-hover:bg-[#89d957]/10 group-hover:text-[#5a9c32] transition-colors">
+                  <Truck className="w-6 h-6" />
                 </div>
               </motion.div>
-              <motion.div variants={sectionVariants} initial="hidden" animate="visible" className="glass-card rounded-2xl p-6 flex items-center justify-between">
+
+              <motion.div
+                variants={sectionVariants}
+                initial="hidden"
+                animate="visible"
+                className="bg-white border border-neutral-200/50 rounded-2xl p-6 flex items-center justify-between shadow-[0_8px_30px_rgb(0,0,0,0.02)] transition-all duration-300 hover:scale-[1.01] hover:shadow-md cursor-pointer group"
+              >
                 <div>
                   <p className="text-sm text-neutral-500 mb-1">Total Drivers</p>
                   <p className="text-3xl font-bold text-neutral-900">{fleetDrivers.length}</p>
                 </div>
-                <div className="w-12 h-12 rounded-2xl bg-gradient-brand flex items-center justify-center">
-                  <Users className="w-6 h-6 text-[#1a2e0f]" />
+                <div className="w-12 h-12 rounded-2xl bg-neutral-100 text-neutral-600 flex items-center justify-center group-hover:bg-[#89d957]/10 group-hover:text-[#5a9c32] transition-colors">
+                  <Users className="w-6 h-6" />
                 </div>
               </motion.div>
-              <motion.div variants={sectionVariants} initial="hidden" animate="visible" className="glass-card rounded-2xl p-6 flex items-center justify-between">
+
+              <motion.div
+                variants={sectionVariants}
+                initial="hidden"
+                animate="visible"
+                className="bg-white border border-neutral-200/50 rounded-2xl p-6 flex items-center justify-between shadow-[0_8px_30px_rgb(0,0,0,0.02)] transition-all duration-300 hover:scale-[1.01] hover:shadow-md cursor-pointer group"
+              >
                 <div>
                   <p className="text-sm text-neutral-500 mb-1">Active QR Codes</p>
                   <p className="text-3xl font-bold text-[#6eb84a]">{activeQrCount}</p>
                 </div>
-                <div className="w-12 h-12 rounded-2xl bg-gradient-brand flex items-center justify-center">
-                  <QrCode className="w-6 h-6 text-[#1a2e0f]" />
+                <div className="w-12 h-12 rounded-2xl bg-neutral-100 text-neutral-600 flex items-center justify-center group-hover:bg-[#89d957]/10 group-hover:text-[#5a9c32] transition-colors">
+                  <QrCode className="w-6 h-6" />
                 </div>
               </motion.div>
             </div>
@@ -1731,12 +1751,15 @@ export default function DashboardPage(props: PageProps) {
             </div>
           </div>
         )}
-      </div>
+          </div>
+        </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white bg-rexu-grid pb-20">
+    <div className="flex flex-col min-h-screen">
+      <SiteNavbar />
+      <div className="flex-1 bg-white bg-rexu-grid pb-20">
       {/* Header */}
       <motion.header
         initial={{ opacity: 0, y: -8 }}
@@ -2128,17 +2151,22 @@ export default function DashboardPage(props: PageProps) {
                       <div>
                         <h3 className="font-bold text-amber-700">QR Not Active</h3>
                         <p className="text-sm text-amber-600 mt-1">
-                          Activate your REXU QR by paying a one-time fee of ₹299.
+                          Activate your REXU QR by paying a one-time fee of ₹349* (regular rate: ₹499).
                         </p>
                       </div>
                     </div>
                   </div>
-                  <button 
-                    onClick={handlePayment}
-                    className="w-full bg-gradient-brand text-[#1a2e0f] py-4 rounded-2xl font-bold hover:opacity-90 transition-all active:scale-95"
-                  >
-                    Pay ₹299 &amp; Activate QR
-                  </button>
+                  <div>
+                    <button 
+                      onClick={handlePayment}
+                      className="w-full bg-gradient-brand text-[#1a2e0f] py-4 rounded-2xl font-bold hover:opacity-90 transition-all active:scale-95"
+                    >
+                      Pay ₹349* &amp; Activate QR
+                    </button>
+                    <p className="text-[10px] text-neutral-500 text-center leading-normal mt-3">
+                      * Inaugural offer of ₹349 per sticker is valid for up to 100 vehicles. For fleets exceeding 100 vehicles, standard rates apply.
+                    </p>
+                  </div>
                 </div>
               ) : (
                 <div className="text-center space-y-6">
@@ -2425,6 +2453,7 @@ export default function DashboardPage(props: PageProps) {
         onSuccess={handlePaymentSuccess}
         // Personal accounts don't track fleet vehicle count
       />
+      </div>
     </div>
   );
 }

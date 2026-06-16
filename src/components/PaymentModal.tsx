@@ -152,7 +152,7 @@ export function PaymentModal({
           name: 'REXU',
           description: 'One-time QR activation',
           order_id: orderId,
-          theme: { color: '#dc2626' },
+          theme: { color: '#6eb84a' },
           handler: async (response) => {
             if (cancelled) return;
             setLoading(true);
@@ -222,15 +222,16 @@ export function PaymentModal({
         </button>
 
         <div className="text-center mb-6">
-          <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-xl flex items-center justify-center mx-auto mb-4">
-            <Shield className="w-6 h-6 text-red-600" />
+          <div className="w-12 h-12 bg-[#89d957]/10 rounded-xl flex items-center justify-center mx-auto mb-4">
+            <Shield className="w-6 h-6 text-[#5a9c32]" />
           </div>
           <h2 className="text-xl font-bold text-zinc-900 dark:text-white">Activate Your QR</h2>
           <p className="text-zinc-500 text-sm mt-1">
             One-time activation:{' '}
-            <span className="font-semibold text-red-600">
-              first 100 free, then ₹99 / ₹199 / ₹299.
-            </span>
+            <span className="font-semibold text-[#5a9c32]">
+              ₹349*
+            </span>{' '}
+            <span className="line-through text-zinc-400 text-xs">₹499</span>
           </p>
           {typeof vehicleCount === 'number' && (
             <p className="text-xs text-zinc-400 mt-1">
@@ -240,11 +241,14 @@ export function PaymentModal({
               </span>
             </p>
           )}
+          <p className="text-[10px] text-zinc-400 mt-3 max-w-xs mx-auto leading-normal">
+            * Inaugural offer of ₹349 per sticker is valid for up to 100 vehicles. For fleets exceeding 100 vehicles, standard rates apply.
+          </p>
         </div>
 
         {loading && step === 'quote' ? (
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-red-600" />
+            <Loader2 className="w-8 h-8 animate-spin text-[#6eb84a]" />
           </div>
         ) : error ? (
           <div className="text-center py-8">
@@ -298,7 +302,7 @@ export function PaymentModal({
             <p className="text-xs text-zinc-400">If the window did not open, check pop-up blocking.</p>
             {loading && (
               <div className="flex items-center justify-center gap-2 mt-4">
-                <Loader2 className="w-5 h-5 animate-spin text-red-600" />
+                <Loader2 className="w-5 h-5 animate-spin text-[#6eb84a]" />
                 <span className="text-sm text-zinc-500">Verifying payment…</span>
               </div>
             )}

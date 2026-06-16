@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { Loader2, User, ArrowLeft } from 'lucide-react';
+import { SiteNavbar } from '@/components/marketing/SiteNavbar';
 
 interface Profile {
   id: string;
@@ -219,49 +220,51 @@ export default function ProfilePage(props: PageProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-black via-[#101518] to-black flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-[#9AC57A]" />
+      <div className="min-h-screen bg-white bg-rexu-grid flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-[#89d957]" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-black via-[#101518] to-black pb-20">
-      <header className="bg-[#1F2428] border-b border-[#2B3136]">
+    <div className="min-h-screen flex flex-col font-sans">
+      <SiteNavbar />
+      <div className="flex-1 bg-white bg-rexu-grid text-neutral-900 pb-20">
+      <header className="bg-white/85 backdrop-blur-md border-b border-neutral-200/50 sticky top-[72px] z-10">
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
           <button
             type="button"
             onClick={() => router.push('/dashboard')}
-            className="w-9 h-9 rounded-full border border-[#3A3F45] flex items-center justify-center text-zinc-500 hover:bg-[#2B3136] hover:text-white transition-colors"
+            className="w-9 h-9 rounded-full border border-neutral-200 flex items-center justify-center text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900 transition-colors"
             aria-label="Back to Dashboard"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
           <div className="flex items-center gap-2">
-            <div className="bg-[#145A3A] p-1.5 rounded-lg">
-              <User className="w-5 h-5 text-white" />
+            <div className="bg-[#89d957]/10 p-1.5 rounded-xl border border-[#89d957]/20">
+              <User className="w-5 h-5 text-[#5a9c32]" />
             </div>
-            <span className="font-bold text-white">Profile</span>
+            <span className="font-bold text-neutral-800">Profile</span>
           </div>
         </div>
       </header>
 
       <main className="max-w-5xl mx-auto px-4 py-8 flex justify-center">
-        <section className="bg-[#101518]/90 rounded-[28px] p-8 border border-white/10 max-w-xl w-full">
-          <h1 className="text-2xl font-bold text-white mb-2">
+        <section className="bg-white rounded-[24px] p-8 shadow-sm border border-neutral-200/50 max-w-xl w-full">
+          <h1 className="text-2xl font-bold text-neutral-900 mb-2">
             Account details
           </h1>
-          <p className="text-sm text-[#B7BEC4] mb-6">
+          <p className="text-sm text-neutral-500 mb-6">
             Update your basic information used across QRgency.
           </p>
 
           {error && (
-            <div className="mb-4 p-3 rounded-lg bg-red-950/30 text-red-400 text-sm font-medium border border-red-900/40">
+            <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-600 text-sm font-medium border border-red-200">
               {error}
             </div>
           )}
           {success && (
-            <div className="mb-4 p-3 rounded-lg bg-[#0F3D2E]/30 text-[#9AC57A] text-sm font-medium border border-[#145A3A]">
+            <div className="mb-4 p-3 rounded-lg bg-[#89d957]/10 text-[#5a9c32] text-sm font-medium border border-[#89d957]/20">
               {success}
             </div>
           )}
@@ -269,7 +272,7 @@ export default function ProfilePage(props: PageProps) {
           <form onSubmit={handleSave} className="space-y-6">
             {/* Avatar */}
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-full bg-[#2B3136] border border-[#3A3F45] flex items-center justify-center overflow-hidden">
+              <div className="w-16 h-16 rounded-xl bg-neutral-50 border border-neutral-200 flex items-center justify-center overflow-hidden shrink-0">
                 {avatarPreview ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -278,22 +281,22 @@ export default function ProfilePage(props: PageProps) {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <span className="text-lg font-semibold text-zinc-400">
+                  <span className="text-lg font-semibold text-neutral-400">
                     {profile?.full_name?.[0] ?? 'U'}
                   </span>
                 )}
               </div>
               <div className="space-y-1">
-                <label className="block text-sm font-medium text-[#B7BEC4]">
+                <label className="block text-sm font-medium text-neutral-500">
                   Profile photo
                 </label>
                 <input
                   type="file"
                   accept="image/*"
                   onChange={handleAvatarChange}
-                  className="text-xs text-[#B7BEC4]"
+                  className="text-xs text-neutral-550"
                 />
-                <p className="text-[11px] text-[#B7BEC4]/60">
+                <p className="text-[11px] text-neutral-400">
                   For best results, use a square image.
                 </p>
               </div>
@@ -301,7 +304,7 @@ export default function ProfilePage(props: PageProps) {
 
             {/* Name */}
             <div>
-              <label className="block text-sm font-medium text-[#B7BEC4] mb-1.5">
+              <label className="block text-sm font-medium text-neutral-500 mb-1.5">
                 Full name
               </label>
               <input
@@ -309,30 +312,30 @@ export default function ProfilePage(props: PageProps) {
                 required
                 value={profile?.full_name ?? ''}
                 onChange={(e) => setProfile((p) => (p ? { ...p, full_name: e.target.value } : p))}
-                className="w-full px-4 py-3 rounded-xl border border-[#3A3F45] bg-[#2B3136] text-white text-sm placeholder:text-[#B7BEC4]/40 focus:outline-none focus:ring-2 focus:ring-[#145A3A]/40 focus:border-[#145A3A] transition"
+                className="w-full px-4 py-3 rounded-xl border border-neutral-200 bg-neutral-50 text-neutral-800 text-sm placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#89d957]/30 focus:border-[#89d957] transition"
                 placeholder="John Doe"
               />
             </div>
 
             {/* Date of birth */}
             <div>
-              <label className="block text-sm font-medium text-[#B7BEC4] mb-1.5">
+              <label className="block text-sm font-medium text-neutral-500 mb-1.5">
                 Date of birth
               </label>
               <input
                 type="date"
                 value={dateOfBirth}
                 onChange={(e) => setDateOfBirth(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-[#3A3F45] bg-[#2B3136] text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#145A3A]/40 focus:border-[#145A3A] transition"
+                className="w-full px-4 py-3 rounded-xl border border-neutral-200 bg-neutral-50 text-neutral-800 text-sm focus:outline-none focus:ring-2 focus:ring-[#89d957]/30 focus:border-[#89d957] transition"
               />
-              <p className="text-[11px] text-[#B7BEC4]/60 mt-1">
+              <p className="text-[11px] text-neutral-400 mt-1">
                 This will be used to calculate your age for emergency info.
               </p>
             </div>
 
             {/* Mobile */}
             <div>
-              <label className="block text-sm font-medium text-[#B7BEC4] mb-1.5">
+              <label className="block text-sm font-medium text-neutral-500 mb-1.5">
                 Mobile number
               </label>
               <input
@@ -340,7 +343,7 @@ export default function ProfilePage(props: PageProps) {
                 required
                 value={profile?.mobile ?? ''}
                 onChange={(e) => setProfile((p) => (p ? { ...p, mobile: e.target.value } : p))}
-                className="w-full px-4 py-3 rounded-xl border border-[#3A3F45] bg-[#2B3136] text-white text-sm placeholder:text-[#B7BEC4]/40 focus:outline-none focus:ring-2 focus:ring-[#145A3A]/40 focus:border-[#145A3A] transition"
+                className="w-full px-4 py-3 rounded-xl border border-neutral-200 bg-neutral-50 text-neutral-800 text-sm placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#89d957]/30 focus:border-[#89d957] transition"
                 placeholder="+91 98765 43210"
               />
             </div>
@@ -348,60 +351,60 @@ export default function ProfilePage(props: PageProps) {
             <button
               type="submit"
               disabled={saving}
-              className="mt-2 inline-flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-[#145A3A] text-white text-sm font-semibold hover:bg-[#1F7A5A] active:scale-[0.98] transition disabled:opacity-50"
+              className="mt-2 inline-flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-gradient-to-r from-[#89d957] to-[#74c346] text-white text-sm font-semibold hover:opacity-95 shadow-sm active:scale-[0.98] transition disabled:opacity-50"
             >
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save changes'}
+              {saving ? <Loader2 className="w-4 h-4 animate-spin text-white" /> : 'Save changes'}
             </button>
           </form>
 
-          <div className="mt-8 pt-6 border-t border-white/10">
-            <h2 className="text-lg font-bold text-white">Reset password</h2>
-            <p className="text-sm text-[#B7BEC4] mt-1">
+          <div className="mt-8 pt-6 border-t border-neutral-200">
+            <h2 className="text-lg font-bold text-neutral-800">Reset password</h2>
+            <p className="text-sm text-neutral-500 mt-1">
               Change your password using your old password.
             </p>
 
             {pwError && (
-              <div className="mt-4 p-3 rounded-lg bg-red-950/30 text-red-400 text-sm font-medium border border-red-900/40">
+              <div className="mt-4 p-3 rounded-lg bg-red-50 text-red-600 text-sm font-medium border border-red-200">
                 {pwError}
               </div>
             )}
             {pwSuccess && (
-              <div className="mt-4 p-3 rounded-lg bg-[#0F3D2E]/30 text-[#9AC57A] text-sm font-medium border border-[#145A3A]">
+              <div className="mt-4 p-3 rounded-lg bg-[#89d957]/10 text-[#5a9c32] text-sm font-medium border border-[#89d957]/20">
                 {pwSuccess}
               </div>
             )}
 
             <form onSubmit={handleChangePassword} className="mt-4 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-[#B7BEC4] mb-1.5">Old password</label>
+                <label className="block text-sm font-medium text-neutral-500 mb-1.5">Old password</label>
                 <input
                   type="password"
                   required
                   value={pwOld}
                   onChange={(e) => setPwOld(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-[#3A3F45] bg-[#2B3136] text-white text-sm placeholder:text-[#B7BEC4]/40 focus:outline-none focus:ring-2 focus:ring-[#145A3A]/40 focus:border-[#145A3A] transition"
+                  className="w-full px-4 py-3 rounded-xl border border-neutral-200 bg-neutral-50 text-neutral-800 text-sm placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#89d957]/30 focus:border-[#89d957] transition"
                   placeholder="Enter old password"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#B7BEC4] mb-1.5">New password</label>
+                <label className="block text-sm font-medium text-neutral-500 mb-1.5">New password</label>
                 <input
                   type="password"
                   required
                   value={pwNew}
                   onChange={(e) => setPwNew(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-[#3A3F45] bg-[#2B3136] text-white text-sm placeholder:text-[#B7BEC4]/40 focus:outline-none focus:ring-2 focus:ring-[#145A3A]/40 focus:border-[#145A3A] transition"
+                  className="w-full px-4 py-3 rounded-xl border border-neutral-200 bg-neutral-50 text-neutral-800 text-sm placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#89d957]/30 focus:border-[#89d957] transition"
                   placeholder="Min 6 characters"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#B7BEC4] mb-1.5">Confirm new password</label>
+                <label className="block text-sm font-medium text-neutral-500 mb-1.5">Confirm new password</label>
                 <input
                   type="password"
                   required
                   value={pwConfirm}
                   onChange={(e) => setPwConfirm(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-[#3A3F45] bg-[#2B3136] text-white text-sm placeholder:text-[#B7BEC4]/40 focus:outline-none focus:ring-2 focus:ring-[#145A3A]/40 focus:border-[#145A3A] transition"
+                  className="w-full px-4 py-3 rounded-xl border border-neutral-200 bg-neutral-50 text-neutral-800 text-sm placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#89d957]/30 focus:border-[#89d957] transition"
                   placeholder="Repeat new password"
                 />
               </div>
@@ -409,14 +412,15 @@ export default function ProfilePage(props: PageProps) {
               <button
                 type="submit"
                 disabled={pwSaving}
-                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-2xl border border-[#3A3F45] bg-[#2B3136] text-white text-sm font-semibold hover:bg-[#3A3F45] active:scale-[0.98] transition disabled:opacity-50"
+                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-2xl border border-neutral-200 bg-neutral-50 text-neutral-600 text-sm font-semibold hover:bg-neutral-100 active:scale-[0.98] transition disabled:opacity-50"
               >
-                {pwSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Update password'}
+                {pwSaving ? <Loader2 className="w-4 h-4 animate-spin text-neutral-600" /> : 'Update password'}
               </button>
             </form>
           </div>
         </section>
       </main>
+      </div>
     </div>
   );
 }

@@ -30,6 +30,7 @@ import {
   Upload,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { SiteNavbar } from '@/components/marketing/SiteNavbar';
 
 interface FleetVehicle {
   id: string;
@@ -88,14 +89,14 @@ const FLEET_DOC_TYPES = [
 ];
 
 function getReminderStatus(dueDate: string, status: string): { label: string; color: string } {
-  if (status === 'completed') return { label: 'Completed', color: 'text-[#9AC57A] bg-[#0F3D2E]/30 border-[#145A3A]/40' };
+  if (status === 'completed') return { label: 'Completed', color: 'text-[#5a9c32] bg-[#89d957]/10 border-[#89d957]/20' };
   const now = new Date();
   now.setHours(0, 0, 0, 0);
   const due = new Date(dueDate);
   const diffDays = Math.ceil((due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-  if (diffDays < 0) return { label: `${Math.abs(diffDays)}d overdue`, color: 'text-red-400 bg-red-950/30 border-red-500/30' };
-  if (diffDays <= 7) return { label: `${diffDays}d left`, color: 'text-amber-400 bg-amber-950/30 border-amber-500/30' };
-  return { label: `${diffDays}d left`, color: 'text-[#B7BEC4] bg-[#2B3136] border-[#3A3F45]' };
+  if (diffDays < 0) return { label: `${Math.abs(diffDays)}d overdue`, color: 'text-red-600 bg-red-50 border-red-200' };
+  if (diffDays <= 7) return { label: `${diffDays}d left`, color: 'text-amber-600 bg-amber-50 border-amber-200' };
+  return { label: `${diffDays}d left`, color: 'text-neutral-600 bg-neutral-50 border-neutral-200' };
 }
 
 export default function FleetManagerPage() {
@@ -675,7 +676,7 @@ export default function FleetManagerPage() {
         .single();
 
       if (dbError || !inserted) {
-        setDocError(dbError?.message || 'Save failed');
+         setDocError(dbError?.message || 'Save failed');
         return;
       }
 
@@ -754,8 +755,8 @@ export default function FleetManagerPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-[#9AC57A]" />
+      <div className="min-h-screen bg-white bg-rexu-grid flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-[#89d957]" />
       </div>
     );
   }
@@ -774,31 +775,33 @@ export default function FleetManagerPage() {
     : fleetVehicles;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-black via-[#101518] to-black text-white pb-20">
+    <div className="min-h-screen flex flex-col font-sans">
+      <SiteNavbar />
+      <div className="flex-1 bg-white bg-rexu-grid text-neutral-900 pb-20">
       {/* ── Header ── */}
       <motion.header
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, ease: [0.33, 1, 0.68, 1] as [number, number, number, number] }}
-        className="bg-[#1F2428] border-b border-[#2B3136] sticky top-0 z-10"
+        className="bg-white/85 backdrop-blur-md border-b border-neutral-200/50 sticky top-[72px] z-10"
       >
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => router.push('/dashboard')}
-              className="w-9 h-9 rounded-full border border-[#3A3F45] flex items-center justify-center text-[#B7BEC4] hover:bg-[#2B3136] hover:text-white transition-colors"
+              className="w-9 h-9 rounded-full border border-neutral-200 flex items-center justify-center text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900 transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
             </button>
-            <div className="bg-[#145A3A] p-1.5 rounded-full">
-              <Shield className="w-5 h-5 text-white" />
+            <div className="bg-[#89d957]/10 p-1.5 rounded-xl border border-[#89d957]/20">
+              <Shield className="w-5 h-5 text-[#5a9c32]" />
             </div>
             <div className="flex flex-col">
-              <span className="font-bold text-white leading-tight">
+              <span className="font-bold text-neutral-800 leading-tight">
                 Vehicle Manager
               </span>
-              <span className="text-[10px] uppercase tracking-[0.2em] text-[#B7BEC4]">
+              <span className="text-[10px] uppercase tracking-[0.2em] text-neutral-400">
                 Vehicles
               </span>
             </div>
@@ -807,25 +810,25 @@ export default function FleetManagerPage() {
             <button
               type="button"
               onClick={() => setProfileMenuOpen((open) => !open)}
-              className="h-8 px-2.5 rounded-lg bg-[#2B3136] border border-[#3A3F45] text-white text-[11px] font-bold tracking-wide flex items-center justify-center hover:bg-[#3A3F45] transition-colors"
+              className="h-8 px-2.5 rounded-lg bg-neutral-50 border border-neutral-200 text-neutral-700 text-[11px] font-bold tracking-wide flex items-center justify-center hover:bg-neutral-100 transition-colors"
             >
               rexu
             </button>
             {profileMenuOpen && (
-              <div className="absolute right-0 mt-2 w-44 rounded-xl border border-[#3A3F45] bg-[#1F2428] shadow-lg py-1 text-sm z-20">
+              <div className="absolute right-0 mt-2 w-44 rounded-xl border border-neutral-200/60 bg-white shadow-xl py-1 text-sm z-20">
                 <button
                   type="button"
                   onClick={() => { setProfileMenuOpen(false); router.push('/dashboard'); }}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-left text-[#B7BEC4] hover:bg-[#2B3136] hover:text-white"
+                  className="w-full flex items-center gap-2 px-3 py-2 text-left text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 transition-colors"
                 >
-                  <Shield className="w-4 h-4" /> Back to dashboard
+                  <Shield className="w-4 h-4 text-neutral-400" /> Back to dashboard
                 </button>
                 <button
                   type="button"
                   onClick={() => { setProfileMenuOpen(false); router.push('/profile'); }}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-left text-[#B7BEC4] hover:bg-[#2B3136] hover:text-white"
+                  className="w-full flex items-center gap-2 px-3 py-2 text-left text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 transition-colors"
                 >
-                  <User className="w-4 h-4" /> Profile
+                  <User className="w-4 h-4 text-neutral-400" /> Profile
                 </button>
               </div>
             )}
@@ -840,59 +843,59 @@ export default function FleetManagerPage() {
         className="max-w-5xl mx-auto px-4 py-8 space-y-6"
       >
         {/* ── Welcome card with stats ── */}
-        <section className="bg-[#101518]/90 rounded-[28px] p-8 border border-white/10">
+        <section className="bg-white rounded-[24px] p-8 shadow-sm border border-neutral-200/50">
           <div className="flex items-start justify-between gap-6">
             <div>
-              <h1 className="text-2xl font-bold text-white mb-2">
+              <h1 className="text-2xl font-bold text-neutral-900 mb-2">
                 Welcome, {profileName}
               </h1>
-              <p className="text-[#B7BEC4] text-sm max-w-lg leading-relaxed">
+              <p className="text-neutral-500 text-sm max-w-lg leading-relaxed">
                 Manage all your fleet vehicles, generate QR codes, and download stickers from a
                 single place.
               </p>
             </div>
             <div className="flex items-center gap-3 shrink-0">
-              <div className="flex flex-col items-center justify-center px-5 py-3 rounded-xl border border-[#3A3F45] bg-[#2B3136] min-w-[72px]">
-                <span className="text-2xl font-bold text-white">{fleetVehicles.length}</span>
-                <span className="text-[10px] uppercase tracking-[0.18em] text-[#B7BEC4] font-semibold">Vehicles</span>
+              <div className="flex flex-col items-center justify-center px-5 py-3 rounded-xl border border-neutral-200 bg-neutral-50 min-w-[72px]">
+                <span className="text-2xl font-bold text-neutral-800">{fleetVehicles.length}</span>
+                <span className="text-[10px] uppercase tracking-[0.18em] text-neutral-400 font-semibold">Vehicles</span>
               </div>
-              <div className="flex flex-col items-center justify-center px-5 py-3 rounded-xl bg-[#0F3D2E]/30 border border-[#145A3A]/40 min-w-[72px]">
-                <span className="text-2xl font-bold text-[#9AC57A]">{qrReadyCount}</span>
-                <span className="text-[10px] uppercase tracking-[0.18em] text-[#9AC57A] font-semibold">QR Ready</span>
+              <div className="flex flex-col items-center justify-center px-5 py-3 rounded-xl bg-[#89d957]/10 border border-[#89d957]/20 min-w-[72px]">
+                <span className="text-2xl font-bold text-[#5a9c32]">{qrReadyCount}</span>
+                <span className="text-[10px] uppercase tracking-[0.18em] text-[#5a9c32] font-semibold">QR Ready</span>
               </div>
             </div>
           </div>
         </section>
 
         {/* ── Vehicles section ── */}
-        <section className="bg-[#101518]/90 rounded-[28px] p-6 border border-white/10 space-y-5">
+        <section className="bg-white rounded-[24px] p-6 shadow-sm border border-neutral-200/50 space-y-5">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <h2 className="text-lg font-bold text-white">Fleet Vehicles</h2>
-              <p className="text-sm text-[#B7BEC4] mt-0.5">Add, manage and download QR codes</p>
+              <h2 className="text-lg font-bold text-neutral-800">Fleet Vehicles</h2>
+              <p className="text-sm text-neutral-400 mt-0.5">Add, manage and download QR codes</p>
             </div>
             <button
               type="button"
               onClick={() => setIsVehicleModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#145A3A] text-white text-sm font-semibold hover:bg-[#1F7A5A] active:scale-[0.97] transition"
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#89d957] to-[#74c346] text-white text-sm font-semibold hover:opacity-95 shadow-sm active:scale-[0.97] transition"
             >
               <Plus className="w-4 h-4" /> Add Vehicle
             </button>
           </div>
 
           <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#B7BEC4]/60" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search by number, label, or make & model..."
-              className="w-full pl-11 pr-4 py-3 rounded-xl border border-[#3A3F45] bg-[#2B3136] text-sm text-white placeholder:text-[#B7BEC4]/50 focus:outline-none focus:ring-2 focus:ring-[#145A3A]/40 focus:border-[#145A3A] transition"
+              className="w-full pl-11 pr-4 py-3 rounded-xl border border-neutral-200 bg-neutral-50 text-sm text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#89d957]/30 focus:border-[#89d957] transition"
             />
           </div>
 
           {filteredVehicles.length > 0 ? (
-            <div className="rounded-xl border border-white/5 divide-y divide-white/5">
+            <div className="rounded-xl border border-neutral-200/60 divide-y divide-neutral-200/60">
               {filteredVehicles.map((v) => {
                 const isExpanded = expandedVehicle === v.id;
                 const vReminders = reminders[v.id] || [];
@@ -906,53 +909,53 @@ export default function FleetManagerPage() {
 
                 return (
                   <div key={v.id}>
-                    <div className="px-4 py-4 flex items-center gap-4 hover:bg-white/[0.02] transition-colors">
-                      <div className="w-10 h-10 rounded-full bg-[#2B3136] border border-[#3A3F45] flex items-center justify-center shrink-0">
-                        <Truck className="w-5 h-5 text-[#B7BEC4]" />
+                    <div className="px-4 py-4 flex items-center gap-4 hover:bg-neutral-50/50 transition-colors">
+                      <div className="w-10 h-10 rounded-xl bg-neutral-50 border border-neutral-200 flex items-center justify-center shrink-0">
+                        <Truck className="w-5 h-5 text-neutral-500" />
                       </div>
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1 flex-wrap">
-                          <span className="font-bold text-sm text-white">{v.vehicle_number}</span>
+                          <span className="font-bold text-sm text-neutral-800">{v.vehicle_number}</span>
                           {v.qr_token ? (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#9AC57A] bg-[#0F3D2E]/30 border border-[#145A3A]/40 rounded-full px-2 py-0.5">
-                              <span className="w-1.5 h-1.5 rounded-full bg-[#9AC57A]" /> QR Ready
+                            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#5a9c32] bg-[#89d957]/10 border border-[#89d957]/20 rounded-full px-2 py-0.5">
+                              <span className="w-1.5 h-1.5 rounded-full bg-[#89d957]" /> QR Ready
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#B7BEC4]/60 bg-[#2B3136] border border-[#3A3F45] rounded-full px-2 py-0.5">
+                            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-neutral-400 bg-neutral-50 border border-neutral-200 rounded-full px-2 py-0.5">
                               No QR
                             </span>
                           )}
                           {overdueCount > 0 && (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-medium text-red-400 bg-red-950/30 border border-red-500/30 rounded-full px-2 py-0.5">
-                              <AlertTriangle className="w-2.5 h-2.5" /> {overdueCount} overdue
+                            <span className="inline-flex items-center gap-1 text-[10px] font-medium text-red-600 bg-red-50 border border-red-200 rounded-full px-2 py-0.5">
+                              <AlertTriangle className="w-2.5 h-2.5 text-red-500" /> {overdueCount} overdue
                             </span>
                           )}
                         </div>
-                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[#B7BEC4]">
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-neutral-500">
                           {v.label && <span>{v.label}</span>}
-                          {v.make_model && <span className="text-[#B7BEC4]/60">{v.make_model}</span>}
+                          {v.make_model && <span className="text-neutral-400">{v.make_model}</span>}
                         </div>
                       </div>
 
                       <div className="flex items-center gap-2 shrink-0">
                         {v.qr_token ? (
-                          <button type="button" onClick={() => v.qr_token && handleDownloadVehicleQr(v.qr_token)} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#145A3A] text-white text-[11px] font-medium hover:bg-[#1F7A5A] transition-colors">
+                          <button type="button" onClick={() => v.qr_token && handleDownloadVehicleQr(v.qr_token)} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#89d957] to-[#74c346] text-white text-[11px] font-medium hover:opacity-95 transition-colors shadow-sm">
                             <Download className="w-3 h-3" /> Download
                           </button>
                         ) : (
-                          <button type="button" onClick={() => handleGenerateVehicleQr(v.id)} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#3A3F45] text-[11px] font-medium text-[#B7BEC4] hover:bg-[#2B3136] hover:text-white transition-colors">
-                            <QrCode className="w-3 h-3" /> Generate QR
+                          <button type="button" onClick={() => handleGenerateVehicleQr(v.id)} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-neutral-200 text-[11px] font-medium text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 transition-colors">
+                            <QrCode className="w-3 h-3 text-neutral-500" /> Generate QR
                           </button>
                         )}
                         <button
                           type="button"
                           onClick={() => toggleVehicleDetails(v.id)}
-                          className={`p-2 rounded-lg text-[#B7BEC4]/60 hover:text-white hover:bg-[#2B3136] transition-colors ${isExpanded ? 'bg-[#2B3136] text-white' : ''}`}
+                          className={`p-2 rounded-lg text-neutral-400 hover:text-neutral-800 hover:bg-neutral-50 transition-colors ${isExpanded ? 'bg-neutral-50 text-neutral-800' : ''}`}
                         >
                           <ChevronDown className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                         </button>
-                        <button type="button" onClick={() => handleDeleteVehicle(v.id)} className="p-2 rounded-lg text-[#B7BEC4]/40 hover:text-red-400 hover:bg-red-950/30 transition-colors">
+                        <button type="button" onClick={() => handleDeleteVehicle(v.id)} className="p-2 rounded-lg text-neutral-300 hover:text-red-600 hover:bg-red-50 transition-colors">
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
@@ -969,18 +972,18 @@ export default function FleetManagerPage() {
                         >
                           {vehicleDetailLoading === v.id ? (
                             <div className="px-4 pb-5 flex justify-center">
-                              <Loader2 className="w-5 h-5 animate-spin text-[#B7BEC4]/40" />
+                              <Loader2 className="w-5 h-5 animate-spin text-neutral-400" />
                             </div>
                           ) : (
                             <div className="px-4 pb-5 space-y-4">
                               {/* Driver check-in QR */}
-                              <div className="bg-[#1F2428]/60 rounded-xl p-4 border border-white/5">
+                              <div className="bg-neutral-50/50 rounded-xl p-4 border border-neutral-100">
                                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                                   <div>
-                                    <h3 className="text-xs font-bold uppercase tracking-wider text-[#B7BEC4] flex items-center gap-1.5">
-                                      <ClipboardCheck className="w-3.5 h-3.5" /> Driver check-in QR
+                                    <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-500 flex items-center gap-1.5">
+                                      <ClipboardCheck className="w-3.5 h-3.5 text-neutral-400" /> Driver check-in QR
                                     </h3>
-                                    <p className="text-[10px] text-[#B7BEC4]/60 mt-1 max-w-md leading-relaxed">
+                                    <p className="text-[10px] text-neutral-400 mt-1 max-w-md leading-relaxed">
                                       Scan to check in or out and attach photos. No sign-in required for drivers.
                                     </p>
                                   </div>
@@ -989,7 +992,7 @@ export default function FleetManagerPage() {
                                       <button
                                         type="button"
                                         onClick={() => handleGenerateCheckinQr(v.id)}
-                                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#145A3A] text-white text-[10px] font-semibold hover:bg-[#1F7A5A]"
+                                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-[#89d957] to-[#74c346] text-white text-[10px] font-semibold hover:opacity-95"
                                       >
                                         <QrCode className="w-3 h-3" /> Generate check-in QR
                                       </button>
@@ -998,14 +1001,14 @@ export default function FleetManagerPage() {
                                         <button
                                           type="button"
                                           onClick={() => handleDownloadCheckinQr(v.id)}
-                                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#145A3A] text-white text-[10px] font-semibold hover:bg-[#1F7A5A]"
+                                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-[#89d957] to-[#74c346] text-white text-[10px] font-semibold hover:opacity-95"
                                         >
                                           <Download className="w-3 h-3" /> Download QR
                                         </button>
                                         <button
                                           type="button"
                                           onClick={() => handleGenerateCheckinQr(v.id, true)}
-                                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-[#3A3F45] text-[10px] font-medium text-[#B7BEC4] hover:bg-[#2B3136] hover:text-white"
+                                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-neutral-200 text-[10px] font-medium text-neutral-600 hover:bg-neutral-50 hover:text-neutral-800"
                                         >
                                           New QR
                                         </button>
@@ -1016,23 +1019,23 @@ export default function FleetManagerPage() {
                               </div>
 
                               {/* Documents for this vehicle */}
-                              <div className="bg-[#1F2428]/60 rounded-xl p-4 border border-white/5">
+                              <div className="bg-neutral-50/50 rounded-xl p-4 border border-neutral-100">
                                 <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
-                                  <h3 className="text-xs font-bold uppercase tracking-wider text-[#B7BEC4] flex items-center gap-1.5">
-                                    <FileText className="w-3.5 h-3.5" /> Vehicle documents
+                                  <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-500 flex items-center gap-1.5">
+                                    <FileText className="w-3.5 h-3.5 text-neutral-400" /> Vehicle documents
                                   </h3>
                                   <div className="flex flex-wrap gap-2">
                                     <button
                                       type="button"
                                       onClick={() => openDocModal(v.id)}
-                                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#145A3A] text-white text-[10px] font-semibold hover:bg-[#1F7A5A]"
+                                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-gradient-to-r from-[#89d957] to-[#74c346] text-white text-[10px] font-semibold hover:opacity-95"
                                     >
                                       <Upload className="w-3 h-3" /> Upload
                                     </button>
                                     <button
                                       type="button"
                                       onClick={() => router.push(`/documents?vehicle=${v.id}`)}
-                                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-[#3A3F45] text-[10px] font-medium text-[#B7BEC4] hover:bg-[#2B3136] hover:text-white"
+                                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-neutral-200 text-[10px] font-medium text-neutral-600 hover:bg-neutral-100 hover:text-neutral-800"
                                     >
                                       Open documents page
                                     </button>
@@ -1043,11 +1046,11 @@ export default function FleetManagerPage() {
                                     {vDocs.map((d) => (
                                       <div
                                         key={d.id}
-                                        className="flex items-center gap-3 py-2 px-3 rounded-lg bg-black/20 border border-white/5"
+                                        className="flex items-center gap-3 py-2 px-3 rounded-lg bg-white border border-neutral-200/50 shadow-sm"
                                       >
                                         <div className="flex-1 min-w-0">
-                                          <p className="text-sm font-medium text-white truncate">{d.document_name}</p>
-                                          <p className="text-[10px] text-[#B7BEC4]/60">
+                                          <p className="text-sm font-medium text-neutral-800 truncate">{d.document_name}</p>
+                                          <p className="text-[10px] text-neutral-400">
                                             {FLEET_DOC_TYPES.find((t) => t.value === d.document_type)?.label ||
                                               d.document_type}
                                             {d.expiry_date &&
@@ -1061,14 +1064,14 @@ export default function FleetManagerPage() {
                                         <button
                                           type="button"
                                           onClick={() => void handleFleetDocOpen(d.file_path)}
-                                          className="px-2 py-1 rounded-lg text-[10px] font-semibold text-[#9AC57A] hover:bg-[#2B3136]"
+                                          className="px-2 py-1 rounded-lg text-[10px] font-semibold text-[#5a9c32] hover:bg-neutral-50"
                                         >
                                           Open
                                         </button>
                                         <button
                                           type="button"
                                           onClick={() => handleFleetDocDownload(d.file_path, d.document_name)}
-                                          className="p-1.5 rounded-lg text-[#B7BEC4] hover:bg-[#2B3136] hover:text-white"
+                                          className="p-1.5 rounded-lg text-neutral-400 hover:bg-neutral-50 hover:text-neutral-700"
                                           title="Download"
                                         >
                                           <Download className="w-3.5 h-3.5" />
@@ -1076,7 +1079,7 @@ export default function FleetManagerPage() {
                                         <button
                                           type="button"
                                           onClick={() => handleFleetDocDelete(v.id, d)}
-                                          className="p-1.5 rounded-lg text-[#B7BEC4]/40 hover:text-red-400 hover:bg-red-950/30"
+                                          className="p-1.5 rounded-lg text-neutral-300 hover:text-red-600 hover:bg-red-50"
                                           title="Delete"
                                         >
                                           <Trash2 className="w-3.5 h-3.5" />
@@ -1085,22 +1088,22 @@ export default function FleetManagerPage() {
                                     ))}
                                   </div>
                                 ) : (
-                                  <p className="text-xs text-[#B7BEC4]/40 text-center py-2">
+                                  <p className="text-xs text-neutral-400 text-center py-2">
                                     No documents linked to this vehicle yet.
                                   </p>
                                 )}
                               </div>
 
                               {/* ── Maintenance Reminders ── */}
-                              <div className="bg-[#1F2428]/60 rounded-xl p-4 border border-white/5">
+                              <div className="bg-neutral-50/50 rounded-xl p-4 border border-neutral-100">
                                 <div className="flex items-center justify-between mb-3">
-                                  <h3 className="text-xs font-bold uppercase tracking-wider text-[#B7BEC4] flex items-center gap-1.5">
-                                    <Wrench className="w-3.5 h-3.5" /> Maintenance Reminders
+                                  <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-500 flex items-center gap-1.5">
+                                    <Wrench className="w-3.5 h-3.5 text-neutral-400" /> Maintenance Reminders
                                   </h3>
                                   <button
                                     type="button"
                                     onClick={() => openReminderModal(v.id)}
-                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#145A3A] text-white text-[10px] font-semibold hover:bg-[#1F7A5A] transition-colors"
+                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-gradient-to-r from-[#89d957] to-[#74c346] text-white text-[10px] font-semibold hover:opacity-95 transition-colors"
                                   >
                                     <Plus className="w-3 h-3" /> Add
                                   </button>
@@ -1110,14 +1113,14 @@ export default function FleetManagerPage() {
                                     {vReminders.map((r) => {
                                       const st = getReminderStatus(r.due_date, r.status);
                                       return (
-                                        <div key={r.id} className="flex items-center gap-3 py-2 px-3 rounded-lg bg-black/20 border border-white/5">
+                                        <div key={r.id} className="flex items-center gap-3 py-2 px-3 rounded-lg bg-white border border-neutral-200/50 shadow-sm">
                                           <div className="flex-1 min-w-0">
-                                            <p className={`text-sm font-medium ${r.status === 'completed' ? 'text-[#B7BEC4]/50 line-through' : 'text-white'}`}>
+                                            <p className={`text-sm font-medium ${r.status === 'completed' ? 'text-neutral-400 line-through' : 'text-neutral-800'}`}>
                                               {r.title}
                                             </p>
                                             <div className="flex items-center gap-2 mt-0.5">
-                                              <span className="text-[10px] text-[#B7BEC4]/60 flex items-center gap-1">
-                                                <Calendar className="w-2.5 h-2.5" />
+                                              <span className="text-[10px] text-neutral-400 flex items-center gap-1">
+                                                <Calendar className="w-2.5 h-2.5 text-neutral-400" />
                                                 {new Date(r.due_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                                               </span>
                                               <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${st.color}`}>
@@ -1129,9 +1132,9 @@ export default function FleetManagerPage() {
                                             <button
                                               type="button"
                                               onClick={() => handleCompleteReminder(v.id, r.id)}
-                                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-[#3A3F45] text-[10px] font-medium text-[#B7BEC4] hover:bg-[#0F3D2E]/30 hover:text-[#9AC57A] hover:border-[#145A3A]/40 transition-colors"
+                                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-neutral-200 text-[10px] font-medium text-neutral-600 hover:bg-[#89d957]/10 hover:text-[#5a9c32] hover:border-[#89d957]/30 transition-colors"
                                             >
-                                              <CheckCircle2 className="w-3 h-3" /> Done
+                                              <CheckCircle2 className="w-3 h-3 text-[#5a9c32]" /> Done
                                             </button>
                                           )}
                                         </div>
@@ -1139,20 +1142,20 @@ export default function FleetManagerPage() {
                                     })}
                                   </div>
                                 ) : (
-                                  <p className="text-xs text-[#B7BEC4]/40 text-center py-2">No reminders yet</p>
+                                  <p className="text-xs text-neutral-400 text-center py-2">No reminders yet</p>
                                 )}
                               </div>
 
                               {/* ── Incidents ── */}
-                              <div className="bg-[#1F2428]/60 rounded-xl p-4 border border-white/5">
+                              <div className="bg-neutral-50/50 rounded-xl p-4 border border-neutral-100">
                                 <div className="flex items-center justify-between mb-3">
-                                  <h3 className="text-xs font-bold uppercase tracking-wider text-[#B7BEC4] flex items-center gap-1.5">
-                                    <AlertTriangle className="w-3.5 h-3.5" /> Incidents
+                                  <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-500 flex items-center gap-1.5">
+                                    <AlertTriangle className="w-3.5 h-3.5 text-neutral-400" /> Incidents
                                   </h3>
                                   <button
                                     type="button"
                                     onClick={() => openIncidentModal(v.id)}
-                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-red-600/80 text-white text-[10px] font-semibold hover:bg-red-600 transition-colors"
+                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-neutral-900 text-white text-[10px] font-semibold hover:bg-neutral-800 transition-colors"
                                   >
                                     <Plus className="w-3 h-3" /> Report
                                   </button>
@@ -1167,7 +1170,7 @@ export default function FleetManagerPage() {
                                     })}
                                   </div>
                                 ) : (
-                                  <p className="text-xs text-[#B7BEC4]/40 text-center py-2">No incidents reported</p>
+                                  <p className="text-xs text-neutral-400 text-center py-2">No incidents reported</p>
                                 )}
                               </div>
                             </div>
@@ -1180,7 +1183,7 @@ export default function FleetManagerPage() {
               })}
             </div>
           ) : (
-            <p className="text-sm text-[#B7BEC4]/60 py-4 text-center">
+            <p className="text-sm text-neutral-400 py-4 text-center">
               {searchQuery.trim()
                 ? 'No vehicles match your search.'
                 : 'No vehicles added yet. Use "Add Vehicle" to register your first vehicle.'}
@@ -1188,7 +1191,7 @@ export default function FleetManagerPage() {
           )}
 
           {fleetVehicles.length > 0 && (
-            <p className="text-xs text-[#B7BEC4]/50 pt-1">
+            <p className="text-xs text-neutral-400 pt-1">
               Showing {filteredVehicles.length} of {fleetVehicles.length} vehicles
             </p>
           )}
@@ -1198,34 +1201,34 @@ export default function FleetManagerPage() {
       {/* ── Add Vehicle Modal ── */}
       {isVehicleModalOpen && (
         <div className="fixed inset-0 z-40 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setIsVehicleModalOpen(false)} />
-          <div className="relative bg-[#1F2428] rounded-[28px] w-full max-w-md p-6 shadow-2xl border border-white/10">
+          <div className="absolute inset-0 bg-neutral-900/60 backdrop-blur-sm" onClick={() => setIsVehicleModalOpen(false)} />
+          <div className="relative bg-white rounded-[24px] w-full max-w-md p-6 shadow-2xl border border-neutral-200/60">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-lg font-semibold text-white">Add Vehicle</h2>
-                <p className="text-xs text-[#B7BEC4]">Save your vehicle details first, then generate its QR.</p>
+                <h2 className="text-lg font-semibold text-neutral-800">Add Vehicle</h2>
+                <p className="text-xs text-neutral-400">Save your vehicle details first, then generate its QR.</p>
               </div>
-              <button type="button" onClick={() => setIsVehicleModalOpen(false)} className="p-2 text-[#B7BEC4] hover:text-white transition-colors">
+              <button type="button" onClick={() => setIsVehicleModalOpen(false)} className="p-2 text-neutral-400 hover:text-neutral-700 transition-colors">
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            {vehicleError && <div className="mb-3 text-xs text-red-400">{vehicleError}</div>}
+            {vehicleError && <div className="mb-3 text-xs text-red-500">{vehicleError}</div>}
 
             <form onSubmit={handleCreateVehicle} className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-[#B7BEC4] mb-1.5">Vehicle Number</label>
-                <input type="text" required value={vehicleNumber} onChange={(e) => setVehicleNumber(e.target.value.toUpperCase())} className="w-full px-4 py-2.5 rounded-xl border border-[#3A3F45] bg-[#2B3136] text-sm text-white placeholder:text-[#B7BEC4]/40 focus:outline-none focus:ring-2 focus:ring-[#145A3A]/40 focus:border-[#145A3A] transition" placeholder="KA01AB1234" />
+                <label className="block text-xs font-medium text-neutral-500 mb-1.5">Vehicle Number</label>
+                <input type="text" required value={vehicleNumber} onChange={(e) => setVehicleNumber(e.target.value.toUpperCase())} className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 bg-neutral-50 text-sm text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#89d957]/30 focus:border-[#89d957] transition" placeholder="KA01AB1234" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-[#B7BEC4] mb-1.5">Label (optional)</label>
-                <input type="text" value={vehicleLabel} onChange={(e) => setVehicleLabel(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-[#3A3F45] bg-[#2B3136] text-sm text-white placeholder:text-[#B7BEC4]/40 focus:outline-none focus:ring-2 focus:ring-[#145A3A]/40 focus:border-[#145A3A] transition" placeholder="E.g. Cab #21, Delivery Bike 3" />
+                <label className="block text-xs font-medium text-neutral-500 mb-1.5">Label (optional)</label>
+                <input type="text" value={vehicleLabel} onChange={(e) => setVehicleLabel(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 bg-neutral-50 text-sm text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#89d957]/30 focus:border-[#89d957] transition" placeholder="E.g. Cab #21, Delivery Bike 3" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-[#B7BEC4] mb-1.5">Make &amp; Model (optional)</label>
-                <input type="text" value={vehicleMakeModel} onChange={(e) => setVehicleMakeModel(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-[#3A3F45] bg-[#2B3136] text-sm text-white placeholder:text-[#B7BEC4]/40 focus:outline-none focus:ring-2 focus:ring-[#145A3A]/40 focus:border-[#145A3A] transition" placeholder="E.g. Tata Ace, Honda Activa" />
+                <label className="block text-xs font-medium text-neutral-500 mb-1.5">Make &amp; Model (optional)</label>
+                <input type="text" value={vehicleMakeModel} onChange={(e) => setVehicleMakeModel(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 bg-neutral-50 text-sm text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#89d957]/30 focus:border-[#89d957] transition" placeholder="E.g. Tata Ace, Honda Activa" />
               </div>
-              <button type="submit" disabled={vehicleSaving} className="w-full mt-2 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-[#145A3A] text-white text-sm font-semibold hover:bg-[#1F7A5A] active:scale-[0.98] transition disabled:opacity-50">
+              <button type="submit" disabled={vehicleSaving} className="w-full mt-2 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-[#89d957] to-[#74c346] text-white text-sm font-semibold hover:opacity-95 shadow-sm active:scale-[0.98] transition disabled:opacity-50">
                 {vehicleSaving ? (<><Loader2 className="w-4 h-4 animate-spin" /> Saving vehicle…</>) : ('Save Vehicle')}
               </button>
             </form>
@@ -1236,34 +1239,34 @@ export default function FleetManagerPage() {
       {/* ── Add Reminder Modal ── */}
       {isReminderModalOpen && (
         <div className="fixed inset-0 z-40 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setIsReminderModalOpen(false)} />
-          <div className="relative bg-[#1F2428] rounded-[28px] w-full max-w-md p-6 shadow-2xl border border-white/10">
+          <div className="absolute inset-0 bg-neutral-900/60 backdrop-blur-sm" onClick={() => setIsReminderModalOpen(false)} />
+          <div className="relative bg-white rounded-[24px] w-full max-w-md p-6 shadow-2xl border border-neutral-200/60">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-                  <Wrench className="w-5 h-5 text-[#9AC57A]" /> Maintenance Reminder
+                <h2 className="text-lg font-semibold text-neutral-800 flex items-center gap-2">
+                  <Wrench className="w-5 h-5 text-[#5a9c32]" /> Maintenance Reminder
                 </h2>
-                <p className="text-xs text-[#B7BEC4]">
+                <p className="text-xs text-neutral-400">
                   For {fleetVehicles.find((v) => v.id === reminderVehicleId)?.vehicle_number || 'vehicle'}
                 </p>
               </div>
-              <button type="button" onClick={() => setIsReminderModalOpen(false)} className="p-2 text-[#B7BEC4] hover:text-white transition-colors">
+              <button type="button" onClick={() => setIsReminderModalOpen(false)} className="p-2 text-neutral-400 hover:text-neutral-700 transition-colors">
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            {reminderError && <div className="mb-3 text-xs text-red-400">{reminderError}</div>}
+            {reminderError && <div className="mb-3 text-xs text-red-500">{reminderError}</div>}
 
             <form onSubmit={handleCreateReminder} className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-[#B7BEC4] mb-1.5">Title</label>
-                <input type="text" required value={reminderTitle} onChange={(e) => setReminderTitle(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-[#3A3F45] bg-[#2B3136] text-sm text-white placeholder:text-[#B7BEC4]/40 focus:outline-none focus:ring-2 focus:ring-[#145A3A]/40 focus:border-[#145A3A] transition" placeholder="E.g. Oil Change, Tire Rotation, Insurance Renewal" />
+                <label className="block text-xs font-medium text-neutral-500 mb-1.5">Title</label>
+                <input type="text" required value={reminderTitle} onChange={(e) => setReminderTitle(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 bg-neutral-50 text-sm text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#89d957]/30 focus:border-[#89d957] transition" placeholder="E.g. Oil Change, Tire Rotation, Insurance Renewal" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-[#B7BEC4] mb-1.5">Due Date</label>
-                <input type="date" required value={reminderDueDate} onChange={(e) => setReminderDueDate(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-[#3A3F45] bg-[#2B3136] text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#145A3A]/40 focus:border-[#145A3A] transition [color-scheme:dark]" />
+                <label className="block text-xs font-medium text-neutral-500 mb-1.5">Due Date</label>
+                <input type="date" required value={reminderDueDate} onChange={(e) => setReminderDueDate(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 bg-neutral-50 text-sm text-neutral-800 focus:outline-none focus:ring-2 focus:ring-[#89d957]/30 focus:border-[#89d957] transition" />
               </div>
-              <button type="submit" disabled={reminderSaving} className="w-full mt-2 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-[#145A3A] text-white text-sm font-semibold hover:bg-[#1F7A5A] active:scale-[0.98] transition disabled:opacity-50">
+              <button type="submit" disabled={reminderSaving} className="w-full mt-2 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-[#89d957] to-[#74c346] text-white text-sm font-semibold hover:opacity-95 shadow-sm active:scale-[0.98] transition disabled:opacity-50">
                 {reminderSaving ? (<><Loader2 className="w-4 h-4 animate-spin" /> Saving…</>) : (<><Clock className="w-4 h-4" /> Create Reminder</>)}
               </button>
             </form>
@@ -1274,28 +1277,28 @@ export default function FleetManagerPage() {
       {/* ── Report Incident Modal ── */}
       {isIncidentModalOpen && (
         <div className="fixed inset-0 z-40 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setIsIncidentModalOpen(false)} />
-          <div className="relative bg-[#1F2428] rounded-[28px] w-full max-w-md p-6 shadow-2xl border border-white/10">
+          <div className="absolute inset-0 bg-neutral-900/60 backdrop-blur-sm" onClick={() => setIsIncidentModalOpen(false)} />
+          <div className="relative bg-white rounded-[24px] w-full max-w-md p-6 shadow-2xl border border-neutral-200/60">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-                  <AlertTriangle className="w-5 h-5 text-red-400" /> Report Incident
+                <h2 className="text-lg font-semibold text-neutral-800 flex items-center gap-2">
+                  <AlertTriangle className="w-5 h-5 text-red-500" /> Report Incident
                 </h2>
-                <p className="text-xs text-[#B7BEC4]">
+                <p className="text-xs text-neutral-400">
                   For {fleetVehicles.find((v) => v.id === incidentVehicleId)?.vehicle_number || 'vehicle'}
                 </p>
               </div>
-              <button type="button" onClick={() => setIsIncidentModalOpen(false)} className="p-2 text-[#B7BEC4] hover:text-white transition-colors">
+              <button type="button" onClick={() => setIsIncidentModalOpen(false)} className="p-2 text-neutral-400 hover:text-neutral-700 transition-colors">
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            {incidentError && <div className="mb-3 text-xs text-red-400">{incidentError}</div>}
+            {incidentError && <div className="mb-3 text-xs text-red-500">{incidentError}</div>}
 
             <form onSubmit={handleCreateIncident} className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-[#B7BEC4] mb-1.5">Incident Type</label>
-                <select required value={incidentType} onChange={(e) => setIncidentType(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-[#3A3F45] bg-[#2B3136] text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#145A3A]/40 focus:border-[#145A3A] transition">
+                <label className="block text-xs font-medium text-neutral-500 mb-1.5">Incident Type</label>
+                <select required value={incidentType} onChange={(e) => setIncidentType(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 bg-neutral-50 text-sm text-neutral-850 focus:outline-none focus:ring-2 focus:ring-[#89d957]/30 focus:border-[#89d957] transition">
                   <option value="" disabled>Select type</option>
                   {INCIDENT_TYPES.map((t) => (
                     <option key={t.value} value={t.value}>{t.label}</option>
@@ -1303,27 +1306,27 @@ export default function FleetManagerPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-[#B7BEC4] mb-1.5">Description</label>
-                <textarea required value={incidentDescription} onChange={(e) => setIncidentDescription(e.target.value)} rows={3} className="w-full px-4 py-2.5 rounded-xl border border-[#3A3F45] bg-[#2B3136] text-sm text-white placeholder:text-[#B7BEC4]/40 focus:outline-none focus:ring-2 focus:ring-[#145A3A]/40 focus:border-[#145A3A] transition" placeholder="Describe the incident..." />
+                <label className="block text-xs font-medium text-neutral-500 mb-1.5">Description</label>
+                <textarea required value={incidentDescription} onChange={(e) => setIncidentDescription(e.target.value)} rows={3} className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 bg-neutral-50 text-sm text-neutral-850 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#89d957]/30 focus:border-[#89d957] transition" placeholder="Describe the incident..." />
               </div>
               <div>
-                <label className="block text-xs font-medium text-[#B7BEC4] mb-1.5">Photo (optional)</label>
+                <label className="block text-xs font-medium text-neutral-500 mb-1.5">Photo (optional)</label>
                 {incidentImagePreview ? (
-                  <div className="relative w-24 h-24 rounded-xl overflow-hidden border border-[#3A3F45]">
+                  <div className="relative w-24 h-24 rounded-xl overflow-hidden border border-neutral-200">
                     <img src={incidentImagePreview} alt="Preview" className="w-full h-full object-cover" />
                     <button type="button" onClick={() => { if (incidentImagePreview) URL.revokeObjectURL(incidentImagePreview); setIncidentImage(null); setIncidentImagePreview(null); if (incidentFileRef.current) incidentFileRef.current.value = ''; }} className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/70 flex items-center justify-center">
                       <X className="w-3 h-3 text-white" />
                     </button>
                   </div>
                 ) : (
-                  <button type="button" onClick={() => incidentFileRef.current?.click()} className="w-24 h-24 rounded-xl border-2 border-dashed border-[#3A3F45] flex flex-col items-center justify-center gap-1 text-[#B7BEC4]/60 hover:text-[#B7BEC4] hover:border-[#B7BEC4]/40 transition-colors">
+                  <button type="button" onClick={() => incidentFileRef.current?.click()} className="w-24 h-24 rounded-xl border-2 border-dashed border-neutral-200 flex flex-col items-center justify-center gap-1 text-neutral-400 hover:text-neutral-600 hover:border-neutral-300 transition-colors">
                     <Camera className="w-5 h-5" />
                     <span className="text-[9px] uppercase tracking-wider font-semibold">Add</span>
                   </button>
                 )}
                 <input ref={incidentFileRef} type="file" accept="image/*" onChange={handleIncidentImageSelect} className="hidden" />
               </div>
-              <button type="submit" disabled={incidentSaving} className="w-full mt-2 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-red-600 text-white text-sm font-semibold hover:bg-red-700 active:scale-[0.98] transition disabled:opacity-50">
+              <button type="submit" disabled={incidentSaving} className="w-full mt-2 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-neutral-900 text-white text-sm font-semibold hover:bg-neutral-800 active:scale-[0.98] transition disabled:opacity-50">
                 {incidentSaving ? (<><Loader2 className="w-4 h-4 animate-spin" /> Submitting…</>) : (<><AlertTriangle className="w-4 h-4" /> Submit Report</>)}
               </button>
             </form>
@@ -1334,32 +1337,32 @@ export default function FleetManagerPage() {
       {/* ── Upload document for vehicle ── */}
       {isDocModalOpen && docVehicleId && (
         <div className="fixed inset-0 z-40 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setIsDocModalOpen(false)} />
-          <div className="relative bg-[#1F2428] rounded-[28px] w-full max-w-md p-6 shadow-2xl border border-white/10 max-h-[90vh] overflow-y-auto">
+          <div className="absolute inset-0 bg-neutral-900/60 backdrop-blur-sm" onClick={() => setIsDocModalOpen(false)} />
+          <div className="relative bg-white rounded-[24px] w-full max-w-md p-6 shadow-2xl border border-neutral-200/60 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-                  <FileText className="w-5 h-5 text-[#9AC57A]" /> Upload document
+                <h2 className="text-lg font-semibold text-neutral-800 flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-[#5a9c32]" /> Upload document
                 </h2>
-                <p className="text-xs text-[#B7BEC4]">
+                <p className="text-xs text-neutral-400">
                   For {fleetVehicles.find((x) => x.id === docVehicleId)?.vehicle_number || 'vehicle'}
                 </p>
               </div>
-              <button type="button" onClick={() => setIsDocModalOpen(false)} className="p-2 text-[#B7BEC4] hover:text-white transition-colors">
+              <button type="button" onClick={() => setIsDocModalOpen(false)} className="p-2 text-neutral-400 hover:text-neutral-700 transition-colors">
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            {docError && <div className="mb-3 text-xs text-red-400">{docError}</div>}
+            {docError && <div className="mb-3 text-xs text-red-500">{docError}</div>}
 
             <form onSubmit={handleFleetDocUpload} className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-[#B7BEC4] mb-1.5">Document type</label>
+                <label className="block text-xs font-medium text-neutral-500 mb-1.5">Document type</label>
                 <select
                   required
                   value={docType}
                   onChange={(e) => setDocType(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-[#3A3F45] bg-[#2B3136] text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#145A3A]/40 focus:border-[#145A3A] transition"
+                  className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 bg-neutral-50 text-sm text-neutral-850 focus:outline-none focus:ring-2 focus:ring-[#89d957]/30 focus:border-[#89d957] transition"
                 >
                   <option value="" disabled>Select type</option>
                   {FLEET_DOC_TYPES.map((t) => (
@@ -1368,50 +1371,50 @@ export default function FleetManagerPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-[#B7BEC4] mb-1.5">Document name</label>
+                <label className="block text-xs font-medium text-neutral-500 mb-1.5">Document name</label>
                 <input
                   type="text"
                   required
                   value={docName}
                   onChange={(e) => setDocName(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-[#3A3F45] bg-[#2B3136] text-sm text-white placeholder:text-[#B7BEC4]/40 focus:outline-none focus:ring-2 focus:ring-[#145A3A]/40 focus:border-[#145A3A] transition"
+                  className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 bg-neutral-50 text-sm text-neutral-855 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#89d957]/30 focus:border-[#89d957] transition"
                   placeholder="E.g. Insurance policy 2025"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-[#B7BEC4] mb-1.5">File</label>
+                <label className="block text-xs font-medium text-neutral-500 mb-1.5">File</label>
                 <input
                   ref={docFileRef}
                   type="file"
                   required
                   accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx"
                   onChange={(e) => setDocFile(e.target.files?.[0] || null)}
-                  className="w-full text-sm text-[#B7BEC4] file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border file:border-[#3A3F45] file:bg-[#2B3136] file:text-white file:font-medium file:text-xs hover:file:bg-[#3A3F45] file:cursor-pointer"
+                  className="w-full text-sm text-neutral-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border file:border-neutral-200 file:bg-neutral-50 file:text-neutral-700 file:font-medium file:text-xs hover:file:bg-neutral-100 file:cursor-pointer"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-[#B7BEC4] mb-1.5">Expiry date (optional)</label>
+                <label className="block text-xs font-medium text-neutral-500 mb-1.5">Expiry date (optional)</label>
                 <input
                   type="date"
                   value={docExpiryDate}
                   onChange={(e) => setDocExpiryDate(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-[#3A3F45] bg-[#2B3136] text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#145A3A]/40 focus:border-[#145A3A] transition [color-scheme:dark]"
+                  className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 bg-neutral-50 text-sm text-neutral-850 focus:outline-none focus:ring-2 focus:ring-[#89d957]/30 focus:border-[#89d957] transition"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-[#B7BEC4] mb-1.5">Notes (optional)</label>
+                <label className="block text-xs font-medium text-neutral-500 mb-1.5">Notes (optional)</label>
                 <textarea
                   value={docNotes}
                   onChange={(e) => setDocNotes(e.target.value)}
                   rows={2}
-                  className="w-full px-4 py-2.5 rounded-xl border border-[#3A3F45] bg-[#2B3136] text-sm text-white placeholder:text-[#B7BEC4]/40 focus:outline-none focus:ring-2 focus:ring-[#145A3A]/40 focus:border-[#145A3A] transition"
+                  className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 bg-neutral-50 text-sm text-neutral-850 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#89d957]/30 focus:border-[#89d957] transition"
                   placeholder="Optional notes"
                 />
               </div>
               <button
                 type="submit"
                 disabled={docSaving}
-                className="w-full mt-2 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-[#145A3A] text-white text-sm font-semibold hover:bg-[#1F7A5A] active:scale-[0.98] transition disabled:opacity-50"
+                className="w-full mt-2 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-[#89d957] to-[#74c346] text-white text-sm font-semibold hover:opacity-95 shadow-sm active:scale-[0.98] transition disabled:opacity-50"
               >
                 {docSaving ? (<><Loader2 className="w-4 h-4 animate-spin" /> Uploading…</>) : (<><Upload className="w-4 h-4" /> Upload</>)}
               </button>
@@ -1419,6 +1422,7 @@ export default function FleetManagerPage() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }
@@ -1436,34 +1440,34 @@ function IncidentCard({ incident, typeLabel }: { incident: FleetIncident; typeLa
   };
 
   const typeColor: Record<string, string> = {
-    unauthorized_use: 'text-red-400 bg-red-950/30 border-red-500/30',
-    damage: 'text-amber-400 bg-amber-950/30 border-amber-500/30',
-    missing_checkin: 'text-blue-400 bg-blue-950/30 border-blue-500/30',
-    other: 'text-[#B7BEC4] bg-[#2B3136] border-[#3A3F45]',
+    unauthorized_use: 'text-red-600 bg-red-50 border-red-200',
+    damage: 'text-amber-600 bg-amber-50 border-amber-200',
+    missing_checkin: 'text-blue-600 bg-blue-50 border-blue-200',
+    other: 'text-neutral-600 bg-neutral-50 border-neutral-200',
   };
 
   return (
-    <div className="py-2 px-3 rounded-lg bg-black/20 border border-white/5">
+    <div className="py-2 px-3 rounded-lg bg-white border border-neutral-200/50 shadow-sm">
       <div className="flex items-start gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
             <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${typeColor[incident.incident_type] || typeColor.other}`}>
               {typeLabel}
             </span>
-            <span className="text-[10px] text-[#B7BEC4]/50">
+            <span className="text-[10px] text-neutral-400">
               {new Date(incident.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
             </span>
           </div>
-          <p className="text-xs text-[#B7BEC4] leading-relaxed">{incident.description}</p>
+          <p className="text-xs text-neutral-600 leading-relaxed">{incident.description}</p>
         </div>
         {incident.image_path && !imageUrl && (
-          <button type="button" onClick={loadImage} className="shrink-0 w-10 h-10 rounded-lg border border-[#3A3F45] flex items-center justify-center text-[#B7BEC4]/40 hover:text-[#B7BEC4] hover:border-[#B7BEC4]/40 transition-colors">
+          <button type="button" onClick={loadImage} className="shrink-0 w-10 h-10 rounded-lg border border-neutral-200 flex items-center justify-center text-neutral-400 hover:text-neutral-750 hover:border-neutral-300 transition-colors">
             {loadingImage ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
           </button>
         )}
       </div>
       {imageUrl && (
-        <a href={imageUrl} target="_blank" rel="noopener noreferrer" className="block mt-2 w-32 h-32 rounded-xl overflow-hidden border border-[#3A3F45] hover:border-[#145A3A] transition-colors">
+        <a href={imageUrl} target="_blank" rel="noopener noreferrer" className="block mt-2 w-32 h-32 rounded-xl overflow-hidden border border-neutral-200 hover:border-[#89d957] transition-colors">
           <img src={imageUrl} alt="Incident" className="w-full h-full object-cover" />
         </a>
       )}

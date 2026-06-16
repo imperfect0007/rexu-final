@@ -65,7 +65,7 @@ export default function ContactPage() {
           <p className="text-sm text-neutral-600 leading-relaxed">
             REXU
             <br />
-            [Your registered address here]
+            [Mysuru, Karnataka, India]
             <br />
             India
           </p>

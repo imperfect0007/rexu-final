@@ -41,7 +41,7 @@ export function FAQSection() {
         </motion.div>
       </div>
 
-      <div className="mx-auto mt-12 max-w-2xl space-y-3">
+      <div className="mx-auto mt-12 max-w-4xl space-y-3">
         {faqs.map((item, i) => {
           const open = openIndex === i;
           return (

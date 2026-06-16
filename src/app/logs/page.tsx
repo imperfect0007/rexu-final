@@ -13,6 +13,7 @@ import {
   Filter,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { SiteNavbar } from '@/components/marketing/SiteNavbar';
 
 interface FleetVehicleSummary {
   vehicle_id: string;
@@ -145,29 +146,31 @@ export default function LogsPage() {
         : vehicleLogs.filter((l) => !l.has_vec);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-black via-[#101518] to-black text-white pb-20">
+    <div className="min-h-screen flex flex-col font-sans">
+      <SiteNavbar />
+      <div className="flex-1 bg-white bg-rexu-grid text-neutral-900 pb-20">
       {/* Header */}
       <motion.header
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, ease: [0.33, 1, 0.68, 1] as [number, number, number, number] }}
-        className="bg-[#1F2428] border-b border-[#2B3136] sticky top-0 z-10"
+        className="bg-white/85 backdrop-blur-md border-b border-neutral-200/50 sticky top-[72px] z-10"
       >
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => router.push('/dashboard')}
-              className="w-9 h-9 rounded-full border border-[#3A3F45] flex items-center justify-center text-[#B7BEC4] hover:bg-[#2B3136] hover:text-white transition-colors"
+              className="w-9 h-9 rounded-full border border-neutral-200 flex items-center justify-center text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900 transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
             </button>
-            <div className="bg-[#145A3A] p-1.5 rounded-full">
+            <div className="bg-emerald-800 p-1.5 rounded-full">
               <ScrollText className="w-5 h-5 text-white" />
             </div>
             <div className="flex flex-col">
-              <span className="font-bold text-white leading-tight">Activity Logs</span>
-              <span className="text-[10px] uppercase tracking-[0.2em] text-[#B7BEC4]">
+              <span className="font-bold text-neutral-900 leading-tight">Activity Logs</span>
+              <span className="text-[10px] uppercase tracking-[0.2em] text-neutral-500">
                 Fleet audit trail
               </span>
             </div>
@@ -176,16 +179,16 @@ export default function LogsPage() {
             <button
               type="button"
               onClick={() => setProfileMenuOpen((o) => !o)}
-              className="h-8 px-2.5 rounded-lg bg-[#2B3136] border border-[#3A3F45] text-white text-[11px] font-bold tracking-wide flex items-center justify-center hover:bg-[#3A3F45] transition-colors"
+              className="h-8 px-2.5 rounded-lg bg-white border border-neutral-200 text-neutral-900 text-[11px] font-bold tracking-wide flex items-center justify-center hover:bg-neutral-50 transition-colors"
             >
               {profileName || 'rexu'}
             </button>
             {profileMenuOpen && (
-              <div className="absolute right-0 mt-2 w-44 rounded-xl border border-[#3A3F45] bg-[#1F2428] shadow-lg py-1 text-sm z-20">
-                <button type="button" onClick={() => { setProfileMenuOpen(false); router.push('/dashboard'); }} className="w-full flex items-center gap-2 px-3 py-2 text-left text-[#B7BEC4] hover:bg-[#2B3136] hover:text-white">
+              <div className="absolute right-0 mt-2 w-44 rounded-xl border border-neutral-200 bg-white shadow-lg py-1 text-sm z-20">
+                <button type="button" onClick={() => { setProfileMenuOpen(false); router.push('/dashboard'); }} className="w-full flex items-center gap-2 px-3 py-2 text-left text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900">
                   <Shield className="w-4 h-4" /> Back to dashboard
                 </button>
-                <button type="button" onClick={() => { setProfileMenuOpen(false); router.push('/profile'); }} className="w-full flex items-center gap-2 px-3 py-2 text-left text-[#B7BEC4] hover:bg-[#2B3136] hover:text-white">
+                <button type="button" onClick={() => { setProfileMenuOpen(false); router.push('/profile'); }} className="w-full flex items-center gap-2 px-3 py-2 text-left text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900">
                   <User className="w-4 h-4" /> Profile
                 </button>
               </div>
@@ -202,30 +205,30 @@ export default function LogsPage() {
       >
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="border border-white/10 rounded-[28px] bg-[#101518]/90 p-6 flex items-center justify-between">
+          <div className="border border-neutral-200 rounded-[28px] bg-white p-6 flex items-center justify-between">
             <div>
-              <p className="text-sm text-[#B7BEC4] mb-1">Vehicles</p>
-              <p className="text-3xl font-bold text-white">{vehicles.length}</p>
+              <p className="text-sm text-neutral-500 mb-1">Vehicles</p>
+              <p className="text-3xl font-bold text-neutral-900">{vehicles.length}</p>
             </div>
-            <ScrollText className="w-6 h-6 text-[#B7BEC4]/40" />
+            <ScrollText className="w-6 h-6 text-neutral-300" />
           </div>
-          <div className="border border-white/10 rounded-[28px] bg-[#101518]/90 p-6 flex items-center justify-between">
+          <div className="border border-neutral-200 rounded-[28px] bg-white p-6 flex items-center justify-between">
             <div>
-              <p className="text-sm text-[#B7BEC4] mb-1">Selected vehicle logs</p>
-              <p className="text-3xl font-bold text-[#9AC57A]">
+              <p className="text-sm text-neutral-500 mb-1">Selected vehicle logs</p>
+              <p className="text-3xl font-bold text-emerald-700">
                 {filteredLogs.length}
               </p>
             </div>
-            <Filter className="w-6 h-6 text-[#9AC57A]/40" />
+            <Filter className="w-6 h-6 text-emerald-700/40" />
           </div>
         </div>
 
         {/* Filters */}
-        <section className="bg-[#101518]/90 rounded-[28px] p-6 border border-white/10 space-y-5">
+        <section className="bg-white rounded-[28px] p-6 border border-neutral-200 space-y-5">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <h2 className="text-lg font-bold text-white">Vehicle logs</h2>
-              <p className="text-sm text-[#B7BEC4] mt-0.5">
+              <h2 className="text-lg font-bold text-neutral-900">Vehicle logs</h2>
+              <p className="text-sm text-neutral-500 mt-0.5">
                 Tap a vehicle to view check-in/out logs.
               </p>
             </div>
@@ -233,14 +236,14 @@ export default function LogsPage() {
 
           {/* Vehicle picker */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div className="rounded-2xl border border-white/10 bg-[#0B0F12]/30 overflow-hidden">
-              <div className="px-4 py-3 border-b border-white/10 flex items-center gap-2">
-                <Truck className="w-4 h-4 text-[#B7BEC4]" />
-                <p className="text-sm font-semibold text-white">Vehicles</p>
+            <div className="rounded-2xl border border-neutral-200 bg-neutral-50/50 overflow-hidden">
+              <div className="px-4 py-3 border-b border-neutral-200 flex items-center gap-2">
+                <Truck className="w-4 h-4 text-neutral-400" />
+                <p className="text-sm font-semibold text-neutral-900">Vehicles</p>
               </div>
-              <div className="max-h-[420px] overflow-auto divide-y divide-white/5">
+              <div className="max-h-[420px] overflow-auto divide-y divide-neutral-200">
                 {vehicles.length === 0 ? (
-                  <p className="px-4 py-4 text-sm text-[#B7BEC4]/70">No vehicles yet.</p>
+                  <p className="px-4 py-4 text-sm text-neutral-500">No vehicles yet.</p>
                 ) : (
                   vehicles.map((v) => {
                     const active = v.vehicle_id === selectedVehicleId;
@@ -252,34 +255,34 @@ export default function LogsPage() {
                           setSelectedVehicleId(v.vehicle_id);
                           void loadVehicleLogs(v.vehicle_id);
                         }}
-                        className={`w-full px-4 py-3 text-left hover:bg-white/[0.03] transition ${
-                          active ? 'bg-[#145A3A]/20' : ''
+                        className={`w-full px-4 py-3 text-left hover:bg-neutral-100 transition ${
+                          active ? 'bg-emerald-50' : ''
                         }`}
                       >
                         <div className="flex items-center justify-between gap-3">
                           <div className="min-w-0">
-                            <p className="text-sm font-semibold text-white truncate">
+                            <p className="text-sm font-semibold text-neutral-900 truncate">
                               {v.vehicle_number}
-                              {v.label ? <span className="text-[#B7BEC4] font-normal"> • {v.label}</span> : null}
+                              {v.label ? <span className="text-neutral-500 font-normal"> • {v.label}</span> : null}
                             </p>
-                            <p className="text-[11px] text-[#B7BEC4]/70">
+                            <p className="text-[11px] text-neutral-500">
                               {v.make_model || '—'}
                               {v.last_log_at ? ` • Last: ${new Date(v.last_log_at).toLocaleString('en-IN')}` : ''}
                             </p>
                           </div>
                           <div className="shrink-0 text-right">
-                            <p className="text-xs font-bold text-white">{v.logs_total}</p>
-                            <p className="text-[10px] text-[#B7BEC4]/70">logs</p>
+                            <p className="text-xs font-bold text-neutral-900">{v.logs_total}</p>
+                            <p className="text-[10px] text-neutral-500">logs</p>
                           </div>
                         </div>
-                        <div className="mt-2 flex items-center gap-2 text-[10px] text-[#B7BEC4]/70">
-                          <span className="px-2 py-1 rounded-full border border-white/10 bg-white/[0.02]">
+                        <div className="mt-2 flex items-center gap-2 text-[10px] text-neutral-500">
+                          <span className="px-2 py-1 rounded-full border border-neutral-200 bg-white">
                             In: {v.checkins_total}
                           </span>
-                          <span className="px-2 py-1 rounded-full border border-white/10 bg-white/[0.02]">
+                          <span className="px-2 py-1 rounded-full border border-neutral-200 bg-white">
                             Out: {v.checkouts_total}
                           </span>
-                          <span className="px-2 py-1 rounded-full border border-white/10 bg-white/[0.02]">
+                          <span className="px-2 py-1 rounded-full border border-neutral-200 bg-white">
                             VEC: {v.logs_with_vec}
                           </span>
                         </div>
@@ -290,13 +293,13 @@ export default function LogsPage() {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-white/10 bg-[#0B0F12]/30 overflow-hidden">
-              <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between gap-3">
+            <div className="rounded-2xl border border-neutral-200 bg-neutral-50/50 overflow-hidden">
+              <div className="px-4 py-3 border-b border-neutral-200 flex items-center justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold text-white truncate">
+                  <p className="text-sm font-semibold text-neutral-900 truncate">
                     {selectedVehicle ? `Logs • ${selectedVehicle.vehicle_number}` : 'Logs'}
                   </p>
-                  <p className="text-[11px] text-[#B7BEC4]/70">
+                  <p className="text-[11px] text-neutral-500">
                     {selectedVehicle?.make_model || 'Select a vehicle to view logs.'}
                   </p>
                 </div>
@@ -306,8 +309,8 @@ export default function LogsPage() {
                     onClick={() => setFilterHasVec('all')}
                     className={`px-3 py-2 rounded-xl text-xs font-semibold border transition ${
                       filterHasVec === 'all'
-                        ? 'bg-[#145A3A] border-[#145A3A] text-white'
-                        : 'bg-[#2B3136] border-[#3A3F45] text-[#B7BEC4] hover:bg-[#3A3F45] hover:text-white'
+                        ? 'bg-emerald-700 border-emerald-700 text-white'
+                        : 'bg-white border-neutral-200 text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900'
                     }`}
                   >
                     All
@@ -317,8 +320,8 @@ export default function LogsPage() {
                     onClick={() => setFilterHasVec('yes')}
                     className={`px-3 py-2 rounded-xl text-xs font-semibold border transition ${
                       filterHasVec === 'yes'
-                        ? 'bg-[#145A3A] border-[#145A3A] text-white'
-                        : 'bg-[#2B3136] border-[#3A3F45] text-[#B7BEC4] hover:bg-[#3A3F45] hover:text-white'
+                        ? 'bg-emerald-700 border-emerald-700 text-white'
+                        : 'bg-white border-neutral-200 text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900'
                     }`}
                   >
                     VEC ✓
@@ -328,8 +331,8 @@ export default function LogsPage() {
                     onClick={() => setFilterHasVec('no')}
                     className={`px-3 py-2 rounded-xl text-xs font-semibold border transition ${
                       filterHasVec === 'no'
-                        ? 'bg-[#145A3A] border-[#145A3A] text-white'
-                        : 'bg-[#2B3136] border-[#3A3F45] text-[#B7BEC4] hover:bg-[#3A3F45] hover:text-white'
+                        ? 'bg-emerald-700 border-emerald-700 text-white'
+                        : 'bg-white border-neutral-200 text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900'
                     }`}
                   >
                     VEC ☐
@@ -337,27 +340,27 @@ export default function LogsPage() {
                 </div>
               </div>
 
-              <div className="max-h-[420px] overflow-auto divide-y divide-white/5">
+              <div className="max-h-[420px] overflow-auto divide-y divide-neutral-200">
                 {logsLoading ? (
-                  <div className="px-4 py-6 flex items-center gap-2 text-sm text-[#B7BEC4]">
+                  <div className="px-4 py-6 flex items-center gap-2 text-sm text-neutral-500">
                     <Loader2 className="w-4 h-4 animate-spin" /> Loading logs…
                   </div>
                 ) : selectedVehicleId == null ? (
-                  <p className="px-4 py-4 text-sm text-[#B7BEC4]/70">Select a vehicle.</p>
+                  <p className="px-4 py-4 text-sm text-neutral-500">Select a vehicle.</p>
                 ) : filteredLogs.length === 0 ? (
-                  <p className="px-4 py-4 text-sm text-[#B7BEC4]/70">No logs for this vehicle.</p>
+                  <p className="px-4 py-4 text-sm text-neutral-500">No logs for this vehicle.</p>
                 ) : (
                   filteredLogs.map((l) => (
                     <div key={l.checkin_id} className="px-4 py-3">
                       <div className="flex items-center justify-between gap-3">
                         <div className="min-w-0">
-                          <p className="text-sm font-semibold text-white">
+                          <p className="text-sm font-semibold text-neutral-900">
                             {l.check_type === 'check_in' ? 'Check In' : 'Check Out'}
-                            <span className="ml-2 text-[10px] font-semibold px-2 py-1 rounded-full border border-white/10 bg-white/[0.02] text-[#B7BEC4]">
+                            <span className="ml-2 text-[10px] font-semibold px-2 py-1 rounded-full border border-neutral-200 bg-neutral-50 text-neutral-500">
                               {formatTime(l.created_at)}
                             </span>
                           </p>
-                          <p className="text-[11px] text-[#B7BEC4]/70">
+                          <p className="text-[11px] text-neutral-500">
                             {new Date(l.created_at).toLocaleDateString('en-IN')}
                             {l.trip_purpose ? ` • ${l.trip_purpose}` : ''}
                             {l.trip_note ? ` • ${l.trip_note}` : ''}
@@ -367,8 +370,8 @@ export default function LogsPage() {
                           <span
                             className={`text-[10px] font-semibold px-2 py-1 rounded-full border ${
                               l.has_vec
-                                ? 'text-[#9AC57A] bg-[#0F3D2E]/30 border-[#145A3A]/40'
-                                : 'text-[#B7BEC4] bg-[#2B3136] border-[#3A3F45]'
+                                ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
+                                : 'text-neutral-500 bg-neutral-50 border-neutral-200'
                             }`}
                           >
                             VEC {l.has_vec ? '✓' : '☐'}
@@ -378,7 +381,7 @@ export default function LogsPage() {
                               href={l.vec_doc_link}
                               target="_blank"
                               rel="noreferrer"
-                              className="text-xs font-semibold text-[#9AC57A] hover:underline"
+                              className="text-xs font-semibold text-emerald-700 hover:underline"
                             >
                               Open
                             </a>
@@ -391,9 +394,9 @@ export default function LogsPage() {
               </div>
             </div>
           </div>
-
         </section>
       </motion.main>
+      </div>
     </div>
   );
 }
