@@ -70,14 +70,14 @@ const commercialProducts = [
   {
     id: 'fleet-starter',
     name: 'Fleet Starter Dashboard',
-    price: 'From ₹1,999/mo',
-    image: '/instagram/post4.png',
+    price: 'Free',
+    image: '/productgalu/3.png',
   },
   {
     id: 'fleet-enterprise',
     name: 'Enterprise Custom Fleet',
     price: 'Custom Pricing',
-    image: '/instagram/post5.png',
+    image: '/productgalu/4.png',
   },
 ];
 

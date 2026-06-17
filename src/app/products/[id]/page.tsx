@@ -17,7 +17,7 @@ const products: Record<
   'personal-sticker': {
     name: 'Personal QR Safety Sticker',
     price: '₹349* (MRP ₹499)',
-    image: '/instagram/post1.png',
+    image: '/productgalu/rexu-scan-card.png',
     description:
       'A high-durability, waterproof QR safety decal designed for helmet, motorcycle, or car window placement. One scan lets any bystander or emergency responder alert your emergency contacts instantly without installing any apps. * Inaugural offer of ₹349 per sticker is valid for up to 100 vehicles. For fleets exceeding 100 vehicles, standard rates apply.',
     features: [
@@ -31,7 +31,7 @@ const products: Record<
   'keychain-bundle': {
     name: 'Keychains & Tag Bundle',
     price: '₹499',
-    image: '/instagram/post2.png',
+    image: '/productgalu/rexu-scan-card.png',
     description:
       'A premium-quality metal keychain with embedded QR protection. Perfect for keys, daily commuter bags, school backpacks, or elderly family members. Provides critical care info and priority alerts to emergency contacts.',
     features: [
@@ -45,7 +45,7 @@ const products: Record<
   'helmet-shield': {
     name: 'Helmet QR Shield',
     price: '₹399',
-    image: '/instagram/post3.png',
+    image: '/productgalu/rexu-scan-card.png',
     description:
       'A reflective, weather-resistant micro-decal designed specifically for helmet application. Essential safety gear for motorcyclists, bicycle riders, and daily highway commuters.',
     features: [
@@ -58,8 +58,8 @@ const products: Record<
   },
   'fleet-starter': {
     name: 'Fleet Starter Plan',
-    price: '₹1,999/mo',
-    image: '/instagram/post4.png',
+    price: '₹FREE',
+    image: '/productgalu/rexu-scan-card.png',
     description:
       'Safety management platform designed for growing delivery networks, local logistics operations, and taxi chains with up to 15 commercial vehicles.',
     features: [
@@ -73,7 +73,7 @@ const products: Record<
   'fleet-enterprise': {
     name: 'Enterprise Custom Fleet',
     price: 'Custom Pricing',
-    image: '/instagram/post5.png',
+    image: '/productgalu/rexu-scan-card.png',
     description:
       'Uncapped safety operations and compliance logging designed for major transport networks, large trucking enterprises, and international logistics operations.',
     features: [

@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { SiteNavbar } from '@/components/marketing/SiteNavbar';
+import { DashboardSidebar } from '@/components/DashboardSidebar';
 
 interface FleetDocument {
   id: string;
@@ -358,69 +359,16 @@ function DocumentsPageContent() {
 
   return (
     <div className="min-h-screen flex flex-col font-sans">
-      <SiteNavbar />
-      <div className="flex-1 bg-white bg-rexu-grid text-neutral-900 pb-20">
-      <motion.header
-        initial={{ opacity: 0, y: -8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35, ease: [0.33, 1, 0.68, 1] as [number, number, number, number] }}
-        className="bg-white/85 backdrop-blur-md border-b border-neutral-200/50 sticky top-[72px] z-10"
-      >
-        <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => router.push('/dashboard')}
-              className="w-9 h-9 rounded-full border border-neutral-200 flex items-center justify-center text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900 transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-            </button>
-            <div className="bg-[#89d957]/10 p-1.5 rounded-xl border border-[#89d957]/20">
-              <FileText className="w-5 h-5 text-[#5a9c32]" />
-            </div>
-            <div className="flex flex-col">
-              <span className="font-bold text-neutral-800 leading-tight">Documents</span>
-              <span className="text-[10px] uppercase tracking-[0.2em] text-neutral-400">
-                Fleet documents &amp; expiry
-              </span>
-            </div>
-          </div>
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setProfileMenuOpen((o) => !o)}
-              className="h-8 px-2.5 rounded-lg bg-neutral-50 border border-neutral-200 text-neutral-700 text-[11px] font-bold tracking-wide flex items-center justify-center hover:bg-neutral-100 transition-colors"
-            >
-              rexu
-            </button>
-            {profileMenuOpen && (
-              <div className="absolute right-0 mt-2 w-44 rounded-xl border border-neutral-200/60 bg-white shadow-xl py-1 text-sm z-20">
-                <button
-                  type="button"
-                  onClick={() => { setProfileMenuOpen(false); router.push('/dashboard'); }}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-left text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 transition-colors"
-                >
-                  <Shield className="w-4 h-4 text-neutral-400" /> Back to dashboard
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setProfileMenuOpen(false); router.push('/profile'); }}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-left text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 transition-colors"
-                >
-                  <User className="w-4 h-4 text-neutral-400" /> Profile
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </motion.header>
-
-      <motion.main
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.4, delay: 0.1 }}
-        className="max-w-5xl mx-auto px-4 py-8 space-y-6"
-      >
+      <SiteNavbar title="Documents" subtitle="Fleet documents & expiry" backUrl="/dashboard" />
+      <div className="flex-1 flex bg-white bg-rexu-grid text-neutral-900">
+        <DashboardSidebar activePath="/documents" />
+        <div className="flex-1 flex flex-col min-h-[calc(100vh-72px)]">
+          <motion.main
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, ease: [0.33, 1, 0.68, 1] }}
+            className="flex-1 p-8 space-y-6 bg-transparent"
+          >
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="border border-neutral-200/50 rounded-[24px] bg-white shadow-sm p-6 flex items-center justify-between">
@@ -758,6 +706,7 @@ function DocumentsPageContent() {
           </div>
         </div>
       )}
+        </div>
       </div>
     </div>
   );

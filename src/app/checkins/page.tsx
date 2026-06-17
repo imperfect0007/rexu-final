@@ -21,6 +21,8 @@ import {
   Filter,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { SiteNavbar } from '@/components/marketing/SiteNavbar';
+import { DashboardSidebar } from '@/components/DashboardSidebar';
 
 interface FleetCheckin {
   id: string;
@@ -350,61 +352,17 @@ export default function CheckinsPage() {
         : checkins.filter((c) => c.trip_purpose === filterPurpose);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-black via-[#101518] to-black text-white pb-20">
-      {/* Header */}
-      <motion.header
-        initial={{ opacity: 0, y: -8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35, ease: [0.33, 1, 0.68, 1] as [number, number, number, number] }}
-        className="bg-[#1F2428] border-b border-[#2B3136] sticky top-0 z-10"
-      >
-        <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => router.push('/dashboard')}
-              className="w-9 h-9 rounded-full border border-[#3A3F45] flex items-center justify-center text-[#B7BEC4] hover:bg-[#2B3136] hover:text-white transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-            </button>
-            <div className="bg-[#145A3A] p-1.5 rounded-full">
-              <ClipboardCheck className="w-5 h-5 text-white" />
-            </div>
-            <div className="flex flex-col">
-              <span className="font-bold text-white leading-tight">Check-in / Check-out</span>
-              <span className="text-[10px] uppercase tracking-[0.2em] text-[#B7BEC4]">
-                Vehicle shift tracking
-              </span>
-            </div>
-          </div>
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setProfileMenuOpen((o) => !o)}
-              className="h-8 px-2.5 rounded-lg bg-[#2B3136] border border-[#3A3F45] text-white text-[11px] font-bold tracking-wide flex items-center justify-center hover:bg-[#3A3F45] transition-colors"
-            >
-              rexu
-            </button>
-            {profileMenuOpen && (
-              <div className="absolute right-0 mt-2 w-44 rounded-xl border border-[#3A3F45] bg-[#1F2428] shadow-lg py-1 text-sm z-20">
-                <button type="button" onClick={() => { setProfileMenuOpen(false); router.push('/dashboard'); }} className="w-full flex items-center gap-2 px-3 py-2 text-left text-[#B7BEC4] hover:bg-[#2B3136] hover:text-white">
-                  <Shield className="w-4 h-4" /> Back to dashboard
-                </button>
-                <button type="button" onClick={() => { setProfileMenuOpen(false); router.push('/profile'); }} className="w-full flex items-center gap-2 px-3 py-2 text-left text-[#B7BEC4] hover:bg-[#2B3136] hover:text-white">
-                  <User className="w-4 h-4" /> Profile
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </motion.header>
-
-      <motion.main
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.4, delay: 0.1 }}
-        className="max-w-5xl mx-auto px-4 py-8 space-y-6"
-      >
+    <div className="min-h-screen flex flex-col font-sans bg-black text-white">
+      <SiteNavbar title="Check-in / Check-out" subtitle="Vehicle shift tracking" backUrl="/dashboard" dark />
+      <div className="flex-1 flex bg-gradient-to-b from-black via-[#101518] to-black">
+        <DashboardSidebar activePath="/checkins" dark />
+        <div className="flex-1 flex flex-col min-h-[calc(100vh-72px)]">
+          <motion.main
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, ease: [0.33, 1, 0.68, 1] }}
+            className="flex-1 p-8 space-y-6 bg-transparent"
+          >
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="border border-white/10 rounded-[28px] bg-[#101518]/90 p-6 flex items-center justify-between">
@@ -784,7 +742,9 @@ export default function CheckinsPage() {
             </p>
           )}
         </section>
-      </motion.main>
+          </motion.main>
+        </div>
+      </div>
     </div>
   );
 }

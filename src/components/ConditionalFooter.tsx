@@ -10,7 +10,17 @@ export default function ConditionalFooter() {
   const isAuthPage =
     pathname?.includes('/login') || pathname?.includes('/register');
 
-  if (isAuthPage) {
+  const isDashboardPage =
+    pathname === '/dashboard' ||
+    pathname?.startsWith('/fleet') ||
+    pathname?.startsWith('/drivers') ||
+    pathname?.startsWith('/documents') ||
+    pathname?.startsWith('/logs') ||
+    pathname?.startsWith('/profile') ||
+    pathname?.startsWith('/notifications') ||
+    pathname?.startsWith('/checkins');
+
+  if (isAuthPage || isDashboardPage) {
     return null;
   }
 

@@ -40,6 +40,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { PaymentModal } from '@/components/PaymentModal';
 import { motion } from 'framer-motion';
 import { SiteNavbar } from '@/components/marketing/SiteNavbar';
+import { DashboardSidebar } from '@/components/DashboardSidebar';
 
 interface Profile {
   id: string;
@@ -162,6 +163,23 @@ export default function DashboardPage(props: PageProps) {
   useEffect(() => {
     fetchData();
   }, []);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('pay') === 'true') {
+        setIsPaymentOpen(true);
+      }
+      if (params.get('scroll') === 'assignments') {
+        setTimeout(() => {
+          const el = document.getElementById('assignments-section');
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }, 500);
+      }
+    }
+  }, [props.searchParams]);
 
   const fetchData = async () => {
     try {
@@ -1034,196 +1052,10 @@ export default function DashboardPage(props: PageProps) {
 
     return (
       <div className="min-h-screen flex flex-col font-sans">
-        <SiteNavbar />
+        <SiteNavbar title="Fleet Dashboard" subtitle="Vehicles & Drivers" showNotification />
         <div className="flex-1 flex bg-white bg-rexu-grid text-neutral-900">
-        {/* ── Sidebar ── */}
-        <aside className="hidden md:flex w-[240px] shrink-0 border-r border-neutral-200 flex-col bg-white sticky top-[72px] h-[calc(100vh-72px)] overflow-y-auto shadow-sm z-40">
-          {/* Logo / profile */}
-          <div className="px-5 pt-6 pb-5 flex flex-col items-center text-center border-b border-neutral-100">
-            <button
-              type="button"
-              onClick={() => router.push('/')}
-              className="self-start mb-4 w-8 h-8 rounded-full border border-neutral-200 flex items-center justify-center text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-            </button>
-            <div className="w-14 h-14 rounded-full mb-3 overflow-hidden border-2 border-[#89d957]/40 bg-neutral-100 flex items-center justify-center">
-              {profileAvatarUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={profileAvatarUrl} alt="Profile" className="w-full h-full object-cover" />
-              ) : (
-                <Image src="/rexu-logo.png" alt="Rexu" width={56} height={56} className="rounded-full" />
-              )}
-            </div>
-            <h2 className="font-bold text-sm text-neutral-900">{profile?.full_name || 'Rexu'}</h2>
-            <p className="text-[11px] text-[#6eb84a] font-semibold uppercase tracking-widest mt-0.5">Fleet Account</p>
-            <button
-              type="button"
-              onClick={() => router.push('/profile')}
-              className="mt-2 inline-flex items-center gap-1 text-[11px] text-neutral-500 hover:text-neutral-900 transition-colors"
-            >
-              <Pencil className="w-3 h-3" /> Edit Profile
-            </button>
-          </div>
-
-          {/* Navigation */}
-          <nav className="flex-1 py-5 space-y-1 px-3">
-            <p className="px-3 mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-400">
-              Fleet Management
-            </p>
-            <Link
-              href="/dashboard"
-              className="flex items-center gap-3 px-3.5 py-2.5 text-sm font-bold text-neutral-900 bg-white shadow-sm border border-neutral-100/80 rounded-xl transition-all"
-            >
-              <LayoutDashboard className="w-4 h-4 text-[#6eb84a]" /> Fleet Dashboard
-            </Link>
-            <Link
-              href="/fleet"
-              className="flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900 rounded-xl transition-all group"
-            >
-              <Truck className="w-4 h-4 text-neutral-400 group-hover:text-neutral-900 transition-colors" /> Manage Vehicles
-            </Link>
-            <Link
-              href="/drivers"
-              className="flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900 rounded-xl transition-all group"
-            >
-              <Users className="w-4 h-4 text-neutral-400 group-hover:text-neutral-900 transition-colors" /> Manage Drivers
-            </Link>
-            <button
-              type="button"
-              onClick={() => {
-                const el = document.getElementById('assignments-section');
-                el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-              }}
-              className="w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900 rounded-xl transition-all group focus:outline-none cursor-pointer"
-            >
-              <Link2 className="w-4 h-4 text-neutral-400 group-hover:text-neutral-900 transition-colors" /> Assignments
-            </button>
-
-            <p className="px-3 mt-6 mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-400">
-              Operations
-            </p>
-            <Link
-              href="/documents"
-              className="flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900 rounded-xl transition-all group"
-            >
-              <FileText className="w-4 h-4 text-neutral-400 group-hover:text-neutral-900 transition-colors" /> Documents
-              {expiringDocs.length > 0 && (
-                <span className="ml-auto text-[10px] font-bold text-amber-700 bg-amber-100 border border-amber-200 rounded-full px-1.5 py-0.5 leading-none">
-                  {expiringDocs.length}
-                </span>
-              )}
-            </Link>
-            <Link
-              href="/logs"
-              className="flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900 rounded-xl transition-all group"
-            >
-              <ScrollText className="w-4 h-4 text-neutral-400 group-hover:text-neutral-900 transition-colors" /> Activity Logs
-            </Link>
-
-            <p className="px-3 mt-6 mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-400">
-              Account
-            </p>
-            <Link
-              href="/profile"
-              className="flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900 rounded-xl transition-all group"
-            >
-              <Settings className="w-4 h-4 text-neutral-400 group-hover:text-neutral-900 transition-colors" /> Settings
-            </Link>
-            <Link
-              href="/security"
-              className="flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900 rounded-xl transition-all group"
-            >
-              <Shield className="w-4 h-4 text-neutral-400 group-hover:text-neutral-900 transition-colors" /> Security
-            </Link>
-            <button
-              type="button"
-              onClick={handlePayment}
-              className="w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900 rounded-xl transition-all group focus:outline-none cursor-pointer"
-            >
-              <CreditCard className="w-4 h-4 text-neutral-400 group-hover:text-neutral-900 transition-colors" /> Billing &amp; Plans
-            </button>
-          </nav>
-
-          {/* Bottom */}
-          <div className="border-t border-neutral-100 px-5 py-4 space-y-3">
-            <button
-              type="button"
-              className="flex items-center gap-2 text-sm text-neutral-500 hover:text-neutral-900 transition-colors"
-            >
-              <HelpCircle className="w-4 h-4" /> Help &amp; Support
-            </button>
-            <button
-              type="button"
-              onClick={async () => {
-                await supabase.auth.signOut();
-                router.push('/login');
-              }}
-              className="flex items-center gap-2 text-sm text-neutral-500 hover:text-red-500 transition-colors w-full"
-            >
-              <span className="w-6 h-6 rounded-full bg-neutral-100 text-neutral-700 flex items-center justify-center text-[10px] font-bold shrink-0">
-                {profile?.full_name?.[0]?.toUpperCase() || 'U'}
-              </span>
-              Logout
-            </button>
-          </div>
-        </aside>
-
-        {/* ── Main content ── */}
-        <div className="flex-1 flex flex-col min-h-[calc(100vh-72px)]">
-          {/* Top header bar */}
-          <header className="shrink-0 border-b border-neutral-200 flex items-center justify-between px-8 py-5 bg-transparent">
-            <div>
-              <h1 className="text-lg font-bold text-neutral-900 leading-tight">
-                Fleet Dashboard
-              </h1>
-              <p className="text-xs text-neutral-500">Vehicles &amp; Drivers</p>
-            </div>
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                className="p-2 rounded-lg hover:bg-neutral-100 transition-colors"
-              >
-                <Bell className="w-5 h-5 text-neutral-400" />
-              </button>
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => setProfileMenuOpen((open) => !open)}
-                  className="h-8 px-3 rounded-full bg-neutral-100 text-neutral-700 text-[11px] font-bold tracking-wide flex items-center justify-center border border-neutral-200/80 hover:bg-neutral-200 hover:text-neutral-900 transition-colors cursor-pointer"
-                >
-                  {profile?.full_name?.[0]?.toUpperCase() || 'R'}
-                </button>
-                {profileMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-44 rounded-2xl border border-neutral-200 bg-white shadow-xl py-1 text-sm z-20">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setProfileMenuOpen(false);
-                        router.push('/profile');
-                      }}
-                      className="w-full flex items-center gap-2 px-4 py-2.5 text-left text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
-                    >
-                      <User className="w-4 h-4" />
-                      <span>Profile</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        setProfileMenuOpen(false);
-                        await supabase.auth.signOut();
-                        router.push('/login');
-                      }}
-                      className="w-full flex items-center gap-2 px-4 py-2.5 text-left text-red-500 hover:bg-red-50"
-                    >
-                      <LogOut className="w-4 h-4" />
-                      <span>Logout</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </header>
+          <DashboardSidebar activePath="/dashboard" />
+          <div className="flex-1 flex flex-col min-h-[calc(100vh-72px)]">
 
           {/* Scrollable main area */}
           <main className="flex-1 p-8 space-y-6 bg-transparent text-neutral-900">
@@ -1757,89 +1589,17 @@ export default function DashboardPage(props: PageProps) {
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <SiteNavbar />
-      <div className="flex-1 bg-white bg-rexu-grid pb-20">
-      {/* Header */}
-      <motion.header
-        initial={{ opacity: 0, y: -8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35, ease: [0.33, 1, 0.68, 1] as const }}
-        className="bg-white border-b border-neutral-200 sticky top-0 z-10 shadow-sm"
-      >
-        <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="bg-gradient-brand p-2 rounded-xl">
-              <Shield className="w-5 h-5 text-[#1a2e0f]" />
-            </div>
-            <div className="flex flex-col">
-              <span className="font-bold text-neutral-900">My Dashboard</span>
-              {profile?.full_name && (
-                <span className="text-[11px] text-neutral-500">
-                  {profile.full_name}
-                </span>
-              )}
-            </div>
-          </div>
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setProfileMenuOpen((open) => !open)}
-              className="h-8 w-8 rounded-full bg-gradient-brand text-[#1a2e0f] text-sm font-bold flex items-center justify-center hover:opacity-90 transition-opacity"
-            >
-              {profile?.full_name?.[0]?.toUpperCase() || 'R'}
-            </button>
-            {profileMenuOpen && (
-              <div className="absolute right-0 mt-2 w-48 rounded-2xl border border-neutral-200 bg-white shadow-xl py-1 text-sm z-20">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setProfileMenuOpen(false);
-                    router.push('/profile');
-                  }}
-                  className="w-full flex items-center gap-2 px-4 py-2.5 text-left text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
-                >
-                  <User className="w-4 h-4" />
-                  <span>Profile</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setProfileMenuOpen(false);
-                    if (typeof window !== 'undefined') {
-                      const el = document.getElementById('qr-section');
-                      el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }
-                  }}
-                  className="w-full flex items-center gap-2 px-4 py-2.5 text-left text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
-                >
-                  <QrCode className="w-4 h-4" />
-                  <span>Your QR</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={async () => {
-                    setProfileMenuOpen(false);
-                    await supabase.auth.signOut();
-                    router.push('/login');
-                  }}
-                  className="w-full flex items-center gap-2 px-4 py-2.5 text-left text-red-500 hover:bg-red-50"
-                >
-                  <LogOut className="w-4 h-4" />
-                  <span>Logout</span>
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </motion.header>
-
-      <motion.main
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.4, delay: 0.1 }}
-        className="max-w-5xl mx-auto px-4 py-8 space-y-8"
-      >
+    <div className="min-h-screen flex flex-col font-sans">
+      <SiteNavbar title="My Dashboard" subtitle={profile?.full_name || ''} />
+      <div className="flex-1 flex bg-white bg-rexu-grid text-neutral-900">
+        <DashboardSidebar activePath="/dashboard" />
+        <div className="flex-1 flex flex-col min-h-[calc(100vh-72px)]">
+          <motion.main
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.4, delay: 0.1 }}
+            className="flex-1 p-8 space-y-8 bg-transparent"
+          >
         {/* Welcome Card */}
         <motion.section variants={sectionVariants} initial="hidden" animate="visible">
           <div className="glass-card rounded-2xl p-8 bg-gradient-to-r from-[#89d957]/10 to-[#c9e265]/5">
@@ -2445,7 +2205,9 @@ export default function DashboardPage(props: PageProps) {
             </div>
           </section>
         </motion.div>
-      </motion.main>
+          </motion.main>
+        </div>
+      </div>
       <PaymentModal
         isOpen={isPaymentOpen}
         onClose={() => setIsPaymentOpen(false)}
@@ -2454,6 +2216,5 @@ export default function DashboardPage(props: PageProps) {
         // Personal accounts don't track fleet vehicle count
       />
       </div>
-    </div>
-  );
-}
+    );
+  }
