@@ -8,6 +8,7 @@ export interface CachedEmergencyData {
   profileId: string;
   fullName: string;
   mobile: string | null;
+  avatarUrl: string | null;
   bloodGroup: string | null;
   guardianPhone: string | null;
   secondaryContactPhone: string | null;
@@ -50,7 +51,7 @@ async function fetchFromSupabase(
   ] = await Promise.all([
     supabaseAdmin
       .from('profiles')
-      .select('full_name, is_paid, mobile')
+      .select('full_name, is_paid, mobile, avatar_url')
       .eq('id', qrCode.profile_id)
       .single(),
     supabaseAdmin
@@ -88,6 +89,7 @@ async function fetchFromSupabase(
     profileId: qrCode.profile_id,
     fullName: profile.full_name,
     mobile: profile.mobile ?? null,
+    avatarUrl: profile.avatar_url ?? null,
     bloodGroup: emergencyProfile?.blood_group ?? null,
     guardianPhone: emergencyProfile?.guardian_phone ?? null,
     secondaryContactPhone:

@@ -22,8 +22,15 @@ export function CTABanner() {
             Get your REXU QR in minutes — for yourself, your family, or your entire fleet.
           </p>
         </motion.div>
-        <motion.div className="relative mt-8 flex justify-center" variants={staggerChildVariants}>
-          <GradientButton href="/register" variant="dark">
+        <motion.div 
+          className="relative mt-8 flex justify-center cursor-pointer" 
+          variants={staggerChildVariants}
+          onClick={(e) => {
+            e.preventDefault();
+            window.location.href = '/?choice=true';
+          }}
+        >
+          <GradientButton href="/?choice=true" variant="dark">
             Get started
           </GradientButton>
         </motion.div>

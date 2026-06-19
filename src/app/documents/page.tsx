@@ -21,6 +21,7 @@ import {
   CheckCircle2,
   Clock,
   Filter,
+  Truck,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { SiteNavbar } from '@/components/marketing/SiteNavbar';
@@ -489,77 +490,214 @@ function DocumentsPageContent() {
 
           {/* List */}
           {filtered.length > 0 ? (
-            <div className="rounded-xl border border-neutral-200/60 divide-y divide-neutral-200/60">
-              {filtered.map((doc) => {
-                const status = getExpiryStatus(doc.expiry_date);
+            <div className="space-y-6">
+              {/* Group documents by vehicle */}
+              {(() => {
+                const documentsByVehicle: Record<string, { vehicleNumber: string; docs: FleetDocument[] }> = {};
+                const generalDocs: FleetDocument[] = [];
+
+                filtered.forEach((doc) => {
+                  if (doc.vehicle_id) {
+                    const veh = vehicles.find((v) => v.id === doc.vehicle_id);
+                    const vNum = veh?.vehicle_number || doc.fleet_vehicles?.vehicle_number || 'Unknown Vehicle';
+                    if (!documentsByVehicle[doc.vehicle_id]) {
+                      documentsByVehicle[doc.vehicle_id] = {
+                        vehicleNumber: vNum,
+                        docs: [],
+                      };
+                    }
+                    documentsByVehicle[doc.vehicle_id].docs.push(doc);
+                  } else {
+                    generalDocs.push(doc);
+                  }
+                });
+
                 return (
-                  <div
-                    key={doc.id}
-                    className="px-4 py-4 flex items-center gap-4 hover:bg-neutral-50/50 transition-colors"
-                  >
-                    <div className="w-10 h-10 rounded-xl bg-neutral-50 border border-neutral-200 flex items-center justify-center shrink-0">
-                      <FileText className="w-5 h-5 text-neutral-500" />
-                    </div>
+                  <>
+                    {/* Render Vehicle groups */}
+                    {Object.entries(documentsByVehicle).map(([vehicleId, group]) => (
+                      <div key={vehicleId} className="border border-neutral-200/60 rounded-[20px] bg-white overflow-hidden shadow-sm">
+                        <div className="px-5 py-4 bg-neutral-50/70 border-b border-neutral-200/60 flex items-center justify-between">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-lg bg-white border border-neutral-200 flex items-center justify-center text-neutral-500 shrink-0">
+                              <Truck className="w-4 h-4" />
+                            </div>
+                            <div>
+                              <h3 className="font-bold text-sm text-neutral-800">
+                                Vehicle: {group.vehicleNumber}
+                              </h3>
+                              <p className="text-[11px] text-neutral-400">
+                                {group.docs.length} document{group.docs.length > 1 ? 's' : ''} attached
+                              </p>
+                            </div>
+                          </div>
+                          <Link
+                            href={`/fleet?vehicle=${vehicleId}`}
+                            className="text-xs text-[#5a9c32] hover:underline font-medium"
+                          >
+                            Manage Vehicle
+                          </Link>
+                        </div>
+                        <div className="divide-y divide-neutral-100 bg-white">
+                          {group.docs.map((doc) => {
+                            const status = getExpiryStatus(doc.expiry_date);
+                            return (
+                              <div
+                                key={doc.id}
+                                className="px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-neutral-50/30 transition-colors"
+                              >
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                    <span className="font-semibold text-sm text-neutral-800">{doc.document_name}</span>
+                                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-neutral-50 border border-neutral-200 text-neutral-500 uppercase tracking-wider">
+                                      {DOC_TYPES.find((t) => t.value === doc.document_type)?.label || doc.document_type}
+                                    </span>
+                                    {status === 'valid' && (
+                                      <span className="inline-flex items-center gap-1 text-[10px] font-medium text-[#5a9c32] bg-[#89d957]/10 border border-[#89d957]/20 rounded-full px-2 py-0.5">
+                                        <CheckCircle2 className="w-3 h-3 text-[#5a9c32]" /> Valid
+                                      </span>
+                                    )}
+                                    {status === 'warning' && (
+                                      <span className="inline-flex items-center gap-1 text-[10px] font-medium text-amber-600 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">
+                                        <Clock className="w-3 h-3 text-amber-500" /> Expiring soon
+                                      </span>
+                                    )}
+                                    {status === 'expired' && (
+                                      <span className="inline-flex items-center gap-1 text-[10px] font-medium text-red-600 bg-red-50 border border-red-200 rounded-full px-2 py-0.5">
+                                        <AlertTriangle className="w-3 h-3 text-red-500" /> Expired
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-neutral-400">
+                                    {doc.fleet_drivers && <span>Driver: {doc.fleet_drivers.name}</span>}
+                                    {doc.expiry_date && (
+                                      <span>
+                                        Expires: {new Date(doc.expiry_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
 
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <span className="font-bold text-sm text-neutral-800">{doc.document_name}</span>
-                        <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-neutral-50 border border-neutral-200 text-neutral-500 uppercase tracking-wider">
-                          {DOC_TYPES.find((t) => t.value === doc.document_type)?.label || doc.document_type}
-                        </span>
-                        {status === 'valid' && (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-medium text-[#5a9c32] bg-[#89d957]/10 border border-[#89d957]/20 rounded-full px-2 py-0.5">
-                            <CheckCircle2 className="w-3 h-3 text-[#5a9c32]" /> Valid
-                          </span>
-                        )}
-                        {status === 'warning' && (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-medium text-amber-600 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">
-                            <Clock className="w-3 h-3 text-amber-500" /> Expiring soon
-                          </span>
-                        )}
-                        {status === 'expired' && (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-medium text-red-600 bg-red-50 border border-red-200 rounded-full px-2 py-0.5">
-                            <AlertTriangle className="w-3 h-3 text-red-500" /> Expired
-                          </span>
-                        )}
+                                <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                                  <button
+                                    type="button"
+                                    onClick={() => void handleOpen(doc.file_path)}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-neutral-200 text-neutral-600 text-[11px] font-medium hover:bg-neutral-50 hover:text-neutral-900 transition-colors"
+                                  >
+                                    Open
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDownload(doc.file_path, doc.document_name)}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#89d957] to-[#74c346] text-white text-[11px] font-medium hover:opacity-95 transition-colors shadow-sm"
+                                  >
+                                    <Download className="w-3 h-3" /> Download
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDelete(doc)}
+                                    className="p-2 rounded-lg text-neutral-300 hover:text-red-600 hover:bg-red-50 transition-colors"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
-                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-neutral-500">
-                        {doc.fleet_vehicles && <span>Vehicle: {doc.fleet_vehicles.vehicle_number}</span>}
-                        {doc.fleet_drivers && <span>Driver: {doc.fleet_drivers.name}</span>}
-                        {doc.expiry_date && (
-                          <span>
-                            Expires: {new Date(doc.expiry_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                          </span>
-                        )}
-                      </div>
-                    </div>
+                    ))}
 
-                    <div className="flex items-center gap-2 shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => void handleOpen(doc.file_path)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-neutral-200 text-neutral-600 text-[11px] font-medium hover:bg-neutral-50 hover:text-neutral-900 transition-colors"
-                      >
-                        Open
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDownload(doc.file_path, doc.document_name)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#89d957] to-[#74c346] text-white text-[11px] font-medium hover:opacity-95 transition-colors shadow-sm"
-                      >
-                        <Download className="w-3 h-3" /> Download
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(doc)}
-                        className="p-2 rounded-lg text-neutral-300 hover:text-red-600 hover:bg-red-50 transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
+                    {/* Render General / Unlinked documents */}
+                    {generalDocs.length > 0 && (
+                      <div className="border border-neutral-200/60 rounded-[20px] bg-white overflow-hidden shadow-sm">
+                        <div className="px-5 py-4 bg-neutral-50/70 border-b border-neutral-200/60 flex items-center justify-between">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-lg bg-white border border-neutral-200 flex items-center justify-center text-neutral-500 shrink-0">
+                              <FileText className="w-4 h-4" />
+                            </div>
+                            <div>
+                              <h3 className="font-bold text-sm text-neutral-800">
+                                General Documents
+                              </h3>
+                              <p className="text-[11px] text-neutral-400">
+                                {generalDocs.length} general document{generalDocs.length > 1 ? 's' : ''}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="divide-y divide-neutral-100 bg-white">
+                          {generalDocs.map((doc) => {
+                            const status = getExpiryStatus(doc.expiry_date);
+                            return (
+                              <div
+                                key={doc.id}
+                                className="px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-neutral-50/30 transition-colors"
+                              >
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                    <span className="font-semibold text-sm text-neutral-800">{doc.document_name}</span>
+                                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-neutral-50 border border-neutral-200 text-neutral-500 uppercase tracking-wider">
+                                      {DOC_TYPES.find((t) => t.value === doc.document_type)?.label || doc.document_type}
+                                    </span>
+                                    {status === 'valid' && (
+                                      <span className="inline-flex items-center gap-1 text-[10px] font-medium text-[#5a9c32] bg-[#89d957]/10 border border-[#89d957]/20 rounded-full px-2 py-0.5">
+                                        <CheckCircle2 className="w-3 h-3 text-[#5a9c32]" /> Valid
+                                      </span>
+                                    )}
+                                    {status === 'warning' && (
+                                      <span className="inline-flex items-center gap-1 text-[10px] font-medium text-amber-600 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">
+                                        <Clock className="w-3 h-3 text-amber-500" /> Expiring soon
+                                      </span>
+                                    )}
+                                    {status === 'expired' && (
+                                      <span className="inline-flex items-center gap-1 text-[10px] font-medium text-red-600 bg-red-50 border border-red-200 rounded-full px-2 py-0.5">
+                                        <AlertTriangle className="w-3 h-3 text-red-500" /> Expired
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-neutral-400">
+                                    {doc.fleet_drivers && <span>Driver: {doc.fleet_drivers.name}</span>}
+                                    {doc.expiry_date && (
+                                      <span>
+                                        Expires: {new Date(doc.expiry_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                                  <button
+                                    type="button"
+                                    onClick={() => void handleOpen(doc.file_path)}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-neutral-200 text-neutral-600 text-[11px] font-medium hover:bg-neutral-50 hover:text-neutral-900 transition-colors"
+                                  >
+                                    Open
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDownload(doc.file_path, doc.document_name)}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#89d957] to-[#74c346] text-white text-[11px] font-medium hover:opacity-95 transition-colors shadow-sm"
+                                  >
+                                    <Download className="w-3 h-3" /> Download
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDelete(doc)}
+                                    className="p-2 rounded-lg text-neutral-300 hover:text-red-600 hover:bg-red-50 transition-colors"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </>
                 );
-              })}
+              })()}
             </div>
           ) : (
             <p className="text-sm text-neutral-400 py-4 text-center">

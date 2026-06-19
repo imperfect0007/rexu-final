@@ -11,6 +11,8 @@ import {
   ScrollText,
   Truck,
   Filter,
+  Image as ImageIcon,
+  ChevronDown,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { SiteNavbar } from '@/components/marketing/SiteNavbar';
@@ -40,6 +42,7 @@ interface FleetVehicleLog {
   trip_note: string | null;
   has_vec: boolean;
   vec_doc_link: string | null;
+  photo_paths?: string[];
 }
 
 function formatTime(ts: string) {
@@ -55,6 +58,9 @@ export default function LogsPage() {
   const [vehicleLogs, setVehicleLogs] = useState<FleetVehicleLog[]>([]);
   const [logsLoading, setLogsLoading] = useState(false);
   const [filterHasVec, setFilterHasVec] = useState<'all' | 'yes' | 'no'>('all');
+  const [drivers, setDrivers] = useState<{ id: string; name: string }[]>([]);
+  const [expandedLog, setExpandedLog] = useState<string | null>(null);
+  const [photoUrls, setPhotoUrls] = useState<Record<string, string[]>>({});
   const router = useRouter();
 
   useEffect(() => {
@@ -87,17 +93,24 @@ export default function LogsPage() {
         return;
       }
 
-      const { data, error } = await supabase
-        .from('fleet_vehicle_logs_summary')
-        .select('*')
-        .eq('owner_profile_id', user.id)
-        .order('last_log_at', { ascending: false, nullsFirst: false });
+      const [{ data, error }, { data: driversData }] = await Promise.all([
+        supabase
+          .from('fleet_vehicle_logs_summary')
+          .select('*')
+          .eq('owner_profile_id', user.id)
+          .order('last_log_at', { ascending: false, nullsFirst: false }),
+        supabase
+          .from('fleet_drivers')
+          .select('id, name')
+          .eq('owner_profile_id', user.id)
+      ]);
 
       if (error) {
         console.error('Logs: vehicles fetch error:', error);
         return;
       }
 
+      setDrivers(driversData || []);
       const v = (data as FleetVehicleSummary[]) || [];
       setVehicles(v);
       if (v.length > 0) {
@@ -114,20 +127,56 @@ export default function LogsPage() {
   const loadVehicleLogs = async (vehicleId: string) => {
     setLogsLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('fleet_checkin_logs')
-        .select('*')
-        .eq('vehicle_id', vehicleId)
-        .order('created_at', { ascending: false })
-        .limit(200);
-      if (error) {
-        console.error('Vehicle logs fetch error:', error);
+      const [{ data: logsData, error: logsError }, { data: photosData, error: photosError }] = await Promise.all([
+        supabase
+          .from('fleet_checkin_logs')
+          .select('*')
+          .eq('vehicle_id', vehicleId)
+          .order('created_at', { ascending: false })
+          .limit(200),
+        supabase
+          .from('fleet_checkins')
+          .select('id, photo_paths')
+          .eq('vehicle_id', vehicleId)
+      ]);
+
+      if (logsError) {
+        console.error('Vehicle logs fetch error:', logsError);
         return;
       }
-      setVehicleLogs((data as FleetVehicleLog[]) || []);
+
+      const logsMapped = (logsData || []).map((log: any) => {
+        const photoMatch = (photosData || []).find((p) => p.id === log.checkin_id);
+        return {
+          ...log,
+          photo_paths: photoMatch?.photo_paths || [],
+        };
+      });
+
+      setVehicleLogs(logsMapped);
+    } catch (err) {
+      console.error('loadVehicleLogs error:', err);
     } finally {
       setLogsLoading(false);
     }
+  };
+
+  const loadPhotos = async (checkinId: string, paths: string[]) => {
+    if (photoUrls[checkinId]) {
+      setExpandedLog(expandedLog === checkinId ? null : checkinId);
+      return;
+    }
+
+    const urls: string[] = [];
+    for (const path of paths) {
+      const { data } = await supabase.storage
+        .from('fleet-photos')
+        .createSignedUrl(path, 300);
+      if (data?.signedUrl) urls.push(data.signedUrl);
+    }
+
+    setPhotoUrls((prev) => ({ ...prev, [checkinId]: urls }));
+    setExpandedLog(checkinId);
   };
 
   if (loading) {
@@ -305,46 +354,89 @@ export default function LogsPage() {
                 ) : filteredLogs.length === 0 ? (
                   <p className="px-4 py-4 text-sm text-neutral-500">No logs for this vehicle.</p>
                 ) : (
-                  filteredLogs.map((l) => (
-                    <div key={l.checkin_id} className="px-4 py-3">
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="text-sm font-semibold text-neutral-900">
-                            {l.check_type === 'check_in' ? 'Check In' : 'Check Out'}
-                            <span className="ml-2 text-[10px] font-semibold px-2 py-1 rounded-full border border-neutral-200 bg-neutral-50 text-neutral-500">
-                              {formatTime(l.created_at)}
-                            </span>
-                          </p>
-                          <p className="text-[11px] text-neutral-500">
-                            {new Date(l.created_at).toLocaleDateString('en-IN')}
-                            {l.trip_purpose ? ` • ${l.trip_purpose}` : ''}
-                            {l.trip_note ? ` • ${l.trip_note}` : ''}
-                          </p>
-                        </div>
-                        <div className="shrink-0 flex items-center gap-2">
-                          <span
-                            className={`text-[10px] font-semibold px-2 py-1 rounded-full border ${
-                              l.has_vec
-                                ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
-                                : 'text-neutral-500 bg-neutral-50 border-neutral-200'
-                            }`}
-                          >
-                            VEC {l.has_vec ? '✓' : '☐'}
-                          </span>
-                          {l.vec_doc_link ? (
-                            <a
-                              href={l.vec_doc_link}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-xs font-semibold text-emerald-700 hover:underline"
+                  filteredLogs.map((l) => {
+                    const driverName = drivers.find((d) => d.id === l.driver_id)?.name || 'Unknown Driver';
+                    return (
+                      <div key={l.checkin_id} className="px-4 py-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 mb-1 flex-wrap">
+                              <span className="text-sm font-bold text-neutral-900">
+                                {l.check_type === 'check_in' ? 'Check In' : 'Check Out'}
+                              </span>
+                              <span className="text-xs text-neutral-500 font-medium">
+                                • {driverName}
+                              </span>
+                              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full border border-neutral-200 bg-neutral-50 text-neutral-500">
+                                {formatTime(l.created_at)}
+                              </span>
+                              {l.photo_paths && l.photo_paths.length > 0 && (
+                                <button
+                                  type="button"
+                                  onClick={() => loadPhotos(l.checkin_id, l.photo_paths || [])}
+                                  className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md border border-neutral-200 text-[10px] font-medium text-neutral-600 hover:bg-neutral-100 transition-colors"
+                                >
+                                  <ImageIcon className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+                                  <span>{l.photo_paths.length} photo{l.photo_paths.length !== 1 ? 's' : ''}</span>
+                                  <ChevronDown
+                                    className={`w-3.5 h-3.5 transition-transform ${expandedLog === l.checkin_id ? 'rotate-180' : ''}`}
+                                  />
+                                </button>
+                              )}
+                            </div>
+                            <p className="text-[11px] text-neutral-500">
+                              {new Date(l.created_at).toLocaleDateString('en-IN')}
+                              {l.trip_purpose ? ` • ${l.trip_purpose}` : ''}
+                              {l.trip_note ? ` • ${l.trip_note}` : ''}
+                            </p>
+
+                            {/* Photo Gallery (rendered when expanded) */}
+                            {expandedLog === l.checkin_id && photoUrls[l.checkin_id] && (
+                              <div className="mt-3 flex flex-wrap gap-2">
+                                {photoUrls[l.checkin_id].map((url, i) => (
+                                  <a
+                                    key={i}
+                                    href={url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="w-16 h-16 rounded-xl overflow-hidden border border-neutral-200 hover:border-[#5a9c32] transition-colors shrink-0"
+                                  >
+                                    <img
+                                      src={url}
+                                      alt={`Checkin photo ${i + 1}`}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  </a>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                          
+                          <div className="shrink-0 flex items-center gap-2">
+                            <span
+                              className={`text-[10px] font-semibold px-2 py-1 rounded-full border ${
+                                l.has_vec
+                                  ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
+                                  : 'text-neutral-500 bg-neutral-50 border-neutral-200'
+                              }`}
                             >
-                              Open
-                            </a>
-                          ) : null}
+                              VEC {l.has_vec ? '✓' : '☐'}
+                            </span>
+                            {l.vec_doc_link ? (
+                              <a
+                                href={l.vec_doc_link}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-xs font-semibold text-emerald-700 hover:underline"
+                              >
+                                Open
+                              </a>
+                            ) : null}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </div>

@@ -37,6 +37,9 @@ export default function LoginPage(props: PageProps) {
             typeof window !== 'undefined'
               ? `${window.location.origin}/dashboard`
               : undefined,
+          queryParams: {
+            prompt: 'select_account',
+          },
         },
       });
 

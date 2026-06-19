@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import { headers } from 'next/headers';
-import { Shield, AlertTriangle, HeartPulse, Pill, Activity, ArrowLeft } from 'lucide-react';
+import { Shield, AlertTriangle, HeartPulse, Pill, Activity, ArrowLeft, Ruler, Scale, Truck, User } from 'lucide-react';
 import Link from 'next/link';
 import { supabaseAdmin } from '../../../../backend/supabaseAdminClient';
 import { EmergencyContactActions } from './EmergencyContactActions';
@@ -43,6 +43,62 @@ export default async function EmergencyPage({ params }: EmergencyPageProps) {
   const isOrganDonor = data.organDonor;
   const isFleetVehicle = !!data.fleetVehicle;
   const fleetVehicle = data.fleetVehicle;
+
+  // Parse JSON from criticalNote if it is B2C extra info
+  let parsedNote = criticalNote;
+  let individualVehicle: {
+    type: string;
+    number: string;
+    ownerName: string;
+    imageUrl: string | null;
+  } | null = null;
+  let height: string | null = null;
+  let weight: string | null = null;
+
+  if (criticalNote) {
+    try {
+      const parsed = JSON.parse(criticalNote);
+      if (parsed && parsed.isIndividualExtra) {
+        individualVehicle = {
+          type: parsed.vehicleType || '',
+          number: parsed.vehicleNumber || '',
+          ownerName: parsed.vehicleOwnerName || '',
+          imageUrl: parsed.vehicleImageUrl || null,
+        };
+        height = parsed.height || null;
+        weight = parsed.weight || null;
+        parsedNote = parsed.emergencyInstruction || null;
+      }
+    } catch (e) {
+      // Treat as normal text instruction
+    }
+  }
+
+  // Generate signed URLs for profile photo and vehicle photo if they exist
+  let avatarSignedUrl: string | null = null;
+  let vehicleSignedUrl: string | null = null;
+
+  if (data.avatarUrl) {
+    try {
+      const { data: signedData } = await supabaseAdmin.storage
+        .from('profile-photos')
+        .createSignedUrl(data.avatarUrl, 300);
+      avatarSignedUrl = signedData?.signedUrl || null;
+    } catch (err) {
+      console.error('Error signing avatar URL:', err);
+    }
+  }
+
+  if (individualVehicle?.imageUrl) {
+    try {
+      const { data: signedData } = await supabaseAdmin.storage
+        .from('profile-photos')
+        .createSignedUrl(individualVehicle.imageUrl, 300);
+      vehicleSignedUrl = signedData?.signedUrl || null;
+    } catch (err) {
+      console.error('Error signing vehicle URL:', err);
+    }
+  }
 
   let driverName: string | null = null;
   let driverPhone: string | null = null;
@@ -92,15 +148,26 @@ export default async function EmergencyPage({ params }: EmergencyPageProps) {
               <AlertTriangle className="w-4 h-4" />
               <span>Emergency information for:</span>
             </p>
-            <h2 className="text-2xl font-extrabold tracking-tight">
-              {isFleetVehicle && driverName
-                ? driverName
-                : isFleetVehicle
-                ? 'This vehicle & driver'
-                : data.fullName}
-              {!isFleetVehicle && age ? (
-                <span className="text-base text-[#B7BEC4] ml-2">({age} yrs)</span>
-              ) : null}
+            <h2 className="text-2xl font-extrabold tracking-tight flex items-center gap-3">
+              {avatarSignedUrl && (
+                <img
+                  src={avatarSignedUrl}
+                  alt={data.fullName}
+                  className="w-12 h-12 rounded-full object-cover border-2 border-[#9AC57A] shadow-md shrink-0"
+                />
+              )}
+              <div className="flex flex-col">
+                <span className="leading-tight">
+                  {isFleetVehicle && driverName
+                    ? driverName
+                    : isFleetVehicle
+                    ? 'This vehicle & driver'
+                    : data.fullName}
+                </span>
+                {!isFleetVehicle && age ? (
+                  <span className="text-xs text-[#B7BEC4] font-normal mt-0.5">Age: {age} yrs</span>
+                ) : null}
+              </div>
             </h2>
             {languageNote && (
               <p className="text-xs text-[#B7BEC4]">
@@ -109,23 +176,82 @@ export default async function EmergencyPage({ params }: EmergencyPageProps) {
               </p>
             )}
 
-            {/* Blood group & organ donor – inline badges */}
-            {(bloodGroup || isOrganDonor) && (
-              <div className="flex flex-wrap items-center gap-2 pt-1">
+            {/* Blood group, height, weight & organ donor – inline badges */}
+            {(bloodGroup || isOrganDonor || height || weight) && (
+              <div className="space-y-3 pt-1">
                 {bloodGroup && (
                   <div className="w-full px-5 py-4 rounded-2xl bg-red-600 text-white text-lg font-extrabold flex items-center justify-center gap-3 shadow-[0_0_30px_rgba(248,113,113,0.5)]">
-                    <Activity className="w-6 h-6" />
+                    <Activity className="w-6 h-6 animate-pulse text-white" />
                     <span>Blood Group: {bloodGroup}</span>
                   </div>
                 )}
+                
+                {(height || weight) && (
+                  <div className="grid grid-cols-2 gap-3">
+                    {height && (
+                      <div className="px-4 py-3 rounded-xl border border-white/10 bg-[#1A2024]/80 flex items-center gap-3">
+                        <Ruler className="w-5 h-5 text-[#9AC57A]" />
+                        <div>
+                          <p className="text-[10px] text-[#B7BEC4]/60 uppercase tracking-wider">Height</p>
+                          <p className="text-sm font-bold text-white">{height} cm</p>
+                        </div>
+                      </div>
+                    )}
+                    {weight && (
+                      <div className="px-4 py-3 rounded-xl border border-white/10 bg-[#1A2024]/80 flex items-center gap-3">
+                        <Scale className="w-5 h-5 text-[#9AC57A]" />
+                        <div>
+                          <p className="text-[10px] text-[#B7BEC4]/60 uppercase tracking-wider">Weight</p>
+                          <p className="text-sm font-bold text-white">{weight} kg</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {isOrganDonor && (
-                  <div className="px-3 py-1.5 rounded-full border border-[#9AC57A]/40 bg-[#0F3D2E]/30 text-[11px] text-[#9AC57A] font-semibold uppercase tracking-[0.18em]">
+                  <div className="w-full py-2.5 rounded-xl border border-[#9AC57A]/40 bg-[#0F3D2E]/30 text-[11px] text-[#9AC57A] font-semibold uppercase tracking-[0.18em] text-center">
                     Organ Donor
                   </div>
                 )}
               </div>
             )}
           </div>
+
+          {/* Individual Vehicle details */}
+          {!isFleetVehicle && individualVehicle && (
+            <div className="rounded-[20px] border border-white/10 bg-[#101518]/90 px-5 py-4 space-y-3">
+              <p className="text-[11px] uppercase tracking-[0.22em] text-[#9AC57A] font-semibold flex items-center gap-1.5">
+                <Truck className="w-3.5 h-3.5" />
+                Vehicle details
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 items-start">
+                <div className="flex-1 space-y-1.5">
+                  <p className="text-sm text-[#B7BEC4]">
+                    <span className="font-semibold text-white">Owner Name:</span> {individualVehicle.ownerName || '—'}
+                  </p>
+                  <p className="text-sm text-[#B7BEC4]">
+                    <span className="font-semibold text-white">Vehicle Number:</span>{' '}
+                    <span className="font-mono text-white bg-white/15 px-2 py-0.5 rounded text-xs ml-1">
+                      {individualVehicle.number || '—'}
+                    </span>
+                  </p>
+                  <p className="text-sm text-[#B7BEC4]">
+                    <span className="font-semibold text-white">Vehicle Type:</span> {individualVehicle.type || '—'}
+                  </p>
+                </div>
+                {vehicleSignedUrl && (
+                  <div className="w-24 h-24 rounded-xl overflow-hidden border border-white/10 shrink-0">
+                    <img
+                      src={vehicleSignedUrl}
+                      alt="Vehicle"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {isFleetVehicle && (
             <>
@@ -157,7 +283,7 @@ export default async function EmergencyPage({ params }: EmergencyPageProps) {
               {data.mobile && (
                 <a
                   href={`tel:${data.mobile}`}
-                  className="inline-flex items-center justify-center w-full px-4 py-2.5 rounded-2xl bg-red-600 text-white text-sm font-semibold hover:bg-red-700 active:scale-[0.98] transition"
+                  className="inline-flex items-center justify-center w-full px-4 py-2.5 rounded-2xl bg-red-650 text-white text-sm font-semibold hover:bg-red-700 active:scale-[0.98] transition"
                 >
                   Call owner
                 </a>
@@ -189,13 +315,13 @@ export default async function EmergencyPage({ params }: EmergencyPageProps) {
             </>
           )}
 
-          {criticalNote && (
+          {parsedNote && (
             <div className="rounded-[20px] border border-red-500/40 bg-gradient-to-br from-red-950/80 via-[#101518] to-red-900/30 px-5 py-4 shadow-[0_0_40px_rgba(248,113,113,0.25)]">
               <p className="text-[11px] uppercase tracking-[0.25em] text-red-300 mb-1 flex items-center gap-2">
                 <HeartPulse className="w-3 h-3" />
                 Critical Emergency Instruction
               </p>
-              <p className="text-sm leading-relaxed text-red-50">{criticalNote}</p>
+              <p className="text-sm leading-relaxed text-red-50">{parsedNote}</p>
             </div>
           )}
         </section>

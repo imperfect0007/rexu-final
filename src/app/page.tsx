@@ -156,8 +156,15 @@ export default function Home(props: HomePageProps) {
               Comprehensive emergency contact access via QR — for personal riders,
               families, and commercial fleets. Scan. Connect. Save lives.
             </motion.p>
-            <motion.div variants={heroItemVariants} className="mt-10 flex justify-center">
-              <GradientButton href="/register">Get started</GradientButton>
+            <motion.div 
+              variants={heroItemVariants} 
+              className="mt-10 flex justify-center cursor-pointer"
+              onClick={(e) => {
+                e.preventDefault();
+                window.location.href = '/?choice=true';
+              }}
+            >
+              <GradientButton href="/?choice=true">Get started</GradientButton>
             </motion.div>
           </motion.div>
         </div>

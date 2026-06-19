@@ -183,13 +183,13 @@ export default async function ProductDetailPage({
             </div>
 
             <div className="mt-10 flex flex-wrap gap-4 w-full sm:w-auto">
-              <button
-                type="button"
+              <Link
+                href="/?choice=true"
                 className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-full bg-gradient-brand px-8 py-4 text-sm font-semibold text-[#1a2e0f] transition-opacity hover:opacity-90 shadow-lg shadow-[#89d957]/15 cursor-pointer"
               >
                 <ShoppingCart className="h-4 w-4" />
                 Purchase product
-              </button>
+              </Link>
             </div>
           </div>
         </div>

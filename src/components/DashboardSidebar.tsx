@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
 import {
   LayoutDashboard,
@@ -43,6 +43,17 @@ export function DashboardSidebar({ activePath, dark = false }: SidebarProps) {
     expiringDocs: 0,
     notifications: 0,
   });
+  
+  const [recentLogs, setRecentLogs] = useState<{ id: string; description: string; created_at: string }[]>([]);
+  const [currentLogIndex, setCurrentLogIndex] = useState(0);
+
+  useEffect(() => {
+    if (recentLogs.length <= 1) return;
+    const timer = setInterval(() => {
+      setCurrentLogIndex((prev) => (prev + 1) % recentLogs.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [recentLogs]);
 
   useEffect(() => {
     async function loadData() {
@@ -99,6 +110,15 @@ export function DashboardSidebar({ activePath, dark = false }: SidebarProps) {
             expiringDocs: expiringCount,
             notifications: expiringCount,
           });
+
+          // Fetch recent logs
+          const { data: logsData } = await supabase
+            .from('fleet_activity_logs')
+            .select('id, description, created_at')
+            .eq('owner_profile_id', user.id)
+            .order('created_at', { ascending: false })
+            .limit(3);
+          setRecentLogs(logsData || []);
         }
       } catch (err) {
         console.error('Sidebar load data error:', err);
@@ -157,7 +177,6 @@ export function DashboardSidebar({ activePath, dark = false }: SidebarProps) {
     { label: 'Fleet Dashboard', icon: LayoutDashboard, path: '/dashboard' },
     { label: 'Manage Vehicles', icon: Truck, path: '/fleet', badge: stats.vehicles },
     { label: 'Manage Drivers', icon: Users, path: '/drivers', badge: stats.drivers },
-    { label: 'Assignments', icon: Link2, path: '/dashboard', hash: 'assignments-section' },
     { label: 'Documents', icon: FileText, path: '/documents', badge: stats.expiringDocs, badgeType: 'alert' },
     { label: 'Activity Logs', icon: ScrollText, path: '/logs' },
     { label: 'Notifications', icon: Bell, path: '/notifications', badge: stats.notifications, badgeType: 'pulse' },
@@ -303,6 +322,46 @@ export function DashboardSidebar({ activePath, dark = false }: SidebarProps) {
               <span>Billing &amp; Plans</span>
             </button>
           </>
+        )}
+        
+        {/* Animated Live Activity Widget */}
+        {isCommercial && recentLogs.length > 0 && (
+          <div className="mt-6 px-3">
+            <p className={`px-3 mb-2 text-[10px] font-bold uppercase tracking-[0.2em] ${dark ? 'text-neutral-500' : 'text-neutral-450'}`}>
+              Live Activity
+            </p>
+            <div
+              onClick={(e) => handleLinkClick(e, '/logs')}
+              className={`p-3.5 rounded-2xl border transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer flex flex-col gap-2 relative overflow-hidden ${
+                dark
+                  ? 'border-neutral-850 bg-neutral-950/40 hover:bg-neutral-850/40'
+                  : 'border-neutral-200 bg-neutral-50/50 hover:bg-white hover:border-[#89d957]/50 hover:shadow-md'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-wider text-[#5a9c32] dark:text-[#89d957]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping shrink-0" />
+                  Live Feed
+                </span>
+                <span className="text-[9px] font-medium text-neutral-400">
+                  {new Date(recentLogs[currentLogIndex]?.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                </span>
+              </div>
+              
+              <AnimatePresence mode="wait">
+                <motion.p
+                  key={currentLogIndex}
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -5 }}
+                  transition={{ duration: 0.25 }}
+                  className="text-xs font-semibold text-neutral-700 dark:text-neutral-300 leading-snug line-clamp-2"
+                >
+                  {recentLogs[currentLogIndex]?.description}
+                </motion.p>
+              </AnimatePresence>
+            </div>
+          </div>
         )}
       </nav>
 

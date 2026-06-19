@@ -16,6 +16,7 @@ import {
   Phone,
   Droplets,
   Truck,
+  Edit2,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { SiteNavbar } from '@/components/marketing/SiteNavbar';
@@ -51,6 +52,7 @@ export default function DriverManagerPage() {
   const [profileName, setProfileName] = useState<string | null>(null);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [editingDriver, setEditingDriver] = useState<FleetDriver | null>(null);
 
   const router = useRouter();
 
@@ -116,7 +118,7 @@ export default function DriverManagerPage() {
     }
   };
 
-  const handleCreateDriver = async (e: React.FormEvent) => {
+  const handleSaveDriver = async (e: React.FormEvent) => {
     e.preventDefault();
     setDriverError(null);
 
@@ -128,52 +130,128 @@ export default function DriverManagerPage() {
       setDriverError('Profile not loaded. Please refresh the page.');
       return;
     }
-    if (!driverName.trim() || !driverPhone.trim()) {
+    
+    const nameVal = driverName.trim();
+    const phoneVal = driverPhone.trim();
+
+    if (!nameVal || !phoneVal) {
       setDriverError('Driver name and phone are required.');
+      return;
+    }
+    if (nameVal.length < 2 || nameVal.length > 50) {
+      setDriverError('Driver name must be between 2 and 50 characters.');
+      return;
+    }
+    if (!/^[a-zA-Z\s]{2,50}$/.test(nameVal)) {
+      setDriverError('Driver name must contain only letters and spaces.');
+      return;
+    }
+    if (!/^\+?[0-9]{10,15}$/.test(phoneVal.replace(/\s+/g, ''))) {
+      setDriverError('Please enter a valid phone number (at least 10 digits).');
+      return;
+    }
+    const validBloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+    if (driverBloodGroup.trim() && !validBloodGroups.includes(driverBloodGroup.trim().toUpperCase())) {
+      setDriverError('Please enter a valid blood group (e.g. A+, O-, AB+).');
       return;
     }
 
     setDriverSaving(true);
     try {
-      const { data, error } = await supabase
-        .from('fleet_drivers')
-        .insert({
-          owner_profile_id: user.id,
-          name: driverName.trim(),
-          phone: driverPhone.trim(),
-          blood_group: driverBloodGroup.trim() || null,
-          notes: driverNotes.trim() || null,
-        })
-        .select()
-        .single();
+      if (editingDriver) {
+        // Update existing driver
+        const { data, error } = await supabase
+          .from('fleet_drivers')
+          .update({
+            name: nameVal,
+            phone: phoneVal,
+            blood_group: driverBloodGroup.trim() || null,
+            notes: driverNotes.trim() || null,
+          })
+          .eq('id', editingDriver.id)
+          .select()
+          .single();
 
-      if (error) {
-        console.error('DriverManager: failed to create driver:', error);
-        setDriverError(error.message ?? 'Failed to save driver.');
-        return;
+        if (error) {
+          console.error('DriverManager: failed to update driver:', error);
+          setDriverError(error.message ?? 'Failed to save driver.');
+          return;
+        }
+
+        setFleetDrivers((prev) =>
+          prev.map((d) => (d.id === editingDriver.id ? (data as FleetDriver) : d))
+        );
+
+        await logFleetActivity({
+          action: 'driver_updated',
+          entityType: 'driver',
+          entityId: data.id,
+          description: `Updated driver ${nameVal} (${phoneVal})`,
+          metadata: { name: nameVal, phone: phoneVal, blood_group: driverBloodGroup.trim() || null },
+        });
+      } else {
+        // Create new driver
+        const { data, error } = await supabase
+          .from('fleet_drivers')
+          .insert({
+            owner_profile_id: user.id,
+            name: nameVal,
+            phone: phoneVal,
+            blood_group: driverBloodGroup.trim() || null,
+            notes: driverNotes.trim() || null,
+          })
+          .select()
+          .single();
+
+        if (error) {
+          console.error('DriverManager: failed to create driver:', error);
+          setDriverError(error.message ?? 'Failed to save driver.');
+          return;
+        }
+
+        setFleetDrivers((prev) => [data as FleetDriver, ...prev]);
+
+        await logFleetActivity({
+          action: 'driver_added',
+          entityType: 'driver',
+          entityId: data.id,
+          description: `Added driver ${nameVal} (${phoneVal})`,
+          metadata: { name: nameVal, phone: phoneVal, blood_group: driverBloodGroup.trim() || null },
+        });
       }
-
-      setFleetDrivers((prev) => [data as FleetDriver, ...prev]);
-
-      await logFleetActivity({
-        action: 'driver_added',
-        entityType: 'driver',
-        entityId: data.id,
-        description: `Added driver ${driverName.trim()} (${driverPhone.trim()})`,
-        metadata: { name: driverName.trim(), phone: driverPhone.trim(), blood_group: driverBloodGroup.trim() || null },
-      });
 
       setDriverName('');
       setDriverPhone('');
       setDriverBloodGroup('');
       setDriverNotes('');
+      setEditingDriver(null);
       setIsDriverModalOpen(false);
     } catch (err) {
-      console.error('DriverManager: create driver error:', err);
+      console.error('DriverManager: save driver error:', err);
       setDriverError(err instanceof Error ? err.message : 'Something went wrong while saving.');
     } finally {
       setDriverSaving(false);
     }
+  };
+
+  const handleOpenEditModal = (driver: FleetDriver) => {
+    setEditingDriver(driver);
+    setDriverName(driver.name);
+    setDriverPhone(driver.phone);
+    setDriverBloodGroup(driver.blood_group || '');
+    setDriverNotes(driver.notes || '');
+    setDriverError(null);
+    setIsDriverModalOpen(true);
+  };
+
+  const handleOpenAddModal = () => {
+    setEditingDriver(null);
+    setDriverName('');
+    setDriverPhone('');
+    setDriverBloodGroup('');
+    setDriverNotes('');
+    setDriverError(null);
+    setIsDriverModalOpen(true);
   };
 
   const handleAssignDriver = async (driverId: string, vehicleId: string | null) => {
@@ -299,7 +377,7 @@ export default function DriverManagerPage() {
             </div>
             <button
               type="button"
-              onClick={() => setIsDriverModalOpen(true)}
+              onClick={handleOpenAddModal}
               className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#89d957] to-[#74c346] text-white text-sm font-semibold hover:opacity-95 shadow-sm active:scale-[0.97] transition"
             >
               <Plus className="w-4 h-4" />
@@ -369,14 +447,25 @@ export default function DriverManagerPage() {
                       )}
                     </div>
 
-                    {/* Delete */}
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteDriver(driver.id)}
-                      className="p-2 rounded-lg text-neutral-300 hover:text-red-600 hover:bg-red-50 transition-colors shrink-0"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    {/* Actions: Edit and Delete */}
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEditModal(driver)}
+                        className="p-2 rounded-lg text-neutral-300 hover:text-neutral-600 hover:bg-neutral-100 transition-colors cursor-pointer"
+                        title="Edit Driver"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteDriver(driver.id)}
+                        className="p-2 rounded-lg text-neutral-300 hover:text-red-600 hover:bg-red-50 transition-colors shrink-0 cursor-pointer"
+                        title="Delete Driver"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 );
               })}
@@ -409,10 +498,10 @@ export default function DriverManagerPage() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h2 className="text-lg font-semibold text-neutral-800">
-                  Add Driver
+                  {editingDriver ? 'Edit Driver' : 'Add Driver'}
                 </h2>
                 <p className="text-xs text-neutral-400">
-                  Save driver details and optionally assign them to a vehicle later.
+                  {editingDriver ? 'Modify driver details and save changes.' : 'Save driver details and optionally assign them to a vehicle later.'}
                 </p>
               </div>
               <button
@@ -428,7 +517,7 @@ export default function DriverManagerPage() {
               <div className="mb-3 text-xs text-red-500">{driverError}</div>
             )}
 
-            <form onSubmit={handleCreateDriver} className="space-y-4">
+            <form onSubmit={handleSaveDriver} className="space-y-4">
               <div>
                 <label className="block text-xs font-medium text-neutral-500 mb-1.5">
                   Driver name
@@ -488,10 +577,10 @@ export default function DriverManagerPage() {
                 {driverSaving ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Saving driver…</span>
+                    <span>{editingDriver ? 'Saving changes…' : 'Saving driver…'}</span>
                   </>
                 ) : (
-                  <span>Save Driver</span>
+                  <span>{editingDriver ? 'Save Changes' : 'Save Driver'}</span>
                 )}
               </button>
             </form>

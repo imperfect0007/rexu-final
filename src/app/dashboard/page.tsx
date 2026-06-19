@@ -33,6 +33,8 @@ import {
   FileText,
   ScrollText,
   Clock,
+  Camera,
+  Upload,
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -85,6 +87,16 @@ type PageProps = {
   params?: Promise<Record<string, string | string[]>>;
   searchParams?: Promise<Record<string, string | string[]>>;
 };
+
+const DOC_TYPES = [
+  { value: 'insurance', label: 'Insurance' },
+  { value: 'registration', label: 'Registration (RC)' },
+  { value: 'license', label: 'Driving License' },
+  { value: 'permit', label: 'Permit' },
+  { value: 'fitness', label: 'Fitness Certificate' },
+  { value: 'pollution', label: 'Pollution (PUC)' },
+  { value: 'other', label: 'Other' },
+];
 
 export default function DashboardPage(props: PageProps) {
   if (props.params) React.use(props.params);
@@ -150,6 +162,15 @@ export default function DashboardPage(props: PageProps) {
   const [vehicleMakeModel, setVehicleMakeModel] = useState('');
   const [vehicleSaving, setVehicleSaving] = useState(false);
   const [vehicleError, setVehicleError] = useState<string | null>(null);
+  
+  // Document states inside Add Vehicle Modal
+  const [vehicleDocFile, setVehicleDocFile] = useState<File | null>(null);
+  const [vehicleDocType, setVehicleDocType] = useState('registration');
+  const [vehicleDocName, setVehicleDocName] = useState('Registration Certificate (RC)');
+  const [vehicleDocExpiryDate, setVehicleDocExpiryDate] = useState('');
+  const [vehicleDocNotes, setVehicleDocNotes] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const [driverName, setDriverName] = useState('');
   const [driverPhone, setDriverPhone] = useState('');
   const [driverBloodGroup, setDriverBloodGroup] = useState('');
@@ -204,14 +225,14 @@ export default function DashboardPage(props: PageProps) {
       return;
     }
 
-    // Temporarily disable B2C: treat all accounts as commercial.
-    let accountType =
-      profileData?.account_type ??
-      (user.user_metadata?.account_type as string | undefined) ??
-      'commercial';
+    let accountType = profileData?.account_type;
 
-    // Always persist commercial to the profile row during B2B-only mode.
-    if (accountType !== 'commercial' || segmentFromUrl === 'commercial') {
+    if (accountType === 'personal') {
+      router.push('/individual');
+      return;
+    }
+
+    if (!accountType) {
       accountType = 'commercial';
       await supabase
         .from('profiles')
@@ -863,20 +884,24 @@ export default function DashboardPage(props: PageProps) {
       setVehicleError('Profile not loaded. Please refresh the page.');
       return;
     }
-    if (!vehicleNumber.trim()) {
+    const vNum = vehicleNumber.trim();
+    if (!vNum) {
       setVehicleError('Vehicle number is required.');
+      return;
+    }
+    if (!/^[a-zA-Z0-9]{4,15}$/.test(vNum)) {
+      setVehicleError('Vehicle number must be alphanumeric and between 4 and 15 characters (no spaces or special characters).');
       return;
     }
 
     setVehicleSaving(true);
     try {
-      // Requires a `fleet_vehicles` table with at least:
-      // owner_profile_id (uuid), vehicle_number (text), label (text), make_model (text).
+      // 1. Insert vehicle
       const { data: newVehicle, error } = await supabase
         .from('fleet_vehicles')
         .insert({
           owner_profile_id: profile.id,
-          vehicle_number: vehicleNumber.trim(),
+          vehicle_number: vNum,
           label: vehicleLabel.trim() || null,
           make_model: vehicleMakeModel.trim() || null,
         })
@@ -889,6 +914,41 @@ export default function DashboardPage(props: PageProps) {
         return;
       }
 
+      // 2. If a document file is selected, upload and insert document
+      if (newVehicle && vehicleDocFile) {
+        const ext = vehicleDocFile.name.split('.').pop() || 'pdf';
+        const filePath = `${profile.id}/${newVehicle.id}_${Date.now()}_${vehicleDocName.trim().replace(/\s+/g, '_')}.${ext}`;
+
+        const { error: storageError } = await supabase.storage
+          .from('fleet-documents')
+          .upload(filePath, vehicleDocFile);
+
+        if (storageError) {
+          console.error('Failed to upload vehicle document:', storageError);
+          setVehicleError('Vehicle saved, but document upload failed: ' + storageError.message);
+          return;
+        }
+
+        const { error: dbError } = await supabase
+          .from('fleet_documents')
+          .insert({
+            owner_profile_id: profile.id,
+            document_type: vehicleDocType,
+            document_name: vehicleDocName.trim(),
+            file_path: filePath,
+            vehicle_id: newVehicle.id,
+            driver_id: null,
+            expiry_date: vehicleDocExpiryDate || null,
+            notes: vehicleDocNotes.trim() || null,
+          });
+
+        if (dbError) {
+          console.error('Failed to save vehicle document record:', dbError);
+          setVehicleError('Vehicle saved, but document record failed: ' + dbError.message);
+          return;
+        }
+      }
+
       if (newVehicle) {
         setFleetVehicles((prev) => [newVehicle as FleetVehicle, ...prev]);
         void handleGenerateVehicleQr(newVehicle.id);
@@ -897,13 +957,18 @@ export default function DashboardPage(props: PageProps) {
       await logFleetActivity({
         action: 'vehicle_added',
         entityType: 'vehicle',
-        description: `Added vehicle ${vehicleNumber.trim()}${vehicleLabel.trim() ? ` (${vehicleLabel.trim()})` : ''}`,
-        metadata: { vehicle_number: vehicleNumber.trim(), label: vehicleLabel.trim() || null, make_model: vehicleMakeModel.trim() || null },
+        description: `Added vehicle ${vNum}${vehicleLabel.trim() ? ` (${vehicleLabel.trim()})` : ''}`,
+        metadata: { vehicle_number: vNum, label: vehicleLabel.trim() || null, make_model: vehicleMakeModel.trim() || null },
       });
 
       setVehicleNumber('');
       setVehicleLabel('');
       setVehicleMakeModel('');
+      setVehicleDocFile(null);
+      setVehicleDocType('registration');
+      setVehicleDocName('Registration Certificate (RC)');
+      setVehicleDocExpiryDate('');
+      setVehicleDocNotes('');
       setIsVehicleModalOpen(false);
     } catch (err) {
       console.error('Create vehicle error:', err);
@@ -923,8 +988,29 @@ export default function DashboardPage(props: PageProps) {
       setDriverError('Profile not loaded. Please refresh the page.');
       return;
     }
-    if (!driverName.trim() || !driverPhone.trim()) {
+    
+    const nameVal = driverName.trim();
+    const phoneVal = driverPhone.trim();
+
+    if (!nameVal || !phoneVal) {
       setDriverError('Driver name and phone are required.');
+      return;
+    }
+    if (nameVal.length < 2 || nameVal.length > 50) {
+      setDriverError('Driver name must be between 2 and 50 characters.');
+      return;
+    }
+    if (!/^[a-zA-Z\s]{2,50}$/.test(nameVal)) {
+      setDriverError('Driver name must contain only letters and spaces.');
+      return;
+    }
+    if (!/^\+?[0-9]{10,15}$/.test(phoneVal.replace(/\s+/g, ''))) {
+      setDriverError('Please enter a valid phone number (at least 10 digits).');
+      return;
+    }
+    const validBloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+    if (driverBloodGroup.trim() && !validBloodGroups.includes(driverBloodGroup.trim().toUpperCase())) {
+      setDriverError('Please enter a valid blood group (e.g. A+, O-, AB+).');
       return;
     }
 
@@ -1463,6 +1549,126 @@ export default function DashboardPage(props: PageProps) {
                     className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 bg-white text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#89d957]/40 focus:border-[#6eb84a] transition"
                     placeholder="E.g. Tata Ace, Honda Activa"
                   />
+                </div>
+
+                <div className="border-t border-neutral-100 pt-4 mt-2 space-y-4">
+                  <span className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider">
+                    Attach Vehicle Document (Optional)
+                  </span>
+
+                  {/* Hidden file inputs */}
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={(e) => {
+                      if (e.target.files?.[0]) {
+                        setVehicleDocFile(e.target.files[0]);
+                        if (!vehicleDocName || vehicleDocName === 'Registration Certificate (RC)') {
+                          setVehicleDocName(e.target.files[0].name.split('.')[0] || 'Registration Certificate (RC)');
+                        }
+                      }
+                    }}
+                    className="hidden"
+                  />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    ref={cameraInputRef}
+                    onChange={(e) => {
+                      if (e.target.files?.[0]) {
+                        setVehicleDocFile(e.target.files[0]);
+                        if (!vehicleDocName || vehicleDocName === 'Registration Certificate (RC)') {
+                          setVehicleDocName(`Camera_Capture_${Date.now()}`);
+                        }
+                      }
+                    }}
+                    className="hidden"
+                  />
+
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-neutral-200 text-xs font-medium text-neutral-600 hover:bg-neutral-50 active:scale-[0.98] transition"
+                    >
+                      <Upload className="w-3.5 h-3.5 text-neutral-500" />
+                      Upload File
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => cameraInputRef.current?.click()}
+                      className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-neutral-200 text-xs font-medium text-neutral-600 hover:bg-neutral-50 active:scale-[0.98] transition"
+                    >
+                      <Camera className="w-3.5 h-3.5 text-neutral-500" />
+                      Take Photo
+                    </button>
+                  </div>
+
+                  {vehicleDocFile && (
+                    <div className="bg-neutral-50 border border-neutral-100 rounded-xl p-3 space-y-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[11px] text-neutral-400 truncate">Selected File:</p>
+                          <p className="text-xs font-medium text-neutral-700 truncate">{vehicleDocFile.name}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setVehicleDocFile(null);
+                            if (fileInputRef.current) fileInputRef.current.value = '';
+                            if (cameraInputRef.current) cameraInputRef.current.value = '';
+                          }}
+                          className="text-neutral-400 hover:text-red-500 transition-colors"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-medium text-neutral-500 mb-1">
+                          Document Type
+                        </label>
+                        <select
+                          value={vehicleDocType}
+                          onChange={(e) => setVehicleDocType(e.target.value)}
+                          className="w-full px-3 py-1.5 rounded-lg border border-neutral-200 bg-white text-xs text-neutral-800 focus:outline-none focus:ring-1 focus:ring-[#6eb84a]"
+                        >
+                          {DOC_TYPES.map((t) => (
+                            <option key={t.value} value={t.value}>
+                              {t.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-medium text-neutral-500 mb-1">
+                          Document Name
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={vehicleDocName}
+                          onChange={(e) => setVehicleDocName(e.target.value)}
+                          className="w-full px-3 py-1.5 rounded-lg border border-neutral-200 bg-white text-xs text-neutral-800 focus:outline-none focus:ring-1 focus:ring-[#6eb84a]"
+                          placeholder="Registration Certificate (RC), Insurance, etc."
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-medium text-neutral-500 mb-1">
+                          Expiry Date (Optional)
+                        </label>
+                        <input
+                          type="date"
+                          value={vehicleDocExpiryDate}
+                          onChange={(e) => setVehicleDocExpiryDate(e.target.value)}
+                          className="w-full px-3 py-1.5 rounded-lg border border-neutral-200 bg-white text-xs text-neutral-800 focus:outline-none focus:ring-1 focus:ring-[#6eb84a]"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <button

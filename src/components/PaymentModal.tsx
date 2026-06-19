@@ -1,46 +1,14 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { Loader2, X, Shield, CheckCircle2 } from 'lucide-react';
+import { useState } from 'react';
+import { Loader2, X, Shield, CheckCircle2, CreditCard } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-
-declare global {
-  interface Window {
-    Razorpay: new (options: RazorpayOptions) => RazorpayInstance;
-  }
-}
-
-interface RazorpayOptions {
-  key: string;
-  amount: number;
-  currency: string;
-  name: string;
-  description: string;
-  order_id: string;
-  prefill?: { name?: string; email?: string; contact?: string };
-  theme?: { color: string };
-  handler: (response: {
-    razorpay_payment_id: string;
-    razorpay_order_id: string;
-    razorpay_signature: string;
-  }) => void;
-  modal?: { ondismiss?: () => void };
-}
-
-interface RazorpayInstance {
-  open: () => void;
-  on: (event: string, handler: () => void) => void;
-}
 
 interface PaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
   userId: string;
   onSuccess: () => void;
-  /**
-   * Optional count of vehicles for commercial / fleet accounts.
-   * Used only for display; pricing is still controlled server-side.
-   */
   vehicleCount?: number;
 }
 
@@ -53,159 +21,55 @@ export function PaymentModal({
 }: PaymentModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isFree, setIsFree] = useState<boolean | null>(null);
-  const [activationNumber, setActivationNumber] = useState<number | null>(null);
-  const [token, setToken] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const [pricePaise, setPricePaise] = useState<number | null>(null);
-  const [step, setStep] = useState<'quote' | 'pay' | 'done'>('quote');
+  const [token, setToken] = useState<string | null>(null);
+  const [step, setStep] = useState<'quote' | 'done'>('quote');
 
-  const getAuthHeaders = useCallback(async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    const accessToken = session?.access_token;
-    if (!accessToken) throw new Error('You must be logged in to activate your QR.');
-    return {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${accessToken}`,
-    };
-  }, []);
+  const handleMockPayment = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      // 1. Call the database RPC directly as the authenticated user.
+      // complete_activation is security definer, so it will execute with superuser privileges,
+      // updating profiles and generating/inserting the QR code token.
+      const { error: rpcError } = await supabase.rpc('complete_activation', {
+        p_profile_id: userId,
+      });
 
-  useEffect(() => {
-    if (!isOpen || !userId) return;
-
-    let cancelled = false;
-
-    const run = async () => {
-      setLoading(true);
-      setError(null);
-      setIsFree(null);
-      setActivationNumber(null);
-      setToken(null);
-      setSuccess(false);
-      setStep('quote');
-      setPricePaise(null);
-
-      try {
-        const headers = await getAuthHeaders();
-
-        const quoteRes = await fetch('/api/razorpay/quote', { headers });
-        if (!quoteRes.ok) {
-          const data = await quoteRes.json().catch(() => ({}));
-          throw new Error(data.error || 'Failed to get pricing');
-        }
-        const quote = await quoteRes.json();
-
-        if (cancelled) return;
-
-        if (quote.isFree) {
-          const res = await fetch('/api/activate', {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({ userId }),
-          });
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.error || 'Activation failed');
-          if (cancelled) return;
-          setIsFree(true);
-          setActivationNumber(data.activationNumber ?? null);
-          setToken(data.token ?? null);
-          setPricePaise(data.pricePaise ?? 0);
-          setSuccess(true);
-          setTimeout(() => onSuccess(), 1200);
-          setLoading(false);
-          return;
-        }
-
-        setStep('pay');
-        setPricePaise(quote.amountPaise);
-
-        const orderRes = await fetch('/api/razorpay/create-order', {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({ amountPaise: quote.amountPaise }),
-        });
-        const orderData = await orderRes.json();
-        if (!orderRes.ok) throw new Error(orderData.error || 'Failed to create order');
-        if (cancelled) return;
-
-        const { orderId, keyId } = orderData;
-        if (!keyId || !orderId) throw new Error('Invalid order response');
-
-        setLoading(false);
-
-        const script = document.createElement('script');
-        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-        script.async = true;
-        document.body.appendChild(script);
-
-        await new Promise<void>((resolve, reject) => {
-          script.onload = () => resolve();
-          script.onerror = () => reject(new Error('Failed to load Razorpay'));
-        });
-
-        if (cancelled) return;
-
-        const options: RazorpayOptions = {
-          key: keyId,
-          amount: quote.amountPaise,
-          currency: 'INR',
-          name: 'REXU',
-          description: 'One-time QR activation',
-          order_id: orderId,
-          theme: { color: '#6eb84a' },
-          handler: async (response) => {
-            if (cancelled) return;
-            setLoading(true);
-            setError(null);
-            try {
-              const verifyRes = await fetch('/api/razorpay/verify', {
-                method: 'POST',
-                headers: await getAuthHeaders(),
-                body: JSON.stringify({
-                  razorpay_order_id: response.razorpay_order_id,
-                  razorpay_payment_id: response.razorpay_payment_id,
-                  razorpay_signature: response.razorpay_signature,
-                }),
-              });
-              const verifyData = await verifyRes.json();
-              if (!verifyRes.ok) throw new Error(verifyData.error || 'Payment verification failed');
-              if (cancelled) return;
-              setIsFree(false);
-              setActivationNumber(verifyData.activationNumber ?? null);
-              setToken(verifyData.token ?? null);
-              setPricePaise(verifyData.pricePaise ?? quote.amountPaise);
-              setSuccess(true);
-              setStep('done');
-              setTimeout(() => onSuccess(), 1200);
-            } catch (err: unknown) {
-              setError(err instanceof Error ? err.message : 'Verification failed');
-            } finally {
-              setLoading(false);
-            }
-          },
-          modal: {
-            ondismiss: () => {
-              if (!success) setLoading(false);
-            },
-          },
-        };
-
-        const rzp = new window.Razorpay(options);
-        rzp.open();
-      } catch (err: unknown) {
-        if (!cancelled) {
-          setError(err instanceof Error ? err.message : 'Failed to activate QR');
-        }
-        setLoading(false);
+      if (rpcError) {
+        console.error('complete_activation RPC error:', rpcError);
+        throw new Error(rpcError.message || 'Failed to activate profile');
       }
-    };
 
-    run();
-    return () => {
-      cancelled = true;
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- onSuccess is intentionally omitted to prevent re-triggering
-  }, [isOpen, userId, getAuthHeaders]);
+      // 2. Fetch the generated QR token from qr_codes table (which has a policy allowing user access)
+      const { data: qrCodes, error: qrError } = await supabase
+        .from('qr_codes')
+        .select('token')
+        .eq('profile_id', userId)
+        .limit(1);
+
+      if (qrError || !qrCodes || qrCodes.length === 0) {
+        console.error('Failed to retrieve QR code:', qrError);
+        throw new Error('Profile activated but QR code retrieval failed');
+      }
+
+      const generatedToken = qrCodes[0].token;
+      setToken(generatedToken);
+      setSuccess(true);
+      setStep('done');
+      
+      // Call onSuccess after success screen delay
+      setTimeout(() => {
+        onSuccess();
+        onClose();
+      }, 2000);
+    } catch (err: any) {
+      console.error('Dummy payment error:', err);
+      setError(err.message || 'Failed to complete mock payment. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -213,123 +77,92 @@ export function PaymentModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
 
-      <div className="relative bg-white dark:bg-zinc-900 rounded-3xl w-full max-w-md p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+      <div className="relative bg-white rounded-[28px] w-full max-w-md p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200 border border-neutral-100 text-neutral-800">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
+          disabled={loading}
+          className="absolute top-4 right-4 p-2 text-neutral-400 hover:text-neutral-600 transition-colors cursor-pointer"
         >
           <X className="w-5 h-5" />
         </button>
 
-        <div className="text-center mb-6">
-          <div className="w-12 h-12 bg-[#89d957]/10 rounded-xl flex items-center justify-center mx-auto mb-4">
-            <Shield className="w-6 h-6 text-[#5a9c32]" />
-          </div>
-          <h2 className="text-xl font-bold text-zinc-900 dark:text-white">Activate Your QR</h2>
-          <p className="text-zinc-500 text-sm mt-1">
-            One-time activation:{' '}
-            <span className="font-semibold text-[#5a9c32]">
-              ₹349*
-            </span>{' '}
-            <span className="line-through text-zinc-400 text-xs">₹499</span>
-          </p>
-          {typeof vehicleCount === 'number' && (
-            <p className="text-xs text-zinc-400 mt-1">
-              Fleet vehicles:&nbsp;
-              <span className="font-semibold text-zinc-700 dark:text-zinc-200">
-                {vehicleCount}
-              </span>
-            </p>
-          )}
-          <p className="text-[10px] text-zinc-400 mt-3 max-w-xs mx-auto leading-normal">
-            * Inaugural offer of ₹349 per sticker is valid for up to 100 vehicles. For fleets exceeding 100 vehicles, standard rates apply.
-          </p>
-        </div>
-
-        {loading && step === 'quote' ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-[#6eb84a]" />
-          </div>
-        ) : error ? (
-          <div className="text-center py-8">
-            <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
-            <button
-              onClick={onClose}
-              className="px-6 py-2 bg-zinc-100 dark:bg-zinc-800 rounded-xl text-zinc-600 dark:text-zinc-300 font-medium"
-            >
-              Close
-            </button>
-          </div>
-        ) : success && isFree !== null ? (
-          <div className="text-center py-8 space-y-3">
-            <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-2">
-              <CheckCircle2 className="w-8 h-8 text-green-600" />
+        {step === 'quote' ? (
+          <div className="flex flex-col items-center text-center">
+            <div className="w-14 h-14 bg-[#89d957]/10 rounded-2xl flex items-center justify-center mb-4 border border-[#89d957]/20">
+              <Shield className="w-7 h-7 text-[#5a9c32]" />
             </div>
-            <h3 className="text-xl font-bold text-zinc-900 dark:text-white mb-1">
-              {isFree ? 'You got it free!' : 'Payment successful'}
-            </h3>
-            <p className="text-zinc-500 text-sm">
-              {isFree
-                ? 'As an early customer, your QR has been activated at no cost.'
-                : `Your payment of ₹${((pricePaise ?? 0) / 100).toFixed(0)} was successful and your QR is now active.`}
+            
+            <h2 className="text-xl font-black text-neutral-900">REXU Safety Sticker</h2>
+            <p className="text-neutral-500 text-sm mt-1 max-w-xs">
+              Complete mock payment to activate your emergency QR decal and unlock your profile card.
             </p>
-            {activationNumber != null && (
-              <p className="text-xs text-zinc-400">
-                Customer #<span className="font-mono">{activationNumber}</span>
-              </p>
-            )}
-            {token && (
-              <p className="text-xs text-zinc-400">
-                QR Token: <span className="font-mono break-all">{token}</span>
-              </p>
-            )}
-          </div>
-        ) : step === 'pay' && !success ? (
-          <div className="text-center py-8">
-            <p className="text-zinc-500 text-sm mb-2">
-              Complete payment in the Razorpay window. Amount:{' '}
-              <span className="font-semibold">
-                ₹{((pricePaise ?? 0) / 100).toFixed(0)}
-              </span>
-              {typeof vehicleCount === 'number' && (
-                <>
-                  {' '}
-                  for <span className="font-semibold">{vehicleCount}</span> vehicle
-                  {vehicleCount === 1 ? '' : 's'}
-                </>
+
+            {/* Product Card Info */}
+            <div className="w-full mt-5 p-4 rounded-2xl bg-neutral-50 border border-neutral-200/50 text-left space-y-2">
+              <div className="flex justify-between items-center text-xs font-semibold text-neutral-450 uppercase tracking-wider">
+                <span>Item</span>
+                <span>Amount</span>
+              </div>
+              <div className="flex justify-between items-center text-sm font-bold text-neutral-900">
+                <span>REXU Smart Safety Sticker</span>
+                <div className="text-right">
+                  <span className="text-neutral-900">₹349</span>
+                  <span className="text-xs text-neutral-400 line-through ml-1.5 font-normal">₹499</span>
+                </div>
+              </div>
+              {vehicleCount && vehicleCount > 0 && (
+                <div className="text-xs text-neutral-500 pt-1 border-t border-neutral-200/50">
+                  Fleet size: <span className="font-semibold">{vehicleCount}</span> vehicles
+                </div>
               )}
-            </p>
-            <p className="text-xs text-zinc-400">If the window did not open, check pop-up blocking.</p>
-            {loading && (
-              <div className="flex items-center justify-center gap-2 mt-4">
-                <Loader2 className="w-5 h-5 animate-spin text-[#6eb84a]" />
-                <span className="text-sm text-zinc-500">Verifying payment…</span>
+            </div>
+
+            {error && (
+              <div className="mt-4 p-3 w-full rounded-xl bg-red-50 text-red-700 text-xs font-semibold border border-red-200 text-left">
+                {error}
               </div>
             )}
-          </div>
-        ) : null}
 
-        {!error && !success && (
-          <div className="mt-6 space-y-2 text-center">
-            <div className="flex items-center justify-center gap-2 text-xs text-zinc-400">
-              <Shield className="w-3 h-3" />
-              <span>Secure payment via Razorpay</span>
+            <button
+              onClick={handleMockPayment}
+              disabled={loading}
+              className="w-full mt-6 bg-[#89d957] text-[#1a2e0f] py-4 rounded-full font-bold shadow-sm shadow-[#89d957]/15 hover:shadow-md hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin text-[#1a2e0f]" />
+                  Processing payment...
+                </>
+              ) : (
+                <>
+                  <CreditCard className="w-5 h-5" />
+                  Pay ₹349 (Demo Gateway)
+                </>
+              )}
+            </button>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center text-center py-6">
+            <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mb-4 border border-green-200">
+              <CheckCircle2 className="w-10 h-10 text-[#5a9c32]" />
             </div>
-            <p className="text-[10px] text-zinc-500 leading-relaxed">
-              By proceeding, you agree to our{' '}
-              <a href="/terms" target="_blank" className="text-zinc-300 underline underline-offset-2 hover:text-white">
-                Terms
-              </a>
-              ,{' '}
-              <a href="/privacy" target="_blank" className="text-zinc-300 underline underline-offset-2 hover:text-white">
-                Privacy Policy
-              </a>
-              , and{' '}
-              <a href="/refund" target="_blank" className="text-zinc-300 underline underline-offset-2 hover:text-white">
-                Refund Policy
-              </a>
-              .
+            
+            <h2 className="text-xl font-black text-neutral-900">Payment Successful</h2>
+            <p className="text-neutral-500 text-sm mt-1 max-w-xs leading-relaxed">
+              Your mock payment has been processed. Your safety QR decal is now activated and ready to download!
             </p>
+
+            {token && (
+              <div className="mt-4 p-3 bg-neutral-50 border border-neutral-250/60 rounded-xl w-full">
+                <span className="text-[10px] text-neutral-400 font-bold uppercase block tracking-wider">Generated Token</span>
+                <span className="font-mono text-xs text-neutral-700 select-all font-semibold break-all">{token}</span>
+              </div>
+            )}
+            
+            <div className="mt-6 flex items-center justify-center gap-2 text-xs text-neutral-450">
+              <Loader2 className="w-4 h-4 animate-spin text-[#5a9c32]" />
+              Redirecting to dashboard...
+            </div>
           </div>
         )}
       </div>
