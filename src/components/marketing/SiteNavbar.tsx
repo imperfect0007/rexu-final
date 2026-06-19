@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Menu, X, Bell, User, Shield, ArrowLeft, LogOut, Truck } from 'lucide-react';
+import { Menu, X, Bell, User, Shield, ArrowLeft, LogOut, Truck, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
 
@@ -413,15 +413,15 @@ export function SiteNavbar({
               className="absolute inset-0 bg-neutral-950/60 backdrop-blur-sm"
             />
 
-            {/* Modal Content */}
+            {/* Modal Content - Coming Soon Modal */}
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ duration: 0.3, ease: [0.33, 1, 0.68, 1] }}
-              className={`relative w-full max-w-xl overflow-hidden rounded-3xl border p-6 shadow-2xl backdrop-blur-2xl md:p-8 ${dark
-                  ? 'border-neutral-800 bg-neutral-900/90 text-white shadow-neutral-950/80'
-                  : 'border-neutral-200 bg-white/90 text-neutral-900 shadow-neutral-300/50'
+              className={`relative w-full max-w-md overflow-hidden rounded-[32px] border p-8 shadow-2xl backdrop-blur-2xl text-center ${dark
+                  ? 'border-neutral-800 bg-neutral-900/95 text-white shadow-neutral-950/80'
+                  : 'border-neutral-200 bg-white/95 text-neutral-900 shadow-neutral-300/50'
                 }`}
             >
               {/* Close button */}
@@ -435,62 +435,25 @@ export function SiteNavbar({
                 <X className="h-4 w-4" />
               </button>
 
-              <div className="text-center mb-6">
-                <h3 className="text-2xl font-bold tracking-tight">Choose Account Type</h3>
-                <p className={`mt-2 text-sm ${dark ? 'text-neutral-400' : 'text-neutral-500'}`}>
-                  Select the account type that matches your needs to get started.
+              <div className="flex flex-col items-center">
+                <div className={`p-4 rounded-3xl mb-5 border ${dark
+                    ? 'bg-[#89d957]/10 border-[#89d957]/20 text-[#89d957]'
+                    : 'bg-[#89d957]/15 border-[#89d957]/30 text-[#5a9c32]'
+                  }`}>
+                  <Sparkles className="h-10 w-10 animate-pulse" />
+                </div>
+                
+                <h3 className="text-2xl font-black tracking-tight mb-2">Coming Soon! 🚀</h3>
+                
+                <p className={`text-sm leading-relaxed mb-6 px-2 ${dark ? 'text-neutral-400' : 'text-neutral-550'}`}>
+                  REXU smart safety decals and fleet management platforms are launching soon. Registration and individual/commercial account portals are currently under active development. Stay tuned!
                 </p>
-              </div>
 
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                {/* Individual Card */}
                 <button
-                  onClick={async () => {
-                    setShowChoiceModal(false);
-                    setOpen(false);
-                    await supabase.auth.signOut();
-                    router.push('/individual');
-                  }}
-                  className={`flex flex-col items-center text-center p-6 rounded-2xl border transition-all duration-300 hover:scale-[1.02] group cursor-pointer ${dark
-                      ? 'border-neutral-800 bg-neutral-950/40 hover:bg-neutral-800/40 hover:border-[#89d957]/50'
-                      : 'border-neutral-200 bg-neutral-50/50 hover:bg-white hover:border-[#5a9c32]/50 hover:shadow-lg'
-                    }`}
+                  onClick={() => setShowChoiceModal(false)}
+                  className="w-full inline-flex h-12 items-center justify-center rounded-full bg-gradient-brand text-sm font-bold text-[#1a2e0f] shadow-sm shadow-[#89d957]/15 transition-all duration-200 hover:scale-[1.02] hover:shadow-md active:scale-[0.98] cursor-pointer"
                 >
-                  <div className={`p-4 rounded-full mb-4 transition-colors ${dark
-                      ? 'bg-[#89d957]/10 text-[#89d957] group-hover:bg-[#89d957]/20'
-                      : 'bg-[#89d957]/20 text-[#5a9c32] group-hover:bg-[#89d957]/30'
-                    }`}>
-                    <User className="h-8 w-8" />
-                  </div>
-                  <h4 className="text-lg font-bold">Individual</h4>
-                  <p className={`mt-2 text-xs leading-relaxed ${dark ? 'text-neutral-400' : 'text-neutral-500'}`}>
-                    Perfect for riders, commuters, and individuals wanting to set up a smart safety profile for their personal vehicle.
-                  </p>
-                </button>
-
-                {/* Commercial Fleets Card */}
-                <button
-                  onClick={async () => {
-                    setShowChoiceModal(false);
-                    setOpen(false);
-                    await supabase.auth.signOut();
-                    router.push('/login');
-                  }}
-                  className={`flex flex-col items-center text-center p-6 rounded-2xl border transition-all duration-300 hover:scale-[1.02] group cursor-pointer ${dark
-                      ? 'border-neutral-800 bg-neutral-950/40 hover:bg-neutral-800/40 hover:border-[#89d957]/50'
-                      : 'border-neutral-200 bg-neutral-50/50 hover:bg-white hover:border-[#5a9c32]/50 hover:shadow-lg'
-                    }`}
-                >
-                  <div className={`p-4 rounded-full mb-4 transition-colors ${dark
-                      ? 'bg-[#89d957]/10 text-[#89d957] group-hover:bg-[#89d957]/20'
-                      : 'bg-[#89d957]/20 text-[#5a9c32] group-hover:bg-[#89d957]/30'
-                    }`}>
-                    <Truck className="h-8 w-8" />
-                  </div>
-                  <h4 className="text-lg font-bold">Commercial Fleets</h4>
-                  <p className={`mt-2 text-xs leading-relaxed ${dark ? 'text-neutral-400' : 'text-neutral-500'}`}>
-                    Designed for logistics, transport companies, and fleet operators who manage multiple vehicles and drivers.
-                  </p>
+                  Great, Keep Me Posted!
                 </button>
               </div>
             </motion.div>

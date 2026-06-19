@@ -19,7 +19,10 @@ export default function RegisterPage(props: PageProps) {
   // Temporarily disable B2C: force all signups to B2B (commercial).
   const segment = 'commercial';
 
-  if (props.params) React.use(props.params);
+  React.useEffect(() => {
+    window.location.href = '/?choice=true';
+  }, []);
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');

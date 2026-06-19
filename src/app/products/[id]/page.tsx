@@ -147,9 +147,14 @@ export default async function ProductDetailPage({
 
           {/* Right Column: Content details */}
           <div className="lg:col-span-7 flex flex-col items-start">
-            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[#5a9c32] bg-[#89d957]/10 px-3 py-1 rounded-full">
-              Product Details
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[#5a9c32] bg-[#89d957]/10 px-3 py-1 rounded-full">
+                Product Details
+              </span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">
+                Coming Soon
+              </span>
+            </div>
             <h1 className="mt-4 text-3xl sm:text-4xl font-extrabold tracking-tight text-neutral-900 leading-[1.1]">
               {product.name}
             </h1>
@@ -185,10 +190,10 @@ export default async function ProductDetailPage({
             <div className="mt-10 flex flex-wrap gap-4 w-full sm:w-auto">
               <Link
                 href="/?choice=true"
-                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-full bg-gradient-brand px-8 py-4 text-sm font-semibold text-[#1a2e0f] transition-opacity hover:opacity-90 shadow-lg shadow-[#89d957]/15 cursor-pointer"
+                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-full bg-gradient-brand px-8 py-4 text-sm font-semibold text-[#1a2e0f] transition-opacity hover:opacity-90 shadow-lg shadow-[#89d957]/15 cursor-pointer animate-pulse"
               >
                 <ShoppingCart className="h-4 w-4" />
-                Purchase product
+                Coming Soon - Notify Me
               </Link>
             </div>
           </div>

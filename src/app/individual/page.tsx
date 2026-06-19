@@ -40,8 +40,10 @@ interface Contact {
 }
 
 export default function IndividualDashboard() {
-  const router = useRouter();
-  
+  React.useEffect(() => {
+    window.location.href = '/?choice=true';
+  }, []);
+
   // Auth state
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);

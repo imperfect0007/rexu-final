@@ -292,8 +292,8 @@ export default function Home(props: HomePageProps) {
                       <span className="mt-1 text-xs font-semibold text-[#89d957]">
                         {product.price}
                       </span>
-                      <span className="mt-4 text-[10px] font-bold text-white/75 tracking-wider uppercase bg-white/10 px-3.5 py-1.5 rounded-full">
-                        View Details
+                      <span className="mt-4 text-[10px] font-bold text-[#89d957] tracking-wider uppercase bg-[#89d957]/10 px-3.5 py-1.5 rounded-full border border-[#89d957]/20">
+                        Coming Soon
                       </span>
                     </div>
                   </Link>

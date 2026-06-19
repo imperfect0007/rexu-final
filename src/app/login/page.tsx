@@ -16,7 +16,10 @@ type PageProps = {
 
 export default function LoginPage(props: PageProps) {
   if (props.params) React.use(props.params);
-  if (props.searchParams) React.use(props.searchParams);
+  React.useEffect(() => {
+    window.location.href = '/?choice=true';
+  }, []);
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
