@@ -3,8 +3,6 @@ import { promises as fs } from 'fs';
 import QRCode from 'qrcode';
 import sharp from 'sharp';
 
-const TEMPLATE_REL = path.join('public', 'stickers', 'rexu-emergency-model-h.png');
-
 function escapeXml(value: string): string {
   return value
     .replace(/&/g, '&amp;')
@@ -14,45 +12,45 @@ function escapeXml(value: string): string {
     .replace(/'/g, '&apos;');
 }
 
-/**
- * Measured inner QR box on Model H (2000×1250 empty template).
- * Keep a quiet zone so scanners work — QR fills ~93% of the white area.
- */
-const QR_BOX = {
-  innerL: 1085,
-  innerT: 150,
-  innerR: 1869,
-  innerB: 916,
-} as const;
-
-export type EmergencyStickerLabels = {
+export type StickerLabels = {
   vehicleNumber?: string | null;
   companyName?: string | null;
 };
 
+export type QrBox = {
+  innerL: number;
+  innerT: number;
+  innerR: number;
+  innerB: number;
+};
+
+type RenderOpts = {
+  templateRel: string;
+  qrBox: QrBox;
+  qrUrl: string;
+  labels?: StickerLabels;
+};
+
 /**
- * Build the emergency sticker PNG: Model H art + token QR + cut strip
- * with vehicle (left) and company/profile name (slightly right).
+ * Model H sticker: template art + QR in measured box + cut strip
+ * (vehicle left-aligned, company slightly right).
  */
-export async function renderEmergencyStickerPng(
-  emergencyUrl: string,
-  labels: EmergencyStickerLabels = {}
-): Promise<Buffer> {
-  const templatePath = path.join(process.cwd(), TEMPLATE_REL);
+export async function renderModelHStickerPng(opts: RenderOpts): Promise<Buffer> {
+  const templatePath = path.join(process.cwd(), opts.templateRel);
   await fs.access(templatePath);
 
-  const template = sharp(templatePath);
-  const meta = await template.metadata();
+  const meta = await sharp(templatePath).metadata();
   const w = meta.width ?? 2000;
-  const h = meta.height ?? 1250;
+  const h = meta.height ?? 2000;
+  const { qrBox } = opts;
 
-  const boxW = QR_BOX.innerR - QR_BOX.innerL + 1;
-  const boxH = QR_BOX.innerB - QR_BOX.innerT + 1;
+  const boxW = qrBox.innerR - qrBox.innerL + 1;
+  const boxH = qrBox.innerB - qrBox.innerT + 1;
   const qrSize = Math.floor(Math.min(boxW, boxH) * 0.93);
-  const qrX = QR_BOX.innerL + Math.round((boxW - qrSize) / 2);
-  const qrY = QR_BOX.innerT + Math.round((boxH - qrSize) / 2);
+  const qrX = qrBox.innerL + Math.round((boxW - qrSize) / 2);
+  const qrY = qrBox.innerT + Math.round((boxH - qrSize) / 2);
 
-  const qrPng = await QRCode.toBuffer(emergencyUrl, {
+  const qrPng = await QRCode.toBuffer(opts.qrUrl, {
     type: 'png',
     width: qrSize,
     margin: 1,
@@ -60,13 +58,12 @@ export async function renderEmergencyStickerPng(
     color: { dark: '#000000', light: '#FFFFFF' },
   });
 
-  // Trim empty template padding under footer (Model H has ~190px dead space)
   const { data, info } = await sharp(templatePath)
     .raw()
     .toBuffer({ resolveWithObject: true });
   const ch = info.channels;
   let lastInkY = 0;
-  for (let y = Math.max(QR_BOX.innerB + 40, Math.floor(h * 0.75)); y < h; y++) {
+  for (let y = Math.max(qrBox.innerB + 20, Math.floor(h * 0.7)); y < h; y++) {
     let dark = 0;
     for (let x = 0; x < w; x++) {
       const i = (y * w + x) * ch;
@@ -82,6 +79,7 @@ export async function renderEmergencyStickerPng(
     .png()
     .toBuffer();
 
+  const labels = opts.labels ?? {};
   const vehicleLabel = labels.vehicleNumber?.trim()
     ? `Vehicle: ${labels.vehicleNumber.trim()}`
     : '';
@@ -127,3 +125,32 @@ export async function renderEmergencyStickerPng(
     .png()
     .toBuffer();
 }
+
+/** Emergency Model H — QR on the right (2000×1250). */
+export async function renderEmergencyStickerPng(
+  emergencyUrl: string,
+  labels: StickerLabels = {}
+): Promise<Buffer> {
+  return renderModelHStickerPng({
+    templateRel: path.join('public', 'stickers', 'rexu-emergency-model-h.png'),
+    qrBox: { innerL: 1085, innerT: 150, innerR: 1869, innerB: 916 },
+    qrUrl: emergencyUrl,
+    labels,
+  });
+}
+
+/** Check-in Model H — QR on the left (2000×2000). */
+export async function renderCheckinStickerPng(
+  checkinUrl: string,
+  labels: StickerLabels = {}
+): Promise<Buffer> {
+  return renderModelHStickerPng({
+    templateRel: path.join('public', 'stickers', 'rexu-checkin-model-h.png'),
+    qrBox: { innerL: 248, innerT: 698, innerR: 905, innerB: 1375 },
+    qrUrl: checkinUrl,
+    labels,
+  });
+}
+
+// Back-compat type alias
+export type EmergencyStickerLabels = StickerLabels;

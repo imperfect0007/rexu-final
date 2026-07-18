@@ -506,7 +506,7 @@ export default function FleetManagerPage() {
         window.alert('Could not download check-in QR. Generate it first, then try again.');
         return;
       }
-      await downloadBlobAsFile(await res.blob(), 'rexu-checkin-card.svg');
+      await downloadBlobAsFile(await res.blob(), 'rexu-checkin-card.png');
     } catch (err) {
       console.error('FleetManager: download check-in QR:', err);
       window.alert('Could not download check-in QR. Please try again.');
