@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
-import QRCode from 'qrcode';
 import { supabaseAdmin } from '../../../../../backend/supabaseAdminClient';
 import {
   getBearerTokenFromRequest,
   verifySupabaseToken,
 } from '../../../../../backend/supabaseJwtVerifier';
+import { renderCheckinStickerPng } from '@/lib/renderEmergencySticker';
 
 const QR_BUCKET_NAME = process.env.SUPABASE_QR_BUCKET || 'QR';
 const QR_BASE_URL =
@@ -36,7 +36,7 @@ export async function POST(request: Request) {
 
     const { data: vehicle, error: vehicleError } = await supabaseAdmin
       .from('fleet_vehicles')
-      .select('id, owner_profile_id, checkin_token')
+      .select('id, owner_profile_id, checkin_token, vehicle_number')
       .eq('id', vehicleId)
       .single();
 
@@ -64,11 +64,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Failed to create check-in QR' }, { status: 500 });
     }
 
+    const { data: profile } = await supabaseAdmin
+      .from('profiles')
+      .select('full_name')
+      .eq('id', userId)
+      .maybeSingle();
+
     const checkinUrl = `${QR_BASE_URL.replace(/\/$/, '')}/vehicle-checkin/${token}`;
-    const pngBuffer = await QRCode.toBuffer(checkinUrl, {
-      type: 'png',
-      width: 512,
-      margin: 2,
+    const pngBuffer = await renderCheckinStickerPng(checkinUrl, {
+      vehicleNumber: vehicle.vehicle_number,
+      companyName: profile?.full_name ?? null,
     });
 
     const { error: uploadError } = await supabaseAdmin.storage

@@ -24,11 +24,20 @@ export type QrBox = {
   innerB: number;
 };
 
+type CardCrop = {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+};
+
 type RenderOpts = {
   templateRel: string;
   qrBox: QrBox;
   qrUrl: string;
   labels?: StickerLabels;
+  /** When set, crop to the white placard (drops gray canvas) before the cut strip. */
+  cardCrop?: CardCrop;
 };
 
 /**
@@ -58,26 +67,125 @@ export async function renderModelHStickerPng(opts: RenderOpts): Promise<Buffer> 
     color: { dark: '#000000', light: '#FFFFFF' },
   });
 
-  const { data, info } = await sharp(templatePath)
-    .raw()
-    .toBuffer({ resolveWithObject: true });
-  const ch = info.channels;
-  let lastInkY = 0;
-  for (let y = Math.max(qrBox.innerB + 20, Math.floor(h * 0.7)); y < h; y++) {
-    let dark = 0;
-    for (let x = 0; x < w; x++) {
-      const i = (y * w + x) * ch;
-      if (data[i] < 90 && data[i + 1] < 90 && data[i + 2] < 90) dark++;
-    }
-    if (dark > 80) lastInkY = y;
-  }
-  const cropH = Math.min(h, (lastInkY || h - 40) + 22);
-
-  const card = await sharp(templatePath)
+  // Composite QR on full template first, then crop — sharp may reorder
+  // extract-before-composite if chained, which shifts QR by the crop offset.
+  const withQr = await sharp(templatePath)
     .composite([{ input: qrPng, left: qrX, top: qrY }])
-    .extract({ left: 0, top: 0, width: w, height: cropH })
     .png()
     .toBuffer();
+
+  let extract: CardCrop;
+  if (opts.cardCrop) {
+    extract = opts.cardCrop;
+  } else {
+    // Emergency templates fill the frame — trim trailing empty space via footer ink.
+    const { data, info } = await sharp(templatePath)
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+    const ch = info.channels;
+    let lastInkY = 0;
+    for (let y = Math.max(qrBox.innerB + 20, Math.floor(h * 0.7)); y < h; y++) {
+      let dark = 0;
+      for (let x = 0; x < w; x++) {
+        const i = (y * w + x) * ch;
+        if (data[i] < 90 && data[i + 1] < 90 && data[i + 2] < 90) dark++;
+      }
+      if (dark > 80) lastInkY = y;
+    }
+    extract = {
+      left: 0,
+      top: 0,
+      width: w,
+      height: Math.min(h, (lastInkY || h - 40) + 22),
+    };
+  }
+
+  let card = await sharp(withQr).extract(extract).png().toBuffer();
+  // Gray canvas + soft rim around the rounded placard — flood-fill from the
+  // crop edges, then bleach any leftover gray stroke that isn't next to ink
+  // (so QR/text anti-aliasing is left alone).
+  if (opts.cardCrop) {
+    const { data, info } = await sharp(card)
+      .removeAlpha()
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+    const { width: cw, height: chh, channels: cch } = info;
+    const out = Buffer.from(data);
+    const idx = (x: number, y: number) => (y * cw + x) * cch;
+    const isOutsideGray = (i: number) => {
+      const r = out[i];
+      const g = out[i + 1];
+      const b = out[i + 2];
+      const chroma = Math.max(r, g, b) - Math.min(r, g, b);
+      return chroma < 28 && r >= 90 && r < 252;
+    };
+    const stack: number[] = [];
+    const push = (x: number, y: number) => {
+      if (x < 0 || y < 0 || x >= cw || y >= chh) return;
+      const i = idx(x, y);
+      if (!isOutsideGray(i)) return;
+      out[i] = 255;
+      out[i + 1] = 255;
+      out[i + 2] = 255;
+      stack.push(x, y);
+    };
+    for (let x = 0; x < cw; x++) {
+      push(x, 0);
+      push(x, chh - 1);
+    }
+    for (let y = 0; y < chh; y++) {
+      push(0, y);
+      push(cw - 1, y);
+    }
+    while (stack.length) {
+      const y = stack.pop()!;
+      const x = stack.pop()!;
+      push(x + 1, y);
+      push(x - 1, y);
+      push(x, y + 1);
+      push(x, y - 1);
+    }
+    // Closed gray stroke around the card sits between white-outside and white-card.
+    for (let y = 1; y < chh - 1; y++) {
+      for (let x = 1; x < cw - 1; x++) {
+        const i = idx(x, y);
+        if (!isOutsideGray(i)) continue;
+        let nearInk = false;
+        for (let dy = -1; dy <= 1 && !nearInk; dy++) {
+          for (let dx = -1; dx <= 1; dx++) {
+            if (dx === 0 && dy === 0) continue;
+            const j = idx(x + dx, y + dy);
+            const rr = out[j];
+            const gg = out[j + 1];
+            const bb = out[j + 2];
+            // ink (dark) or brand green — don't bleach AA next to these
+            if (rr < 90 && gg < 90 && bb < 90) nearInk = true;
+            else if (gg > 140 && gg > rr + 35 && gg > bb + 35) nearInk = true;
+          }
+        }
+        if (!nearInk) {
+          out[i] = 255;
+          out[i + 1] = 255;
+          out[i + 2] = 255;
+        }
+      }
+    }
+    // Template card fill is off-white (~252); flatten so it matches the cut strip.
+    for (let i = 0; i < out.length; i += cch) {
+      if (out[i] >= 248 && out[i + 1] >= 248 && out[i + 2] >= 248) {
+        out[i] = 255;
+        out[i + 1] = 255;
+        out[i + 2] = 255;
+      }
+    }
+    card = await sharp(out, {
+      raw: { width: cw, height: chh, channels: cch },
+    })
+      .png()
+      .toBuffer();
+  }
+  const outW = extract.width;
+  const cropH = extract.height;
 
   const labels = opts.labels ?? {};
   const vehicleLabel = labels.vehicleNumber?.trim()
@@ -90,13 +198,13 @@ export async function renderModelHStickerPng(opts: RenderOpts): Promise<Buffer> 
   const stripH = 78;
   const cutY = 16;
   const lineLeft = 60;
-  const lineRight = w - 60;
+  const lineRight = outW - 60;
   const vehicleX = lineLeft;
-  const companyX = Math.round(w * 0.52);
+  const companyX = Math.round(outW * 0.52);
 
   const stripSvg = `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${stripH}">
-  <rect width="${w}" height="${stripH}" fill="#FFFFFF"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="${outW}" height="${stripH}">
+  <rect width="${outW}" height="${stripH}" fill="#FFFFFF"/>
   <line x1="${lineLeft}" y1="${cutY}" x2="${lineRight}" y2="${cutY}" stroke="#475569" stroke-width="3" stroke-dasharray="14 10"/>
   ${
     vehicleLabel
@@ -112,7 +220,7 @@ export async function renderModelHStickerPng(opts: RenderOpts): Promise<Buffer> 
 
   return sharp({
     create: {
-      width: w,
+      width: outW,
       height: cropH + stripH,
       channels: 3,
       background: '#FFFFFF',
@@ -139,7 +247,7 @@ export async function renderEmergencyStickerPng(
   });
 }
 
-/** Check-in Model H — QR on the left (2000×2000). */
+/** Check-in Model H — QR on the left (2000×2000 gray canvas; crop to white card). */
 export async function renderCheckinStickerPng(
   checkinUrl: string,
   labels: StickerLabels = {}
@@ -147,6 +255,8 @@ export async function renderCheckinStickerPng(
   return renderModelHStickerPng({
     templateRel: path.join('public', 'stickers', 'rexu-checkin-model-h.png'),
     qrBox: { innerL: 248, innerT: 698, innerR: 905, innerB: 1375 },
+    // Measured white placard on the gray Model H (2) canvas; inset past soft gray rim.
+    cardCrop: { left: 136, top: 560, width: 1747, height: 997 },
     qrUrl: checkinUrl,
     labels,
   });
