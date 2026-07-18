@@ -65,11 +65,8 @@ export async function GET(request: Request) {
 
     const vehicleNumber = vehicle.vehicle_number?.trim() || '';
     const companyName = profile?.full_name?.trim() || '';
-    const labelParts = [
-      vehicleNumber ? `Vehicle: ${vehicleNumber}` : null,
-      companyName ? `Company: ${companyName}` : null,
-    ].filter(Boolean) as string[];
-    const labelLine = labelParts.join('   ·   ') || 'Vehicle / Company';
+    const vehicleLabel = vehicleNumber ? `Vehicle: ${vehicleNumber}` : '';
+    const companyLabel = companyName ? `Company: ${companyName}` : '';
 
     const checkinUrl = `${QR_BASE_URL.replace(/\/$/, '')}/vehicle-checkin/${vehicle.checkin_token}`;
     const qrDataUrl = await QRCode.toDataURL(checkinUrl, {
@@ -78,8 +75,8 @@ export async function GET(request: Request) {
       color: { dark: '#111827', light: '#FFFFFF' },
     });
 
-    const canvasH = 1140;
-    const cutY = 980;
+    const canvasH = 1080;
+    const cutY = 970;
 
     // Check-in / Check-out sticker card matching the provided layout.
     const cardSvg = `<?xml version="1.0" encoding="UTF-8"?>
@@ -106,8 +103,8 @@ export async function GET(request: Request) {
   <text x="512" y="918" text-anchor="middle" fill="#111827" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="500">Get yours now at www.rexu.in</text>
 
   <line x1="220" y1="${cutY}" x2="804" y2="${cutY}" stroke="#475569" stroke-width="2" stroke-dasharray="10 8"/>
-  <text x="512" y="${cutY - 12}" text-anchor="middle" fill="#64748B" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="600">✂ cut here</text>
-  <text x="512" y="${cutY + 42}" text-anchor="middle" fill="#0F172A" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="700">${escapeXml(labelLine)}</text>
+  ${vehicleLabel ? `<text x="220" y="${cutY + 40}" text-anchor="start" fill="#0F172A" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="700">${escapeXml(vehicleLabel)}</text>` : ''}
+  ${companyLabel ? `<text x="520" y="${cutY + 40}" text-anchor="start" fill="#0F172A" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="700">${escapeXml(companyLabel)}</text>` : ''}
 </svg>`;
 
     return new NextResponse(cardSvg, {

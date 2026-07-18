@@ -1,9 +1,9 @@
 /**
- * Download the branded emergency QR card (SVG) from /api/qr/[token].
+ * Download the branded emergency QR sticker (PNG) from /api/qr/[token].
  */
 export async function downloadQrEmergencyCard(
   token: string,
-  filename = 'rexu-emergency-card.svg'
+  filename = 'rexu-emergency-card.png'
 ): Promise<void> {
   const res = await fetch(`/api/qr/${token}`, { cache: 'no-store' });
   if (!res.ok) {
