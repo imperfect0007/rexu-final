@@ -11,6 +11,15 @@ const QR_BASE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ||
   'https://rexu.in';
 
+function escapeXml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
 export async function GET(request: Request) {
   try {
     const bearerToken = getBearerTokenFromRequest(request);
@@ -32,7 +41,7 @@ export async function GET(request: Request) {
 
     const { data: vehicle, error } = await supabaseAdmin
       .from('fleet_vehicles')
-      .select('id, owner_profile_id, checkin_token')
+      .select('id, owner_profile_id, checkin_token, vehicle_number')
       .eq('id', vehicleId)
       .single();
 
@@ -48,6 +57,20 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'No check-in QR yet. Generate one first.' }, { status: 400 });
     }
 
+    const { data: profile } = await supabaseAdmin
+      .from('profiles')
+      .select('full_name')
+      .eq('id', userId)
+      .maybeSingle();
+
+    const vehicleNumber = vehicle.vehicle_number?.trim() || '';
+    const companyName = profile?.full_name?.trim() || '';
+    const labelParts = [
+      vehicleNumber ? `Vehicle: ${vehicleNumber}` : null,
+      companyName ? `Company: ${companyName}` : null,
+    ].filter(Boolean) as string[];
+    const labelLine = labelParts.join('   ·   ') || 'Vehicle / Company';
+
     const checkinUrl = `${QR_BASE_URL.replace(/\/$/, '')}/vehicle-checkin/${vehicle.checkin_token}`;
     const qrDataUrl = await QRCode.toDataURL(checkinUrl, {
       margin: 1,
@@ -55,10 +78,13 @@ export async function GET(request: Request) {
       color: { dark: '#111827', light: '#FFFFFF' },
     });
 
+    const canvasH = 1140;
+    const cutY = 980;
+
     // Check-in / Check-out sticker card matching the provided layout.
     const cardSvg = `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
-  <rect width="1024" height="1024" fill="#A3A3A3"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="${canvasH}" viewBox="0 0 1024 ${canvasH}">
+  <rect width="1024" height="${canvasH}" fill="#A3A3A3"/>
   <rect x="205" y="106" width="614" height="848" rx="42" fill="#F8FAFC"/>
 
   <text x="250" y="215" fill="#111827" font-family="Arial, Helvetica, sans-serif" font-size="74" font-weight="700">rexu</text>
@@ -78,6 +104,10 @@ export async function GET(request: Request) {
   <text x="512" y="844" text-anchor="middle" fill="#111827" font-family="Arial, Helvetica, sans-serif" font-size="37" font-weight="700">Please scan the QR code before</text>
   <text x="512" y="878" text-anchor="middle" fill="#111827" font-family="Arial, Helvetica, sans-serif" font-size="37" font-weight="700">starting a ride</text>
   <text x="512" y="918" text-anchor="middle" fill="#111827" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="500">Get yours now at www.rexu.in</text>
+
+  <line x1="220" y1="${cutY}" x2="804" y2="${cutY}" stroke="#475569" stroke-width="2" stroke-dasharray="10 8"/>
+  <text x="512" y="${cutY - 12}" text-anchor="middle" fill="#64748B" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="600">✂ cut here</text>
+  <text x="512" y="${cutY + 42}" text-anchor="middle" fill="#0F172A" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="700">${escapeXml(labelLine)}</text>
 </svg>`;
 
     return new NextResponse(cardSvg, {
