@@ -229,6 +229,9 @@ create index if not exists idx_fleet_vehicles_owner_profile_id
 create index if not exists idx_fleet_vehicles_qr_token
   on public.fleet_vehicles (qr_token);
 
+create unique index if not exists uq_fleet_vehicles_owner_vehicle_number
+  on public.fleet_vehicles (owner_profile_id, lower(replace(vehicle_number, ' ', '')));
+
 -- =========================================================
 -- FLEET DRIVERS (assigned to vehicles)
 -- =========================================================

@@ -5,6 +5,7 @@ import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { logFleetActivity } from '@/lib/fleetLogger';
 import { downloadQrEmergencyCard } from '@/lib/downloadQrCard';
+import { normalizeVehicleNumber } from '@/lib/fleetVehicleNumber';
 import { resolvePersonalQrToken } from '@/lib/resolvePersonalQrToken';
 import { useRouter } from 'next/navigation';
 import {
@@ -894,8 +895,32 @@ export default function DashboardPage(props: PageProps) {
       return;
     }
 
+    const normalizedNum = normalizeVehicleNumber(vNum);
+    if (
+      fleetVehicles.some(
+        (v) => normalizeVehicleNumber(v.vehicle_number) === normalizedNum
+      )
+    ) {
+      setVehicleError(`Vehicle ${vNum.toUpperCase()} already exists.`);
+      return;
+    }
+
     setVehicleSaving(true);
     try {
+      const { data: existing } = await supabase
+        .from('fleet_vehicles')
+        .select('id, vehicle_number')
+        .eq('owner_profile_id', profile.id);
+
+      if (
+        existing?.some(
+          (v) => normalizeVehicleNumber(v.vehicle_number) === normalizedNum
+        )
+      ) {
+        setVehicleError(`Vehicle ${vNum.toUpperCase()} already exists.`);
+        return;
+      }
+
       // 1. Insert vehicle
       const { data: newVehicle, error } = await supabase
         .from('fleet_vehicles')
@@ -910,7 +935,11 @@ export default function DashboardPage(props: PageProps) {
 
       if (error) {
         console.error('Failed to create fleet vehicle:', error);
-        setVehicleError(error.message ?? 'Failed to save vehicle.');
+        if (error.code === '23505') {
+          setVehicleError(`Vehicle ${vNum.toUpperCase()} already exists.`);
+        } else {
+          setVehicleError(error.message ?? 'Failed to save vehicle.');
+        }
         return;
       }
 
