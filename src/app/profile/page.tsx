@@ -24,7 +24,6 @@ import {
   Eye,
   EyeOff,
   Pencil,
-  ArrowRight,
   Upload,
   Download,
   Trash2
@@ -782,55 +781,53 @@ export default function ProfilePage(props: PageProps) {
                           <div>
                             <p className="text-[11px] text-neutral-400 font-semibold uppercase tracking-wider">Plan Name</p>
                             <p className="text-sm font-bold text-neutral-800 mt-0.5">
-                              {isCommercial ? 'Unlimited Fleet Manager' : 'QRgency Life Plan'}
+                              {isCommercial ? 'Fleet Starter' : 'Personal Safety (coming soon)'}
                             </p>
                           </div>
                           <div>
                             <p className="text-[11px] text-neutral-400 font-semibold uppercase tracking-wider">Status</p>
                             <p className="text-sm font-bold text-[#5a9c32] mt-0.5 flex items-center gap-1.5">
                               <span className="w-2 h-2 rounded-full bg-[#89d957]" />
-                              Active (Verified)
+                              {isCommercial ? 'Active — free tier' : 'Not available yet'}
                             </p>
                           </div>
                           <div>
-                            <p className="text-[11px] text-neutral-400 font-semibold uppercase tracking-wider">Validity Period</p>
-                            <p className="text-sm font-bold text-neutral-800 mt-0.5">Lifetime Subscription</p>
+                            <p className="text-[11px] text-neutral-400 font-semibold uppercase tracking-wider">Billing</p>
+                            <p className="text-sm font-bold text-neutral-800 mt-0.5">
+                              {isCommercial ? 'No charges during launch' : '—'}
+                            </p>
                           </div>
                           <div>
                             <p className="text-[11px] text-neutral-400 font-semibold uppercase tracking-wider">Linked Stickers</p>
-                            <p className="text-sm font-bold text-neutral-800 mt-0.5">Unlimited Active QR Codes</p>
+                            <p className="text-sm font-bold text-neutral-800 mt-0.5">
+                              {isCommercial ? 'Per your fleet vehicles' : '—'}
+                            </p>
                           </div>
                         </div>
 
-                        <div className="flex items-center justify-between border-t border-neutral-100 pt-5">
-                          <span className="text-xs text-neutral-500">Need to upgrade or change payment profile?</span>
-                          <button
-                            onClick={() => router.push('/dashboard?pay=true')}
-                            className="inline-flex items-center gap-1.5 px-4.5 py-2 rounded-xl bg-gradient-brand text-[#1a2e0f] text-xs font-bold hover:opacity-95 shadow-sm active:scale-[0.98] transition cursor-pointer"
-                          >
-                            <span>Manage billing</span>
-                            <ArrowRight className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
+                        {isCommercial && (
+                          <p className="text-xs text-neutral-500 border-t border-neutral-100 pt-4">
+                            Fleet accounts are free for now. Paid plans and online billing will be added when our payment gateway goes live.
+                          </p>
+                        )}
                       </div>
 
-                      {/* Mock Credit Card */}
+                      {/* Payment methods — none until gateway is live */}
                       <div className="bg-white rounded-3xl p-6 border border-neutral-200 shadow-sm space-y-4">
                         <div>
                           <h2 className="text-lg font-bold text-neutral-950 font-sans">Payment Methods</h2>
-                          <p className="text-xs text-neutral-500 mt-0.5">Default card details used for premium sticker renewals.</p>
+                          <p className="text-xs text-neutral-500 mt-0.5">
+                            {isCommercial
+                              ? 'Save a card here once billing is enabled for fleet subscriptions.'
+                              : 'Add a payment method when personal plans launch.'}
+                          </p>
                         </div>
-                        <div className="p-4 rounded-2xl border border-neutral-150 flex items-center justify-between gap-3">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-6 bg-gradient-to-r from-neutral-800 to-neutral-950 rounded-md border border-neutral-700 flex items-center justify-center text-[10px] text-white font-bold tracking-wider">
-                              VISA
-                            </div>
-                            <div>
-                              <p className="text-xs font-bold text-neutral-800">Visa Debit •••• 4890</p>
-                              <p className="text-[10px] text-neutral-400">Expires 09/2030</p>
-                            </div>
-                          </div>
-                          <span className="text-[10px] bg-neutral-150 text-neutral-600 font-semibold px-2 py-0.5 rounded-full">Primary</span>
+                        <div className="p-6 rounded-2xl border border-dashed border-neutral-200 bg-neutral-50/80 text-center space-y-2">
+                          <CreditCard className="w-8 h-8 text-neutral-300 mx-auto" />
+                          <p className="text-sm font-semibold text-neutral-700">No payment method on file</p>
+                          <p className="text-xs text-neutral-500 max-w-sm mx-auto">
+                            We haven&apos;t connected a payment gateway yet. You won&apos;t be charged until billing is turned on and you add a method here.
+                          </p>
                         </div>
                       </div>
                     </motion.div>
