@@ -29,90 +29,101 @@ export interface CachedEmergencyData {
   } | null;
 }
 
+function isCachedEmergencyData(value: unknown): value is CachedEmergencyData {
+  if (!value || typeof value !== 'object') return false;
+  const v = value as Record<string, unknown>;
+  return typeof v.profileId === 'string' && Array.isArray(v.contacts);
+}
+
 async function fetchFromSupabase(
   token: string
 ): Promise<CachedEmergencyData | null> {
-  const { data: qrCode, error: qrError } = await supabaseAdmin
-    .from('qr_codes')
-    .select('profile_id')
-    .eq('token', token)
-    .eq('is_active', true)
-    .single();
+  try {
+    const { data: qrCode, error: qrError } = await supabaseAdmin
+      .from('qr_codes')
+      .select('profile_id')
+      .eq('token', token)
+      .eq('is_active', true)
+      .maybeSingle();
 
-  if (!qrCode || qrError) return null;
+    if (!qrCode || qrError) return null;
 
-  const [
-    { data: profile },
-    { data: emergencyProfile },
-    { data: medicalInfo },
-    { data: emergencyNote },
-    { data: contacts },
-    { data: fleetVehicle },
-  ] = await Promise.all([
-    supabaseAdmin
-      .from('profiles')
-      .select('full_name, is_paid, mobile, avatar_url, account_type')
-      .eq('id', qrCode.profile_id)
-      .single(),
-    supabaseAdmin
-      .from('emergency_profiles')
-      .select(
-        'blood_group, guardian_phone, secondary_contact_phone, emergency_instruction, language_note, age, organ_donor'
-      )
-      .eq('profile_id', qrCode.profile_id)
-      .maybeSingle(),
-    supabaseAdmin
-      .from('medical_info')
-      .select('allergies, medical_conditions, medications')
-      .eq('profile_id', qrCode.profile_id)
-      .maybeSingle(),
-    supabaseAdmin
-      .from('emergency_notes')
-      .select('note')
-      .eq('profile_id', qrCode.profile_id)
-      .maybeSingle(),
-    supabaseAdmin
-      .from('emergency_contacts')
-      .select('id, name, relation, phone')
-      .eq('profile_id', qrCode.profile_id)
-      .order('created_at', { ascending: true }),
-    supabaseAdmin
-      .from('fleet_vehicles')
-      .select('id, vehicle_number, label, make_model')
-      .eq('qr_token', token)
-      .maybeSingle(),
-  ]);
+    const [
+      { data: profile },
+      { data: emergencyProfile },
+      { data: medicalInfo },
+      { data: emergencyNote },
+      { data: contacts },
+      { data: fleetVehicle },
+    ] = await Promise.all([
+      supabaseAdmin
+        .from('profiles')
+        .select('full_name, is_paid, mobile, avatar_url, account_type')
+        .eq('id', qrCode.profile_id)
+        .maybeSingle(),
+      supabaseAdmin
+        .from('emergency_profiles')
+        .select(
+          'blood_group, guardian_phone, secondary_contact_phone, emergency_instruction, language_note, age, organ_donor'
+        )
+        .eq('profile_id', qrCode.profile_id)
+        .maybeSingle(),
+      supabaseAdmin
+        .from('medical_info')
+        .select('allergies, medical_conditions, medications')
+        .eq('profile_id', qrCode.profile_id)
+        .maybeSingle(),
+      supabaseAdmin
+        .from('emergency_notes')
+        .select('note')
+        .eq('profile_id', qrCode.profile_id)
+        .maybeSingle(),
+      supabaseAdmin
+        .from('emergency_contacts')
+        .select('id, name, relation, phone')
+        .eq('profile_id', qrCode.profile_id)
+        .order('created_at', { ascending: true }),
+      supabaseAdmin
+        .from('fleet_vehicles')
+        .select('id, vehicle_number, label, make_model')
+        .eq('qr_token', token)
+        .maybeSingle(),
+    ]);
 
-  if (!profile) return null;
-  // Fleet vehicle safety QR works without personal B2C payment activation.
-  if (!profile.is_paid && !fleetVehicle) return null;
+    if (!profile) return null;
+    // Fleet vehicle safety QR works without personal B2C payment activation.
+    if (!profile.is_paid && !fleetVehicle) return null;
 
-  const companyPhone = profile.mobile ?? null;
+    const companyPhone = profile.mobile ?? null;
 
-  return {
-    profileId: qrCode.profile_id,
-    fullName: profile.full_name,
-    mobile: companyPhone,
-    avatarUrl: profile.avatar_url ?? null,
-    bloodGroup: emergencyProfile?.blood_group ?? null,
-    guardianPhone: fleetVehicle
-      ? companyPhone
-      : (emergencyProfile?.guardian_phone ?? null),
-    secondaryContactPhone: fleetVehicle
-      ? null
-      : (emergencyProfile?.secondary_contact_phone ??
-        (contacts?.[0]?.phone ?? null)),
-    emergencyInstruction: emergencyProfile?.emergency_instruction ?? null,
-    languageNote: emergencyProfile?.language_note ?? null,
-    age: emergencyProfile?.age ?? null,
-    organDonor: emergencyProfile?.organ_donor ?? false,
-    allergies: medicalInfo?.allergies ?? null,
-    medicalConditions: medicalInfo?.medical_conditions ?? null,
-    medications: medicalInfo?.medications ?? null,
-    emergencyNote: emergencyNote?.note ?? null,
-    contacts: fleetVehicle ? [] : (contacts ?? []),
-    fleetVehicle: fleetVehicle ?? null,
-  };
+    return {
+      profileId: qrCode.profile_id,
+      fullName: profile.full_name ?? 'Emergency contact',
+      mobile: companyPhone,
+      avatarUrl: profile.avatar_url ?? null,
+      bloodGroup: emergencyProfile?.blood_group ?? null,
+      guardianPhone: fleetVehicle
+        ? companyPhone
+        : (emergencyProfile?.guardian_phone ?? null),
+      secondaryContactPhone: fleetVehicle
+        ? null
+        : (emergencyProfile?.secondary_contact_phone ??
+          (contacts?.[0]?.phone ?? null)),
+      emergencyInstruction: emergencyProfile?.emergency_instruction ?? null,
+      languageNote: emergencyProfile?.language_note ?? null,
+      age: emergencyProfile?.age ?? null,
+      organDonor: emergencyProfile?.organ_donor ?? false,
+      allergies: medicalInfo?.allergies ?? null,
+      medicalConditions: medicalInfo?.medical_conditions ?? null,
+      medications: medicalInfo?.medications ?? null,
+      emergencyNote: emergencyNote?.note ?? null,
+      contacts: fleetVehicle ? [] : (contacts ?? []),
+      fleetVehicle: fleetVehicle ?? null,
+    };
+  } catch (err) {
+    console.error('fetchFromSupabase failed:', err);
+    return null;
+  }
 }
 
 /**
@@ -127,8 +138,8 @@ export async function getEmergencyData(
 
   if (redis) {
     try {
-      const cached = await redis.get<CachedEmergencyData>(key);
-      if (cached) return cached;
+      const cached = await redis.get(key);
+      if (isCachedEmergencyData(cached)) return cached;
     } catch (err) {
       console.error('Redis read failed, falling back to Supabase:', err);
     }

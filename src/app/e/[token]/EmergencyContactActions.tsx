@@ -86,7 +86,7 @@ export function EmergencyContactActions({
         </button>
       )}
 
-      {contacts.length > 1 && (
+      {(contacts?.length ?? 0) > 1 && (
         <div className="pt-1 space-y-1">
           {contacts.slice(0, 3).map((contact) => (
             <a

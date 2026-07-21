@@ -1,12 +1,12 @@
 import { notFound } from 'next/navigation';
-import { headers } from 'next/headers';
 import { Shield, AlertTriangle, HeartPulse, Pill, Activity, ArrowLeft, Ruler, Scale, Truck, User } from 'lucide-react';
 import Link from 'next/link';
 import { supabaseAdmin } from '../../../../backend/supabaseAdminClient';
 import { EmergencyContactActions } from './EmergencyContactActions';
 import { getEmergencyData } from '@/lib/emergencyCache';
 
-export const revalidate = 60;
+// Dynamic: scan logging + live fleet/driver assignment must not be ISR-cached.
+export const dynamic = 'force-dynamic';
 
 interface EmergencyPageProps {
   params: Promise<{
@@ -21,16 +21,22 @@ export default async function EmergencyPage({ params }: EmergencyPageProps) {
     return notFound();
   }
 
-  const data = await getEmergencyData(token);
+  let data;
+  try {
+    data = await getEmergencyData(token);
+  } catch (err) {
+    console.error('Emergency page load failed:', err);
+    return notFound();
+  }
 
   if (!data) {
     return notFound();
   }
 
-  // Log scan asynchronously — fire-and-forget so it never blocks render
-  logScan(token, data.profileId).catch(() => {});
+  // Log scan asynchronously — never call headers() here (breaks / 500s with caching).
+  void logScan(token, data.profileId);
 
-  const safeContacts = data.contacts;
+  const safeContacts = data.contacts ?? [];
   const criticalNote = data.emergencyNote || data.emergencyInstruction || null;
   const allergies = data.allergies;
   const conditions = data.medicalConditions;
@@ -105,16 +111,21 @@ export default async function EmergencyPage({ params }: EmergencyPageProps) {
   let driverBloodGroup: string | null = null;
 
   if (fleetVehicle?.id) {
-    const { data: driverData } = await supabaseAdmin
-      .from('fleet_drivers')
-      .select('name, phone, blood_group')
-      .eq('assigned_vehicle_id', fleetVehicle.id)
-      .maybeSingle();
+    try {
+      const { data: driverData } = await supabaseAdmin
+        .from('fleet_drivers')
+        .select('name, phone, blood_group')
+        .eq('assigned_vehicle_id', fleetVehicle.id)
+        .limit(1)
+        .maybeSingle();
 
-    if (driverData) {
-      driverName = (driverData as any).name ?? null;
-      driverPhone = (driverData as any).phone ?? null;
-      driverBloodGroup = (driverData as any).blood_group ?? null;
+      if (driverData) {
+        driverName = driverData.name ?? null;
+        driverPhone = driverData.phone ?? null;
+        driverBloodGroup = driverData.blood_group ?? null;
+      }
+    } catch (err) {
+      console.error('Driver lookup failed:', err);
     }
   }
 
@@ -406,15 +417,11 @@ export default async function EmergencyPage({ params }: EmergencyPageProps) {
 
 async function logScan(token: string, profileId: string) {
   try {
-    const h = await headers();
-    const ip = h.get('x-forwarded-for')?.split(',')[0]?.trim() || null;
-    const userAgent = h.get('user-agent') || 'unknown';
-
     await supabaseAdmin.from('scan_logs').insert({
       token,
       profile_id: profileId,
-      ip,
-      user_agent: userAgent,
+      ip: null,
+      user_agent: 'emergency-page',
     });
   } catch {
     // non-critical — never block the emergency page
