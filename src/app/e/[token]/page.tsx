@@ -1,6 +1,5 @@
 import { notFound } from 'next/navigation';
-import { Shield, AlertTriangle, HeartPulse, Pill, Activity, ArrowLeft, Ruler, Scale, Truck, User } from 'lucide-react';
-import Link from 'next/link';
+import { Shield, AlertTriangle, HeartPulse, Pill, Activity, Ruler, Scale, Truck, User } from 'lucide-react';
 import { supabaseAdmin } from '../../../../backend/supabaseAdminClient';
 import { EmergencyContactActions } from './EmergencyContactActions';
 import { getEmergencyData } from '@/lib/emergencyCache';
@@ -133,12 +132,6 @@ export default async function EmergencyPage({ params }: EmergencyPageProps) {
     <div className="min-h-screen bg-gradient-to-b from-black via-[#101518] to-black text-white flex flex-col">
       <header className="px-6 py-4 border-b border-[#2B3136] bg-[#1F2428]">
         <div className="flex items-center gap-3">
-          <Link
-            href="/"
-            className="w-9 h-9 rounded-full border border-[#3A3F45] flex items-center justify-center text-[#B7BEC4] hover:bg-[#2B3136] hover:text-white transition-colors shrink-0"
-          >
-            <ArrowLeft className="w-4 h-4" />
-          </Link>
           <div className="w-10 h-10 rounded-full bg-[#145A3A] flex items-center justify-center">
             <Shield className="w-6 h-6 text-white" />
           </div>
@@ -383,25 +376,25 @@ export default async function EmergencyPage({ params }: EmergencyPageProps) {
           <div className="pt-3 border-t border-[#2B3136] space-y-2">
             <div className="grid grid-cols-3 gap-2">
               <a
-                href="tel:112"
+                href="tel:102"
                 className="py-3 px-2 rounded-2xl bg-red-600 text-center text-[11px] font-semibold tracking-wide hover:bg-red-700 active:scale-[0.97] transition"
               >
                 Ambulance
-                <div className="text-xs font-mono mt-0.5">112</div>
+                <div className="text-xs font-mono mt-0.5">102</div>
               </a>
               <a
-                href="tel:112"
+                href="tel:100"
                 className="py-3 px-2 rounded-2xl bg-[#2B3136] border border-[#3A3F45] text-center text-[11px] font-semibold tracking-wide hover:bg-[#3A3F45] active:scale-[0.97] transition"
               >
                 Police
-                <div className="text-xs font-mono mt-0.5">112</div>
+                <div className="text-xs font-mono mt-0.5">100</div>
               </a>
               <a
-                href="tel:112"
+                href="tel:101"
                 className="py-3 px-2 rounded-2xl bg-[#2B3136] border border-[#3A3F45] text-center text-[11px] font-semibold tracking-wide hover:bg-[#3A3F45] active:scale-[0.97] transition"
               >
                 Fire
-                <div className="text-xs font-mono mt-0.5">112</div>
+                <div className="text-xs font-mono mt-0.5">101</div>
               </a>
             </div>
             <p className="text-[11px] text-[#B7BEC4]/50 text-center leading-relaxed">
