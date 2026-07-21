@@ -234,8 +234,22 @@ export async function renderModelHStickerPng(opts: RenderOpts): Promise<Buffer> 
     .toBuffer();
 }
 
-/** Emergency Model H — QR on the right (2000×1250). */
-export async function renderEmergencyStickerPng(
+/** Emergency Model V — vertical rear-vehicle safety card. */
+export async function renderEmergencyStickerVPng(
+  emergencyUrl: string,
+  labels: StickerLabels = {}
+): Promise<Buffer> {
+  return renderModelHStickerPng({
+    templateRel: path.join('public', 'stickers', 'rexu-emergency-model-v.png'),
+    qrBox: { innerL: 680, innerT: 578, innerR: 1311, innerB: 1191 },
+    cardCrop: { left: 406, top: 206, width: 1188, height: 1588 },
+    qrUrl: emergencyUrl,
+    labels,
+  });
+}
+
+/** Emergency Model H — horizontal safety card (side / second placement). */
+export async function renderEmergencyStickerHPng(
   emergencyUrl: string,
   labels: StickerLabels = {}
 ): Promise<Buffer> {
@@ -245,6 +259,17 @@ export async function renderEmergencyStickerPng(
     qrUrl: emergencyUrl,
     labels,
   });
+}
+
+/** @deprecated prefer V/H explicit helpers; defaults to Model V (rear). */
+export async function renderEmergencyStickerPng(
+  emergencyUrl: string,
+  labels: StickerLabels = {},
+  style: 'v' | 'h' = 'v'
+): Promise<Buffer> {
+  return style === 'h'
+    ? renderEmergencyStickerHPng(emergencyUrl, labels)
+    : renderEmergencyStickerVPng(emergencyUrl, labels);
 }
 
 /** Check-in Model H — QR on the left (2000×2000 gray canvas; crop to white card). */

@@ -3,9 +3,10 @@
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Menu, X, Bell, User, Shield, ArrowLeft, LogOut, Truck, Sparkles } from 'lucide-react';
+import { Menu, X, Bell, User, Shield, ArrowLeft, LogOut, Truck, Sparkles, UserRound, Building2, ChevronLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
+import { EarlyAccessForm } from '@/components/marketing/EarlyAccessForm';
 
 const links = [
   { href: '/about', label: 'About' },
@@ -36,6 +37,7 @@ export function SiteNavbar({
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [profile, setProfile] = useState<{ full_name: string | null; account_type: string | null; is_paid?: boolean } | null>(null);
   const [showChoiceModal, setShowChoiceModal] = useState(false);
+  const [choiceStep, setChoiceStep] = useState<'pick' | 'individual' | 'commercial'>('pick');
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [individualNotifications, setIndividualNotifications] = useState<string[]>([]);
   const router = useRouter();
@@ -93,14 +95,32 @@ export function SiteNavbar({
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
-      if (params.get('choice') === 'true') {
+      const choice = params.get('choice');
+      if (choice === 'true' || choice === 'pick') {
+        setChoiceStep('pick');
         setShowChoiceModal(true);
-        // Clean up query param from URL to avoid re-opening on page refresh
-        const newUrl = window.location.pathname;
-        window.history.replaceState({}, '', newUrl);
+      } else if (choice === 'individual') {
+        setChoiceStep('individual');
+        setShowChoiceModal(true);
+      } else if (choice === 'commercial') {
+        setChoiceStep('commercial');
+        setShowChoiceModal(true);
+      }
+      if (choice) {
+        window.history.replaceState({}, '', window.location.pathname);
       }
     }
   }, []);
+
+  const openChoiceModal = (step: 'pick' | 'individual' | 'commercial' = 'pick') => {
+    setChoiceStep(step);
+    setShowChoiceModal(true);
+  };
+
+  const closeChoiceModal = () => {
+    setShowChoiceModal(false);
+    setChoiceStep('pick');
+  };
 
   const handleSignOut = async () => {
     try {
@@ -304,7 +324,7 @@ export function SiteNavbar({
           ) : (
             <div className="hidden items-center gap-3 md:flex">
               <button
-                onClick={() => setShowChoiceModal(true)}
+                onClick={() => openChoiceModal('pick')}
                 className="inline-flex h-9 items-center justify-center rounded-full bg-gradient-brand px-6 text-sm font-semibold text-[#1a2e0f] shadow-sm shadow-[#89d957]/10 transition-all duration-200 hover:scale-[1.02] hover:shadow-md hover:shadow-[#89d957]/20 active:scale-[0.98] cursor-pointer"
               >
                 Sign In/Up
@@ -386,7 +406,10 @@ export function SiteNavbar({
                     ))}
                     <div className="mt-2 flex flex-col gap-2">
                       <button
-                        onClick={() => setShowChoiceModal(true)}
+                        onClick={() => {
+                          setOpen(false);
+                          openChoiceModal('pick');
+                        }}
                         className="flex h-10 w-full items-center justify-center rounded-full bg-gradient-brand text-sm font-semibold text-[#1a2e0f] shadow-sm transition-all duration-200 hover:scale-[1.01] cursor-pointer"
                       >
                         Sign In/Up
@@ -400,33 +423,30 @@ export function SiteNavbar({
         </AnimatePresence>
       </motion.header>
 
-      {/* Choice Modal */}
+      {/* Account choice modal */}
       <AnimatePresence>
         {showChoiceModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setShowChoiceModal(false)}
+              onClick={closeChoiceModal}
               className="absolute inset-0 bg-neutral-950/60 backdrop-blur-sm"
             />
 
-            {/* Modal Content - Coming Soon Modal */}
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ duration: 0.3, ease: [0.33, 1, 0.68, 1] }}
-              className={`relative w-full max-w-md overflow-hidden rounded-[32px] border p-8 shadow-2xl backdrop-blur-2xl text-center ${dark
+              className={`relative w-full max-w-md overflow-hidden rounded-[32px] border p-8 shadow-2xl backdrop-blur-2xl ${dark
                   ? 'border-neutral-800 bg-neutral-900/95 text-white shadow-neutral-950/80'
                   : 'border-neutral-200 bg-white/95 text-neutral-900 shadow-neutral-300/50'
                 }`}
             >
-              {/* Close button */}
               <button
-                onClick={() => setShowChoiceModal(false)}
+                onClick={closeChoiceModal}
                 className={`absolute right-4 top-4 p-2 rounded-full border transition-colors cursor-pointer ${dark
                     ? 'border-neutral-800 hover:bg-neutral-800 text-neutral-400 hover:text-white'
                     : 'border-neutral-200 hover:bg-neutral-50 text-neutral-550 hover:text-neutral-900'
@@ -435,27 +455,115 @@ export function SiteNavbar({
                 <X className="h-4 w-4" />
               </button>
 
-              <div className="flex flex-col items-center">
-                <div className={`p-4 rounded-3xl mb-5 border ${dark
-                    ? 'bg-[#89d957]/10 border-[#89d957]/20 text-[#89d957]'
-                    : 'bg-[#89d957]/15 border-[#89d957]/30 text-[#5a9c32]'
-                  }`}>
-                  <Sparkles className="h-10 w-10 animate-pulse" />
-                </div>
-                
-                <h3 className="text-2xl font-black tracking-tight mb-2">Coming Soon! 🚀</h3>
-                
-                <p className={`text-sm leading-relaxed mb-6 px-2 ${dark ? 'text-neutral-400' : 'text-neutral-550'}`}>
-                  REXU smart safety decals and fleet management platforms are launching soon. Registration and individual/commercial account portals are currently under active development. Stay tuned!
-                </p>
-
+              {choiceStep !== 'pick' && (
                 <button
-                  onClick={() => setShowChoiceModal(false)}
-                  className="w-full inline-flex h-12 items-center justify-center rounded-full bg-gradient-brand text-sm font-bold text-[#1a2e0f] shadow-sm shadow-[#89d957]/15 transition-all duration-200 hover:scale-[1.02] hover:shadow-md active:scale-[0.98] cursor-pointer"
+                  type="button"
+                  onClick={() => setChoiceStep('pick')}
+                  className={`absolute left-4 top-4 p-2 rounded-full border transition-colors cursor-pointer ${dark
+                      ? 'border-neutral-800 hover:bg-neutral-800 text-neutral-400 hover:text-white'
+                      : 'border-neutral-200 hover:bg-neutral-50 text-neutral-550 hover:text-neutral-900'
+                    }`}
                 >
-                  Great, Keep Me Posted!
+                  <ChevronLeft className="h-4 w-4" />
                 </button>
-              </div>
+              )}
+
+              {choiceStep === 'pick' && (
+                <div className="text-center pt-2">
+                  <h3 className="text-2xl font-black tracking-tight mb-2">Get started with REXU</h3>
+                  <p className={`text-sm mb-6 ${dark ? 'text-neutral-400' : 'text-neutral-550'}`}>
+                    Choose how you&apos;ll use REXU — personal riders or commercial fleets.
+                  </p>
+                  <div className="space-y-3">
+                    <button
+                      type="button"
+                      onClick={() => setChoiceStep('individual')}
+                      className={`w-full flex items-center gap-4 p-4 rounded-2xl border text-left transition-all hover:scale-[1.01] cursor-pointer ${dark
+                          ? 'border-neutral-700 bg-neutral-800/50 hover:border-[#89d957]/40'
+                          : 'border-neutral-200 bg-neutral-50/80 hover:border-[#89d957]/50'
+                        }`}
+                    >
+                      <div className={`p-3 rounded-xl ${dark ? 'bg-[#89d957]/10 text-[#89d957]' : 'bg-[#89d957]/15 text-[#5a9c32]'}`}>
+                        <UserRound className="h-6 w-6" />
+                      </div>
+                      <div>
+                        <p className="font-bold text-sm">Individual (B2C)</p>
+                        <p className={`text-xs mt-0.5 ${dark ? 'text-neutral-400' : 'text-neutral-500'}`}>
+                          Helmet, bike &amp; personal safety — coming soon
+                        </p>
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setChoiceStep('commercial')}
+                      className={`w-full flex items-center gap-4 p-4 rounded-2xl border text-left transition-all hover:scale-[1.01] cursor-pointer ${dark
+                          ? 'border-[#89d957]/30 bg-[#89d957]/10 hover:border-[#89d957]/50'
+                          : 'border-[#89d957]/40 bg-[#89d957]/10 hover:border-[#89d957]/60'
+                        }`}
+                    >
+                      <div className={`p-3 rounded-xl ${dark ? 'bg-[#89d957]/20 text-[#89d957]' : 'bg-[#89d957]/25 text-[#5a9c32]'}`}>
+                        <Building2 className="h-6 w-6" />
+                      </div>
+                      <div>
+                        <p className="font-bold text-sm">Commercial (B2B)</p>
+                        <p className={`text-xs mt-0.5 ${dark ? 'text-neutral-300' : 'text-neutral-600'}`}>
+                          Fleet QR, check-in &amp; drivers — available now
+                        </p>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {choiceStep === 'individual' && (
+                <div className="text-center pt-4">
+                  <div className={`inline-flex p-4 rounded-3xl mb-4 border ${dark
+                      ? 'bg-[#89d957]/10 border-[#89d957]/20 text-[#89d957]'
+                      : 'bg-[#89d957]/15 border-[#89d957]/30 text-[#5a9c32]'
+                    }`}>
+                    <Sparkles className="h-8 w-8 animate-pulse" />
+                  </div>
+                  <h3 className="text-xl font-black tracking-tight mb-2">Individual — Coming Soon</h3>
+                  <p className={`text-sm leading-relaxed mb-5 ${dark ? 'text-neutral-400' : 'text-neutral-550'}`}>
+                    Personal safety stickers and the rider portal are launching soon. Request early access and we&apos;ll notify you first.
+                  </p>
+                  <EarlyAccessForm dark={dark} />
+                </div>
+              )}
+
+              {choiceStep === 'commercial' && (
+                <div className="text-center pt-4">
+                  <div className={`inline-flex p-4 rounded-3xl mb-4 border ${dark
+                      ? 'bg-[#89d957]/10 border-[#89d957]/20 text-[#89d957]'
+                      : 'bg-[#89d957]/15 border-[#89d957]/30 text-[#5a9c32]'
+                    }`}>
+                    <Truck className="h-8 w-8" />
+                  </div>
+                  <h3 className="text-xl font-black tracking-tight mb-2">Commercial fleet</h3>
+                  <p className={`text-sm leading-relaxed mb-6 ${dark ? 'text-neutral-400' : 'text-neutral-550'}`}>
+                    Manage vehicles, generate safety &amp; check-in QR stickers, and track driver logs — live now.
+                  </p>
+                  <div className="space-y-3">
+                    <Link
+                      href="/register?segment=commercial"
+                      onClick={closeChoiceModal}
+                      className="w-full inline-flex h-12 items-center justify-center rounded-full bg-gradient-brand text-sm font-bold text-[#1a2e0f] shadow-sm transition-all hover:scale-[1.02] active:scale-[0.98]"
+                    >
+                      Create commercial account
+                    </Link>
+                    <Link
+                      href="/login?segment=commercial"
+                      onClick={closeChoiceModal}
+                      className={`w-full inline-flex h-11 items-center justify-center rounded-full border text-sm font-semibold transition-colors ${dark
+                          ? 'border-neutral-700 text-neutral-200 hover:bg-neutral-800'
+                          : 'border-neutral-200 text-neutral-700 hover:bg-neutral-50'
+                        }`}
+                    >
+                      Sign in
+                    </Link>
+                  </div>
+                </div>
+              )}
             </motion.div>
           </div>
         )}

@@ -99,10 +99,6 @@ const DOC_TYPES = [
 ];
 
 export default function DashboardPage(props: PageProps) {
-  React.useEffect(() => {
-    window.location.href = '/?choice=true';
-  }, []);
-
   if (props.params) React.use(props.params);
   const searchParams = props.searchParams ? React.use(props.searchParams) : {};
   const segmentFromUrl =

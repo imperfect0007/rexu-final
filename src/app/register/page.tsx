@@ -16,12 +16,9 @@ type PageProps = {
 
 export default function RegisterPage(props: PageProps) {
   const searchParams = props.searchParams ? React.use(props.searchParams) : {};
-  // Temporarily disable B2C: force all signups to B2B (commercial).
-  const segment = 'commercial';
-
-  React.useEffect(() => {
-    window.location.href = '/?choice=true';
-  }, []);
+  const segmentParam =
+    typeof searchParams.segment === 'string' ? searchParams.segment : 'commercial';
+  const segment = segmentParam === 'personal' ? 'personal' : 'commercial';
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -33,6 +30,10 @@ export default function RegisterPage(props: PageProps) {
   const router = useRouter();
 
   const handleGoogleSignup = async () => {
+    if (segment === 'personal') {
+      window.location.href = '/?choice=individual';
+      return;
+    }
     try {
       setLoading(true);
       setError(null);
@@ -66,6 +67,10 @@ export default function RegisterPage(props: PageProps) {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (segment === 'personal') {
+      window.location.href = '/?choice=individual';
+      return;
+    }
     setLoading(true);
     setError(null);
 

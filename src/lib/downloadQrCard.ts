@@ -1,11 +1,13 @@
 /**
  * Download the branded emergency QR sticker (PNG) from /api/qr/[token].
+ * style: 'v' = Model V (rear), 'h' = Model H (horizontal / second safety).
  */
 export async function downloadQrEmergencyCard(
   token: string,
-  filename = 'rexu-emergency-card.png'
+  filename?: string,
+  style: 'v' | 'h' = 'v'
 ): Promise<void> {
-  const res = await fetch(`/api/qr/${token}`, { cache: 'no-store' });
+  const res = await fetch(`/api/qr/${token}?style=${style}`, { cache: 'no-store' });
   if (!res.ok) {
     const detail = await res.text().catch(() => '');
     throw new Error(detail || 'Failed to download QR card');
@@ -14,9 +16,12 @@ export async function downloadQrEmergencyCard(
   const blob = await res.blob();
   const url = URL.createObjectURL(blob);
   const stamp = Date.now();
-  const uniqueName = filename.includes('.')
-    ? filename.replace(/(\.[^.]+)$/, `-${stamp}$1`)
-    : `${filename}-${stamp}`;
+  const base =
+    filename ??
+    (style === 'h' ? 'rexu-safety-card-h.png' : 'rexu-safety-card-v.png');
+  const uniqueName = base.includes('.')
+    ? base.replace(/(\.[^.]+)$/, `-${stamp}$1`)
+    : `${base}-${stamp}`;
 
   try {
     const a = document.createElement('a');

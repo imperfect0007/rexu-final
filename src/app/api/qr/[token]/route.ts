@@ -13,6 +13,10 @@ export async function GET(
   }
 
   try {
+    const { searchParams } = new URL(request.url);
+    const styleParam = (searchParams.get('style') || 'v').toLowerCase();
+    const style: 'v' | 'h' = styleParam === 'h' ? 'h' : 'v';
+
     const { data: qrRow, error: qrErr } = await supabaseAdmin
       .from('qr_codes')
       .select('token, is_active, profile_id')
@@ -42,16 +46,23 @@ export async function GET(
       'https://rexu.in';
     const emergencyUrl = `${baseUrl.replace(/\/$/, '')}/e/${token}`;
 
-    const png = await renderEmergencyStickerPng(emergencyUrl, {
-      vehicleNumber: vehicle?.vehicle_number ?? null,
-      companyName: profile?.full_name ?? null,
-    });
+    const png = await renderEmergencyStickerPng(
+      emergencyUrl,
+      {
+        vehicleNumber: vehicle?.vehicle_number ?? null,
+        companyName: profile?.full_name ?? null,
+      },
+      style
+    );
+
+    const filename =
+      style === 'h' ? 'rexu-safety-card-h.png' : 'rexu-safety-card-v.png';
 
     return new NextResponse(new Uint8Array(png), {
       status: 200,
       headers: {
         'Content-Type': 'image/png',
-        'Content-Disposition': 'attachment; filename="rexu-emergency-card.png"',
+        'Content-Disposition': `attachment; filename="${filename}"`,
         'Cache-Control': 'no-store',
       },
     });

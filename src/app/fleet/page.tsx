@@ -33,15 +33,23 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { SiteNavbar } from '@/components/marketing/SiteNavbar';
 import { DashboardSidebar } from '@/components/DashboardSidebar';
 
+type VehicleKind = 'two_wheeler' | 'four_wheeler';
+
 interface FleetVehicle {
   id: string;
   owner_profile_id: string;
   vehicle_number: string;
   label: string | null;
   make_model: string | null;
+  vehicle_kind?: VehicleKind | null;
   qr_token?: string | null;
   checkin_token?: string | null;
   created_at: string;
+}
+
+/** Cars / vans / trucks: 2 safety stickers + check-in. Bikes: 1 safety only. */
+function needsDualSafetyAndCheckin(kind: VehicleKind | null | undefined): boolean {
+  return kind !== 'two_wheeler';
 }
 
 interface VehicleDocumentRow {
@@ -135,6 +143,7 @@ export default function FleetManagerPage() {
   const [vehicleNumber, setVehicleNumber] = useState('');
   const [vehicleLabel, setVehicleLabel] = useState('');
   const [vehicleMakeModel, setVehicleMakeModel] = useState('');
+  const [vehicleKind, setVehicleKind] = useState<VehicleKind>('four_wheeler');
   const [vehicleSaving, setVehicleSaving] = useState(false);
   const [vehicleError, setVehicleError] = useState<string | null>(null);
 
@@ -224,7 +233,7 @@ export default function FleetManagerPage() {
         supabase
           .from('fleet_vehicles')
           .select(
-            'id, owner_profile_id, vehicle_number, label, make_model, qr_token, checkin_token, created_at'
+            'id, owner_profile_id, vehicle_number, label, make_model, vehicle_kind, qr_token, checkin_token, created_at'
           )
           .eq('owner_profile_id', user.id)
           .order('created_at', { ascending: false }),
@@ -335,6 +344,7 @@ export default function FleetManagerPage() {
           vehicle_number: vNum,
           label: vehicleLabel.trim() || null,
           make_model: vehicleMakeModel.trim() || null,
+          vehicle_kind: vehicleKind,
         })
         .select()
         .single();
@@ -381,19 +391,29 @@ export default function FleetManagerPage() {
       }
 
       setFleetVehicles((prev) => [data as FleetVehicle, ...prev]);
-      void handleGenerateVehicleQr(data.id);
+      await handleGenerateVehicleQr(data.id);
+      // Cars+: also create check-in QR (2 safety stickers share one safety token)
+      if (needsDualSafetyAndCheckin(vehicleKind)) {
+        await handleGenerateCheckinQr(data.id);
+      }
 
       await logFleetActivity({
         action: 'vehicle_added',
         entityType: 'vehicle',
         entityId: data.id,
         description: `Added vehicle ${vNum}`,
-        metadata: { vehicle_number: vNum, label: vehicleLabel.trim() || null, make_model: vehicleMakeModel.trim() || null },
+        metadata: {
+          vehicle_number: vNum,
+          label: vehicleLabel.trim() || null,
+          make_model: vehicleMakeModel.trim() || null,
+          vehicle_kind: vehicleKind,
+        },
       });
 
       setVehicleNumber('');
       setVehicleLabel('');
       setVehicleMakeModel('');
+      setVehicleKind('four_wheeler');
       setVehicleDocFile(null);
       setVehicleDocType('registration');
       setVehicleDocName('Registration Certificate (RC)');
@@ -446,12 +466,12 @@ export default function FleetManagerPage() {
     }
   };
 
-  const handleDownloadVehicleQr = async (token: string) => {
+  const handleDownloadVehicleQr = async (token: string, style: 'v' | 'h' = 'v') => {
     try {
-      await downloadQrEmergencyCard(token);
+      await downloadQrEmergencyCard(token, undefined, style);
     } catch (err) {
       console.error('FleetManager: failed to download vehicle QR:', err);
-      window.alert('Could not download QR. Generate the QR first, then try again.');
+      window.alert('Could not download safety QR. Generate the QR first, then try again.');
     }
   };
 
@@ -1008,6 +1028,9 @@ export default function FleetManagerPage() {
                         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-neutral-500">
                           {v.label && <span>{v.label}</span>}
                           {v.make_model && <span className="text-neutral-400">{v.make_model}</span>}
+                          <span className="text-neutral-400">
+                            {v.vehicle_kind === 'two_wheeler' ? '2-wheeler' : '3+/4-wheeler'}
+                          </span>
                           {(() => {
                             const permanentDriver = fleetDrivers.find((d) => d.assigned_vehicle_id === v.id);
                             if (permanentDriver) {
@@ -1022,11 +1045,36 @@ export default function FleetManagerPage() {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 shrink-0">
+                      <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
                         {v.qr_token ? (
-                          <button type="button" onClick={() => v.qr_token && handleDownloadVehicleQr(v.qr_token)} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#89d957] to-[#74c346] text-white text-[11px] font-medium hover:opacity-95 transition-colors shadow-sm">
-                            <Download className="w-3 h-3" /> Download
-                          </button>
+                          needsDualSafetyAndCheckin(v.vehicle_kind) ? (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => v.qr_token && handleDownloadVehicleQr(v.qr_token, 'v')}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#89d957] to-[#74c346] text-white text-[11px] font-medium hover:opacity-95 transition-colors shadow-sm"
+                                title="Rear safety sticker (Model V)"
+                              >
+                                <Download className="w-3 h-3" /> Safety (rear)
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => v.qr_token && handleDownloadVehicleQr(v.qr_token, 'h')}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#89d957] to-[#74c346] text-white text-[11px] font-medium hover:opacity-95 transition-colors shadow-sm"
+                                title="Side safety sticker (Model H)"
+                              >
+                                <Download className="w-3 h-3" /> Safety (side)
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => v.qr_token && handleDownloadVehicleQr(v.qr_token, 'v')}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#89d957] to-[#74c346] text-white text-[11px] font-medium hover:opacity-95 transition-colors shadow-sm"
+                            >
+                              <Download className="w-3 h-3" /> Safety QR
+                            </button>
+                          )
                         ) : (
                           <button type="button" onClick={() => handleGenerateVehicleQr(v.id)} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-neutral-200 text-[11px] font-medium text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 transition-colors">
                             <QrCode className="w-3 h-3 text-neutral-500" /> Generate QR
@@ -1060,7 +1108,8 @@ export default function FleetManagerPage() {
                             </div>
                           ) : (
                             <div className="px-4 pb-5 space-y-4">
-                              {/* Driver check-in QR */}
+                              {/* Driver check-in QR — cars+ only */}
+                              {needsDualSafetyAndCheckin(v.vehicle_kind) && (
                               <div className="bg-neutral-50/50 rounded-xl p-4 border border-neutral-100">
                                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                                   <div>
@@ -1101,6 +1150,7 @@ export default function FleetManagerPage() {
                                   </div>
                                 </div>
                               </div>
+                              )}
 
                               {/* Documents for this vehicle */}
                               <div className="bg-neutral-50/50 rounded-xl p-4 border border-neutral-100">
@@ -1290,7 +1340,7 @@ export default function FleetManagerPage() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h2 className="text-lg font-semibold text-neutral-800">Add Vehicle</h2>
-                <p className="text-xs text-neutral-400">Save your vehicle details first, then generate its QR.</p>
+                <p className="text-xs text-neutral-400">Cars get 2 safety stickers + check-in; bikes get 1 safety sticker.</p>
               </div>
               <button type="button" onClick={() => setIsVehicleModalOpen(false)} className="p-2 text-neutral-400 hover:text-neutral-700 transition-colors">
                 <X className="w-4 h-4" />
@@ -1307,6 +1357,18 @@ export default function FleetManagerPage() {
               <div>
                 <label className="block text-xs font-medium text-neutral-500 mb-1.5">Label (optional)</label>
                 <input type="text" value={vehicleLabel} onChange={(e) => setVehicleLabel(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 bg-neutral-50 text-sm text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#89d957]/30 focus:border-[#89d957] transition" placeholder="E.g. Cab #21, Delivery Bike 3" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-neutral-500 mb-1.5">Vehicle type</label>
+                <select
+                  required
+                  value={vehicleKind}
+                  onChange={(e) => setVehicleKind(e.target.value as VehicleKind)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 bg-neutral-50 text-sm text-neutral-800 focus:outline-none focus:ring-2 focus:ring-[#89d957]/30 focus:border-[#89d957] transition"
+                >
+                  <option value="four_wheeler">Car / van / truck (3+ wheels) — 2 safety + 1 check-in</option>
+                  <option value="two_wheeler">Bike / scooter (2-wheeler) — 1 safety QR</option>
+                </select>
               </div>
               <div>
                 <label className="block text-xs font-medium text-neutral-500 mb-1.5">Make &amp; Model (optional)</label>

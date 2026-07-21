@@ -152,7 +152,7 @@ export default async function ProductDetailPage({
                 Product Details
               </span>
               <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">
-                Coming Soon
+                {id.startsWith('fleet-') ? 'Available Now' : 'Coming Soon'}
               </span>
             </div>
             <h1 className="mt-4 text-3xl sm:text-4xl font-extrabold tracking-tight text-neutral-900 leading-[1.1]">
@@ -188,13 +188,23 @@ export default async function ProductDetailPage({
             </div>
 
             <div className="mt-10 flex flex-wrap gap-4 w-full sm:w-auto">
-              <Link
-                href="/?choice=true"
-                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-full bg-gradient-brand px-8 py-4 text-sm font-semibold text-[#1a2e0f] transition-opacity hover:opacity-90 shadow-lg shadow-[#89d957]/15 cursor-pointer animate-pulse"
-              >
-                <ShoppingCart className="h-4 w-4" />
-                Coming Soon - Notify Me
-              </Link>
+              {id.startsWith('fleet-') ? (
+                <Link
+                  href="/?choice=commercial"
+                  className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-full bg-gradient-brand px-8 py-4 text-sm font-semibold text-[#1a2e0f] transition-opacity hover:opacity-90 shadow-lg shadow-[#89d957]/15"
+                >
+                  <ShoppingCart className="h-4 w-4" />
+                  Get started — Commercial
+                </Link>
+              ) : (
+                <Link
+                  href="/?choice=individual"
+                  className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-full bg-gradient-brand px-8 py-4 text-sm font-semibold text-[#1a2e0f] transition-opacity hover:opacity-90 shadow-lg shadow-[#89d957]/15"
+                >
+                  <ShoppingCart className="h-4 w-4" />
+                  Request early access
+                </Link>
+              )}
             </div>
           </div>
         </div>
