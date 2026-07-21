@@ -52,6 +52,15 @@ function needsDualSafetyAndCheckin(kind: VehicleKind | null | undefined): boolea
   return kind !== 'two_wheeler';
 }
 
+const FLEET_VEHICLE_COLUMNS =
+  'id, owner_profile_id, vehicle_number, label, make_model, vehicle_kind, qr_token, checkin_token, created_at';
+const FLEET_VEHICLE_COLUMNS_LEGACY =
+  'id, owner_profile_id, vehicle_number, label, make_model, qr_token, checkin_token, created_at';
+
+function isMissingVehicleKindColumn(msg: string): boolean {
+  return /vehicle_kind/i.test(msg);
+}
+
 interface VehicleDocumentRow {
   id: string;
   document_name: string;
@@ -229,24 +238,32 @@ export default function FleetManagerPage() {
         return;
       }
 
-      const [{ data, error }, { data: driversData, error: driversError }, { data: checkinsData, error: checkinsError }] = await Promise.all([
-        supabase
+      let vehiclesRes = await supabase
+        .from('fleet_vehicles')
+        .select(FLEET_VEHICLE_COLUMNS)
+        .eq('owner_profile_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (vehiclesRes.error && isMissingVehicleKindColumn(vehiclesRes.error.message)) {
+        vehiclesRes = await supabase
           .from('fleet_vehicles')
-          .select(
-            'id, owner_profile_id, vehicle_number, label, make_model, vehicle_kind, qr_token, checkin_token, created_at'
-          )
+          .select(FLEET_VEHICLE_COLUMNS_LEGACY)
           .eq('owner_profile_id', user.id)
-          .order('created_at', { ascending: false }),
-        supabase
+          .order('created_at', { ascending: false });
+      }
+
+      const [{ data, error }, { data: driversData, error: driversError }, { data: checkinsData, error: checkinsError }] = [
+        vehiclesRes,
+        await supabase
           .from('fleet_drivers')
           .select('id, owner_profile_id, name, phone, blood_group, assigned_vehicle_id')
           .eq('owner_profile_id', user.id),
-        supabase
+        await supabase
           .from('fleet_checkins')
           .select('id, vehicle_id, driver_id, check_type, created_at, fleet_drivers(name)')
           .eq('owner_profile_id', user.id)
-          .order('created_at', { ascending: false })
-      ]);
+          .order('created_at', { ascending: false }),
+      ];
 
       if (error) {
         console.error('FleetManager: error fetching vehicles:', error);
@@ -337,21 +354,32 @@ export default function FleetManagerPage() {
     setVehicleSaving(true);
     try {
       // 1. Insert vehicle
-      const { data, error } = await supabase
-        .from('fleet_vehicles')
-        .insert({
-          owner_profile_id: user.id,
-          vehicle_number: vNum,
-          label: vehicleLabel.trim() || null,
-          make_model: vehicleMakeModel.trim() || null,
-          vehicle_kind: vehicleKind,
-        })
-        .select()
-        .single();
+      const row = {
+        owner_profile_id: user.id,
+        vehicle_number: vNum,
+        label: vehicleLabel.trim() || null,
+        make_model: vehicleMakeModel.trim() || null,
+        vehicle_kind: vehicleKind,
+      };
+
+      let insertRes = await supabase.from('fleet_vehicles').insert(row).select().single();
+
+      if (insertRes.error && isMissingVehicleKindColumn(insertRes.error.message)) {
+        const { vehicle_kind: _drop, ...legacyRow } = row;
+        insertRes = await supabase.from('fleet_vehicles').insert(legacyRow).select().single();
+      }
+
+      const { data, error } = insertRes;
 
       if (error) {
         console.error('FleetManager: failed to create fleet vehicle:', error);
-        setVehicleError(error.message ?? 'Failed to save vehicle.');
+        if (isMissingVehicleKindColumn(error.message)) {
+          setVehicleError(
+            'Database missing vehicle_kind column. In Supabase SQL Editor run: alter table public.fleet_vehicles add column if not exists vehicle_kind text;'
+          );
+        } else {
+          setVehicleError(error.message ?? 'Failed to save vehicle.');
+        }
         return;
       }
 
@@ -390,7 +418,10 @@ export default function FleetManagerPage() {
         }
       }
 
-      setFleetVehicles((prev) => [data as FleetVehicle, ...prev]);
+      setFleetVehicles((prev) => [
+        { ...(data as FleetVehicle), vehicle_kind: (data as FleetVehicle).vehicle_kind ?? vehicleKind },
+        ...prev,
+      ]);
       await handleGenerateVehicleQr(data.id);
       // Cars+: also create check-in QR (2 safety stickers share one safety token)
       if (needsDualSafetyAndCheckin(vehicleKind)) {

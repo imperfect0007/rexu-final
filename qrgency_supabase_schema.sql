@@ -219,6 +219,7 @@ create table if not exists public.fleet_vehicles (
   vehicle_number text not null,
   label text,
   make_model text,
+  vehicle_kind text check (vehicle_kind is null or vehicle_kind in ('two_wheeler', 'four_wheeler')),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
