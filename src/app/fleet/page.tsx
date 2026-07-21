@@ -177,6 +177,9 @@ export default function FleetManagerPage() {
   const [incidents, setIncidents] = useState<Record<string, FleetIncident[]>>({});
   const [vehicleDocs, setVehicleDocs] = useState<Record<string, VehicleDocumentRow[]>>({});
   const [vehicleDetailLoading, setVehicleDetailLoading] = useState<string | null>(null);
+  /** Blocks double-taps: `${vehicleId}:all|v|h|checkin` */
+  const [stickerBusyKey, setStickerBusyKey] = useState<string | null>(null);
+  const stickerBusyRef = useRef(false);
 
   const [isReminderModalOpen, setIsReminderModalOpen] = useState(false);
   const [reminderVehicleId, setReminderVehicleId] = useState<string | null>(null);
@@ -565,6 +568,10 @@ export default function FleetManagerPage() {
     style: 'v' | 'h' = 'v'
   ) => {
     if (!vehicle.qr_token) return;
+    const key = `${vehicle.id}:${style}`;
+    if (stickerBusyRef.current) return;
+    stickerBusyRef.current = true;
+    setStickerBusyKey(key);
     try {
       const base = stickerNameBase(vehicle.vehicle_number, profileName);
       const filename =
@@ -573,10 +580,17 @@ export default function FleetManagerPage() {
     } catch (err) {
       console.error('FleetManager: failed to download vehicle QR:', err);
       window.alert('Could not download safety QR. Generate the QR first, then try again.');
+    } finally {
+      stickerBusyRef.current = false;
+      setStickerBusyKey(null);
     }
   };
 
   const handleDownloadCheckinQr = async (vehicle: FleetVehicle) => {
+    const key = `${vehicle.id}:checkin`;
+    if (stickerBusyRef.current) return;
+    stickerBusyRef.current = true;
+    setStickerBusyKey(key);
     try {
       const {
         data: { session },
@@ -598,10 +612,17 @@ export default function FleetManagerPage() {
     } catch (err) {
       console.error('FleetManager: download check-in QR:', err);
       window.alert('Could not download check-in QR. Please try again.');
+    } finally {
+      stickerBusyRef.current = false;
+      setStickerBusyKey(null);
     }
   };
 
   const handleDownloadAllStickers = async (vehicle: FleetVehicle) => {
+    const key = `${vehicle.id}:all`;
+    if (stickerBusyRef.current) return;
+    stickerBusyRef.current = true;
+    setStickerBusyKey(key);
     try {
       if (!vehicle.qr_token) {
         window.alert('Generate the safety QR first.');
@@ -642,6 +663,9 @@ export default function FleetManagerPage() {
     } catch (err) {
       console.error('FleetManager: download all stickers:', err);
       window.alert('Could not download stickers zip. Please try again.');
+    } finally {
+      stickerBusyRef.current = false;
+      setStickerBusyKey(null);
     }
   };
 
@@ -1163,36 +1187,60 @@ export default function FleetManagerPage() {
                             <>
                               <button
                                 type="button"
+                                disabled={!!stickerBusyKey}
                                 onClick={() => void handleDownloadAllStickers(v)}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#89d957]/50 bg-[#89d957]/10 text-[#3f7a1f] text-[11px] font-semibold hover:bg-[#89d957]/20 transition-colors"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#89d957]/50 bg-[#89d957]/10 text-[#3f7a1f] text-[11px] font-semibold hover:bg-[#89d957]/20 transition active:scale-[0.96] disabled:opacity-60 disabled:pointer-events-none"
                                 title="Zip: safety rear + side + check-in"
                               >
-                                <Download className="w-3 h-3" /> Download all
+                                {stickerBusyKey === `${v.id}:all` ? (
+                                  <Loader2 className="w-3 h-3 animate-spin" />
+                                ) : (
+                                  <Download className="w-3 h-3" />
+                                )}
+                                {stickerBusyKey === `${v.id}:all` ? 'Preparing…' : 'Download all'}
                               </button>
                               <button
                                 type="button"
+                                disabled={!!stickerBusyKey}
                                 onClick={() => void handleDownloadVehicleQr(v, 'v')}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#89d957] to-[#74c346] text-white text-[11px] font-medium hover:opacity-95 transition-colors shadow-sm"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#89d957] to-[#74c346] text-white text-[11px] font-medium hover:opacity-95 transition active:scale-[0.96] shadow-sm disabled:opacity-60 disabled:pointer-events-none"
                                 title="Rear safety sticker (Model V)"
                               >
-                                <Download className="w-3 h-3" /> Safety (rear)
+                                {stickerBusyKey === `${v.id}:v` ? (
+                                  <Loader2 className="w-3 h-3 animate-spin" />
+                                ) : (
+                                  <Download className="w-3 h-3" />
+                                )}
+                                {stickerBusyKey === `${v.id}:v` ? 'Preparing…' : 'Safety (rear)'}
                               </button>
                               <button
                                 type="button"
+                                disabled={!!stickerBusyKey}
                                 onClick={() => void handleDownloadVehicleQr(v, 'h')}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#89d957] to-[#74c346] text-white text-[11px] font-medium hover:opacity-95 transition-colors shadow-sm"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#89d957] to-[#74c346] text-white text-[11px] font-medium hover:opacity-95 transition active:scale-[0.96] shadow-sm disabled:opacity-60 disabled:pointer-events-none"
                                 title="Side safety sticker (Model H)"
                               >
-                                <Download className="w-3 h-3" /> Safety (side)
+                                {stickerBusyKey === `${v.id}:h` ? (
+                                  <Loader2 className="w-3 h-3 animate-spin" />
+                                ) : (
+                                  <Download className="w-3 h-3" />
+                                )}
+                                {stickerBusyKey === `${v.id}:h` ? 'Preparing…' : 'Safety (side)'}
                               </button>
                             </>
                           ) : (
                             <button
                               type="button"
+                              disabled={!!stickerBusyKey}
                               onClick={() => void handleDownloadVehicleQr(v, 'v')}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#89d957] to-[#74c346] text-white text-[11px] font-medium hover:opacity-95 transition-colors shadow-sm"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#89d957] to-[#74c346] text-white text-[11px] font-medium hover:opacity-95 transition active:scale-[0.96] shadow-sm disabled:opacity-60 disabled:pointer-events-none"
                             >
-                              <Download className="w-3 h-3" /> Safety QR
+                              {stickerBusyKey === `${v.id}:v` ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <Download className="w-3 h-3" />
+                              )}
+                              {stickerBusyKey === `${v.id}:v` ? 'Preparing…' : 'Safety QR'}
                             </button>
                           )
                         ) : (
@@ -1253,10 +1301,16 @@ export default function FleetManagerPage() {
                                       <>
                                         <button
                                           type="button"
+                                          disabled={!!stickerBusyKey}
                                           onClick={() => void handleDownloadCheckinQr(v)}
-                                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-[#89d957] to-[#74c346] text-white text-[10px] font-semibold hover:opacity-95"
+                                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-[#89d957] to-[#74c346] text-white text-[10px] font-semibold hover:opacity-95 transition active:scale-[0.96] disabled:opacity-60 disabled:pointer-events-none"
                                         >
-                                          <Download className="w-3 h-3" /> Download QR
+                                          {stickerBusyKey === `${v.id}:checkin` ? (
+                                            <Loader2 className="w-3 h-3 animate-spin" />
+                                          ) : (
+                                            <Download className="w-3 h-3" />
+                                          )}
+                                          {stickerBusyKey === `${v.id}:checkin` ? 'Preparing…' : 'Download QR'}
                                         </button>
                                         <button
                                           type="button"
