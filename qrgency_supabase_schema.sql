@@ -1133,7 +1133,8 @@ using (auth.uid() = owner_profile_id)
 with check (auth.uid() = owner_profile_id);
 
 -- Convenience view for logs UI (filter + show VEC checkbox easily)
-create or replace view public.fleet_checkin_logs as
+create or replace view public.fleet_checkin_logs
+with (security_invoker = true) as
 select
   c.id as checkin_id,
   c.owner_profile_id,
@@ -1161,7 +1162,8 @@ from public.fleet_checkins c;
 
 -- Vehicle-first logs UX:
 -- 1) show vehicles list with last log + counts
-create or replace view public.fleet_vehicle_logs_summary as
+create or replace view public.fleet_vehicle_logs_summary
+with (security_invoker = true) as
 select
   v.id as vehicle_id,
   v.owner_profile_id,
@@ -1181,7 +1183,8 @@ group by
   v.id, v.owner_profile_id, v.vehicle_number, v.label, v.make_model;
 
 -- 2) easy drilldown view; filter by vehicle_id in your app query
-create or replace view public.fleet_vehicle_logs as
+create or replace view public.fleet_vehicle_logs
+with (security_invoker = true) as
 select
   l.*
 from public.fleet_checkin_logs l;
