@@ -39,14 +39,29 @@ async function fetchFromSupabase(
   token: string
 ): Promise<CachedEmergencyData | null> {
   try {
-    const { data: qrCode, error: qrError } = await supabaseAdmin
-      .from('qr_codes')
-      .select('profile_id')
-      .eq('token', token)
-      .eq('is_active', true)
-      .maybeSingle();
+    const [{ data: qrCode }, { data: fleetByToken }] = await Promise.all([
+      supabaseAdmin
+        .from('qr_codes')
+        .select('profile_id, is_active')
+        .eq('token', token)
+        .maybeSingle(),
+      supabaseAdmin
+        .from('fleet_vehicles')
+        .select('id, vehicle_number, label, make_model, owner_profile_id')
+        .eq('qr_token', token)
+        .maybeSingle(),
+    ]);
 
-    if (!qrCode || qrError) return null;
+    // Prefer active qr_codes row; fall back to fleet vehicle owner for safety stickers.
+    const profileId =
+      (qrCode?.is_active !== false ? qrCode?.profile_id : null) ??
+      fleetByToken?.owner_profile_id ??
+      null;
+
+    if (!profileId) return null;
+
+    // Inactive personal QR with no fleet vehicle → treat as missing.
+    if (qrCode && qrCode.is_active === false && !fleetByToken) return null;
 
     const [
       { data: profile },
@@ -54,50 +69,56 @@ async function fetchFromSupabase(
       { data: medicalInfo },
       { data: emergencyNote },
       { data: contacts },
-      { data: fleetVehicle },
     ] = await Promise.all([
       supabaseAdmin
         .from('profiles')
         .select('full_name, is_paid, mobile, avatar_url, account_type')
-        .eq('id', qrCode.profile_id)
+        .eq('id', profileId)
         .maybeSingle(),
       supabaseAdmin
         .from('emergency_profiles')
         .select(
           'blood_group, guardian_phone, secondary_contact_phone, emergency_instruction, language_note, age, organ_donor'
         )
-        .eq('profile_id', qrCode.profile_id)
+        .eq('profile_id', profileId)
         .maybeSingle(),
       supabaseAdmin
         .from('medical_info')
         .select('allergies, medical_conditions, medications')
-        .eq('profile_id', qrCode.profile_id)
+        .eq('profile_id', profileId)
         .maybeSingle(),
       supabaseAdmin
         .from('emergency_notes')
         .select('note')
-        .eq('profile_id', qrCode.profile_id)
+        .eq('profile_id', profileId)
         .maybeSingle(),
       supabaseAdmin
         .from('emergency_contacts')
         .select('id, name, relation, phone')
-        .eq('profile_id', qrCode.profile_id)
+        .eq('profile_id', profileId)
         .order('created_at', { ascending: true }),
-      supabaseAdmin
-        .from('fleet_vehicles')
-        .select('id, vehicle_number, label, make_model')
-        .eq('qr_token', token)
-        .maybeSingle(),
     ]);
 
     if (!profile) return null;
-    // Fleet vehicle safety QR works without personal B2C payment activation.
-    if (!profile.is_paid && !fleetVehicle) return null;
+
+    const fleetVehicle = fleetByToken
+      ? {
+          id: fleetByToken.id,
+          vehicle_number: fleetByToken.vehicle_number,
+          label: fleetByToken.label,
+          make_model: fleetByToken.make_model,
+        }
+      : null;
+
+    // Personal unpaid QR with no fleet vehicle → inactive.
+    // Commercial / fleet safety QRs work without B2C is_paid.
+    const isCommercial = profile.account_type === 'commercial';
+    if (!profile.is_paid && !fleetVehicle && !isCommercial) return null;
 
     const companyPhone = profile.mobile ?? null;
 
     return {
-      profileId: qrCode.profile_id,
+      profileId,
       fullName: profile.full_name ?? 'Emergency contact',
       mobile: companyPhone,
       avatarUrl: profile.avatar_url ?? null,
@@ -118,7 +139,7 @@ async function fetchFromSupabase(
       medications: medicalInfo?.medications ?? null,
       emergencyNote: emergencyNote?.note ?? null,
       contacts: fleetVehicle ? [] : (contacts ?? []),
-      fleetVehicle: fleetVehicle ?? null,
+      fleetVehicle,
     };
   } catch (err) {
     console.error('fetchFromSupabase failed:', err);

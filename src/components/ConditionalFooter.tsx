@@ -20,7 +20,12 @@ export default function ConditionalFooter() {
     pathname?.startsWith('/notifications') ||
     pathname?.startsWith('/checkins');
 
-  if (isAuthPage || isDashboardPage) {
+  // Public scan surfaces — no marketing footer
+  const isScanPage =
+    pathname?.startsWith('/e/') ||
+    pathname?.startsWith('/vehicle-checkin');
+
+  if (isAuthPage || isDashboardPage || isScanPage) {
     return null;
   }
 
