@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../../backend/supabaseAdminClient';
 import { renderEmergencyStickerPng } from '@/lib/renderEmergencySticker';
+import { stickerNameBase } from '@/lib/stickerFilename';
 
 export async function GET(
   request: Request,
@@ -46,17 +47,18 @@ export async function GET(
       'https://rexu.in';
     const emergencyUrl = `${baseUrl.replace(/\/$/, '')}/e/${token}`;
 
+    const vehicleNumber = vehicle?.vehicle_number ?? null;
+    const companyName = profile?.full_name ?? null;
+
     const png = await renderEmergencyStickerPng(
       emergencyUrl,
-      {
-        vehicleNumber: vehicle?.vehicle_number ?? null,
-        companyName: profile?.full_name ?? null,
-      },
+      { vehicleNumber, companyName },
       style
     );
 
+    const base = stickerNameBase(vehicleNumber, companyName);
     const filename =
-      style === 'h' ? 'rexu-safety-card-h.png' : 'rexu-safety-card-v.png';
+      style === 'h' ? `${base}-safety-side.png` : `${base}-safety-rear.png`;
 
     return new NextResponse(new Uint8Array(png), {
       status: 200,

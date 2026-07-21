@@ -5,6 +5,7 @@ import {
   verifySupabaseToken,
 } from '../../../../../backend/supabaseJwtVerifier';
 import { renderCheckinStickerPng } from '@/lib/renderEmergencySticker';
+import { stickerNameBase } from '@/lib/stickerFilename';
 
 const QR_BASE_URL =
   process.env.NEXT_PUBLIC_APP_URL ||
@@ -54,17 +55,20 @@ export async function GET(request: Request) {
       .eq('id', userId)
       .maybeSingle();
 
+    const companyName = profile?.full_name ?? null;
     const checkinUrl = `${QR_BASE_URL.replace(/\/$/, '')}/vehicle-checkin/${vehicle.checkin_token}`;
     const png = await renderCheckinStickerPng(checkinUrl, {
       vehicleNumber: vehicle.vehicle_number,
-      companyName: profile?.full_name ?? null,
+      companyName,
     });
+
+    const filename = `${stickerNameBase(vehicle.vehicle_number, companyName)}-checkin.png`;
 
     return new NextResponse(new Uint8Array(png), {
       status: 200,
       headers: {
         'Content-Type': 'image/png',
-        'Content-Disposition': 'attachment; filename="rexu-checkin-card.png"',
+        'Content-Disposition': `attachment; filename="${filename}"`,
         'Cache-Control': 'no-store',
       },
     });

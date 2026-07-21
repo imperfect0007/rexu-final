@@ -188,32 +188,34 @@ export async function renderModelHStickerPng(opts: RenderOpts): Promise<Buffer> 
   const cropH = extract.height;
 
   const labels = opts.labels ?? {};
-  const vehicleLabel = labels.vehicleNumber?.trim()
+  const vehicleText = labels.vehicleNumber?.trim()
     ? `Vehicle: ${labels.vehicleNumber.trim()}`
     : '';
-  const companyLabel = labels.companyName?.trim()
+  const companyText = labels.companyName?.trim()
     ? `Company: ${labels.companyName.trim()}`
     : '';
 
-  const stripH = 78;
+  // Stack labels under the cut line so both always read clearly.
+  const hasBoth = !!(vehicleText && companyText);
+  const stripH = hasBoth ? 110 : vehicleText || companyText ? 78 : 56;
   const cutY = 16;
   const lineLeft = 60;
   const lineRight = outW - 60;
-  const vehicleX = lineLeft;
-  const companyX = Math.round(outW * 0.52);
+  const textX = lineLeft;
+  const fontSize = Math.min(36, Math.max(26, Math.round(outW / 36)));
 
   const stripSvg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${outW}" height="${stripH}">
   <rect width="${outW}" height="${stripH}" fill="#FFFFFF"/>
   <line x1="${lineLeft}" y1="${cutY}" x2="${lineRight}" y2="${cutY}" stroke="#475569" stroke-width="3" stroke-dasharray="14 10"/>
   ${
-    vehicleLabel
-      ? `<text x="${vehicleX}" y="${cutY + 44}" text-anchor="start" fill="#0F172A" font-family="Arial, Helvetica, sans-serif" font-size="34" font-weight="700">${escapeXml(vehicleLabel)}</text>`
+    vehicleText
+      ? `<text x="${textX}" y="${cutY + 40}" text-anchor="start" fill="#0F172A" font-family="Arial, Helvetica, sans-serif" font-size="${fontSize}" font-weight="700">${escapeXml(vehicleText)}</text>`
       : ''
   }
   ${
-    companyLabel
-      ? `<text x="${companyX}" y="${cutY + 44}" text-anchor="start" fill="#0F172A" font-family="Arial, Helvetica, sans-serif" font-size="34" font-weight="700">${escapeXml(companyLabel)}</text>`
+    companyText
+      ? `<text x="${textX}" y="${cutY + (vehicleText ? 78 : 40)}" text-anchor="start" fill="#0F172A" font-family="Arial, Helvetica, sans-serif" font-size="${fontSize}" font-weight="700">${escapeXml(companyText)}</text>`
       : ''
   }
 </svg>`;

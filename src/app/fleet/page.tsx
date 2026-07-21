@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase';
 import { logFleetActivity } from '@/lib/fleetLogger';
 import { downloadQrEmergencyCard, downloadBlobAsFile } from '@/lib/downloadQrCard';
 import { duplicateVehicleMessage, normalizeVehicleNumber } from '@/lib/fleetVehicleNumber';
+import { stickerNameBase } from '@/lib/stickerFilename';
 import {
   Shield,
   Plus,
@@ -525,15 +526,6 @@ export default function FleetManagerPage() {
     }
   };
 
-  const handleDownloadVehicleQr = async (token: string, style: 'v' | 'h' = 'v') => {
-    try {
-      await downloadQrEmergencyCard(token, undefined, style);
-    } catch (err) {
-      console.error('FleetManager: failed to download vehicle QR:', err);
-      window.alert('Could not download safety QR. Generate the QR first, then try again.');
-    }
-  };
-
   const handleGenerateCheckinQr = async (vehicleId: string, regenerate?: boolean) => {
     try {
       const {
@@ -568,7 +560,23 @@ export default function FleetManagerPage() {
     }
   };
 
-  const handleDownloadCheckinQr = async (vehicleId: string) => {
+  const handleDownloadVehicleQr = async (
+    vehicle: FleetVehicle,
+    style: 'v' | 'h' = 'v'
+  ) => {
+    if (!vehicle.qr_token) return;
+    try {
+      const base = stickerNameBase(vehicle.vehicle_number, profileName);
+      const filename =
+        style === 'h' ? `${base}-safety-side.png` : `${base}-safety-rear.png`;
+      await downloadQrEmergencyCard(vehicle.qr_token, filename, style);
+    } catch (err) {
+      console.error('FleetManager: failed to download vehicle QR:', err);
+      window.alert('Could not download safety QR. Generate the QR first, then try again.');
+    }
+  };
+
+  const handleDownloadCheckinQr = async (vehicle: FleetVehicle) => {
     try {
       const {
         data: { session },
@@ -577,7 +585,7 @@ export default function FleetManagerPage() {
       if (!accessToken) return;
 
       const res = await fetch(
-        `/api/fleet/checkin-qr-image?vehicleId=${encodeURIComponent(vehicleId)}`,
+        `/api/fleet/checkin-qr-image?vehicleId=${encodeURIComponent(vehicle.id)}`,
         { headers: { Authorization: `Bearer ${accessToken}` }, cache: 'no-store' }
       );
       if (!res.ok) {
@@ -585,10 +593,55 @@ export default function FleetManagerPage() {
         window.alert('Could not download check-in QR. Generate it first, then try again.');
         return;
       }
-      await downloadBlobAsFile(await res.blob(), 'rexu-checkin-card.png');
+      const filename = `${stickerNameBase(vehicle.vehicle_number, profileName)}-checkin.png`;
+      await downloadBlobAsFile(await res.blob(), filename);
     } catch (err) {
       console.error('FleetManager: download check-in QR:', err);
       window.alert('Could not download check-in QR. Please try again.');
+    }
+  };
+
+  const handleDownloadAllStickers = async (vehicle: FleetVehicle) => {
+    try {
+      if (!vehicle.qr_token) {
+        window.alert('Generate the safety QR first.');
+        return;
+      }
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
+      if (!accessToken) return;
+
+      const res = await fetch(
+        `/api/fleet/download-vehicle-stickers?vehicleId=${encodeURIComponent(vehicle.id)}`,
+        { headers: { Authorization: `Bearer ${accessToken}` }, cache: 'no-store' }
+      );
+      if (!res.ok) {
+        console.error('FleetManager: download-all error', await res.text());
+        window.alert('Could not download stickers zip. Try again.');
+        return;
+      }
+      const zipName = `${stickerNameBase(vehicle.vehicle_number, profileName)}.zip`;
+      await downloadBlobAsFile(await res.blob(), zipName);
+
+      // Refresh vehicle so check-in token shows if it was auto-created.
+      const { data: refreshed } = await supabase
+        .from('fleet_vehicles')
+        .select('checkin_token')
+        .eq('id', vehicle.id)
+        .maybeSingle();
+      if (refreshed?.checkin_token) {
+        setFleetVehicles((prev) =>
+          prev.map((v) =>
+            v.id === vehicle.id ? { ...v, checkin_token: refreshed.checkin_token } : v
+          )
+        );
+      }
+    } catch (err) {
+      console.error('FleetManager: download all stickers:', err);
+      window.alert('Could not download stickers zip. Please try again.');
     }
   };
 
@@ -1110,7 +1163,15 @@ export default function FleetManagerPage() {
                             <>
                               <button
                                 type="button"
-                                onClick={() => v.qr_token && handleDownloadVehicleQr(v.qr_token, 'v')}
+                                onClick={() => void handleDownloadAllStickers(v)}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#89d957]/50 bg-[#89d957]/10 text-[#3f7a1f] text-[11px] font-semibold hover:bg-[#89d957]/20 transition-colors"
+                                title="Zip: safety rear + side + check-in"
+                              >
+                                <Download className="w-3 h-3" /> Download all
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => void handleDownloadVehicleQr(v, 'v')}
                                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#89d957] to-[#74c346] text-white text-[11px] font-medium hover:opacity-95 transition-colors shadow-sm"
                                 title="Rear safety sticker (Model V)"
                               >
@@ -1118,7 +1179,7 @@ export default function FleetManagerPage() {
                               </button>
                               <button
                                 type="button"
-                                onClick={() => v.qr_token && handleDownloadVehicleQr(v.qr_token, 'h')}
+                                onClick={() => void handleDownloadVehicleQr(v, 'h')}
                                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#89d957] to-[#74c346] text-white text-[11px] font-medium hover:opacity-95 transition-colors shadow-sm"
                                 title="Side safety sticker (Model H)"
                               >
@@ -1128,7 +1189,7 @@ export default function FleetManagerPage() {
                           ) : (
                             <button
                               type="button"
-                              onClick={() => v.qr_token && handleDownloadVehicleQr(v.qr_token, 'v')}
+                              onClick={() => void handleDownloadVehicleQr(v, 'v')}
                               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#89d957] to-[#74c346] text-white text-[11px] font-medium hover:opacity-95 transition-colors shadow-sm"
                             >
                               <Download className="w-3 h-3" /> Safety QR
@@ -1192,7 +1253,7 @@ export default function FleetManagerPage() {
                                       <>
                                         <button
                                           type="button"
-                                          onClick={() => handleDownloadCheckinQr(v.id)}
+                                          onClick={() => void handleDownloadCheckinQr(v)}
                                           className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-[#89d957] to-[#74c346] text-white text-[10px] font-semibold hover:opacity-95"
                                         >
                                           <Download className="w-3 h-3" /> Download QR

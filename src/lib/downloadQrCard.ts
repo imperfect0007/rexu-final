@@ -14,46 +14,36 @@ export async function downloadQrEmergencyCard(
   }
 
   const blob = await res.blob();
-  const url = URL.createObjectURL(blob);
-  const stamp = Date.now();
-  const base =
+  const headerName = filenameFromContentDisposition(
+    res.headers.get('Content-Disposition')
+  );
+  await downloadBlobAsFile(
+    blob,
     filename ??
-    (style === 'h' ? 'rexu-safety-card-h.png' : 'rexu-safety-card-v.png');
-  const uniqueName = base.includes('.')
-    ? base.replace(/(\.[^.]+)$/, `-${stamp}$1`)
-    : `${base}-${stamp}`;
+      headerName ??
+      (style === 'h' ? 'rexu-safety-card-h.png' : 'rexu-safety-card-v.png')
+  );
+}
 
-  try {
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = uniqueName;
-    a.rel = 'noopener';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-  } finally {
-    // Delay revoke so repeat clicks / slow browsers can finish the download.
-    window.setTimeout(() => URL.revokeObjectURL(url), 2000);
-  }
+function filenameFromContentDisposition(header: string | null): string | null {
+  if (!header) return null;
+  const m = /filename="([^"]+)"/i.exec(header);
+  return m?.[1] ?? null;
 }
 
 /**
- * Download a blob response (e.g. check-in QR SVG) with the same repeat-download behavior.
+ * Download a blob (PNG/zip). Uses the given filename as-is (no timestamp).
  */
 export async function downloadBlobAsFile(
   blob: Blob,
   filename: string
 ): Promise<void> {
   const url = URL.createObjectURL(blob);
-  const stamp = Date.now();
-  const uniqueName = filename.includes('.')
-    ? filename.replace(/(\.[^.]+)$/, `-${stamp}$1`)
-    : `${filename}-${stamp}`;
 
   try {
     const a = document.createElement('a');
     a.href = url;
-    a.download = uniqueName;
+    a.download = filename;
     a.rel = 'noopener';
     document.body.appendChild(a);
     a.click();
