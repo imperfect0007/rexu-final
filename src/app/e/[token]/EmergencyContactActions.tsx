@@ -13,12 +13,16 @@ interface EmergencyContactActionsProps {
   guardianPhone: string | null;
   secondaryPhone: string | null;
   contacts: SafeContact[];
+  primaryLabel?: string;
+  primarySublabel?: string;
 }
 
 export function EmergencyContactActions({
   guardianPhone,
   secondaryPhone,
   contacts,
+  primaryLabel = 'Call Guardian',
+  primarySublabel = 'Primary emergency contact',
 }: EmergencyContactActionsProps) {
   const triggerGuardian = () => {
     if (!guardianPhone) return;
@@ -44,9 +48,9 @@ export function EmergencyContactActions({
                 <Phone className="w-5 h-5 text-[#9AC57A]" />
               </div>
               <div>
-                <div className="text-sm font-semibold text-white">Call Guardian</div>
+                <div className="text-sm font-semibold text-white">{primaryLabel}</div>
                 <div className="text-[11px] text-[#B7BEC4]/60 uppercase tracking-[0.18em]">
-                  Primary emergency contact
+                  {primarySublabel}
                 </div>
               </div>
             </div>

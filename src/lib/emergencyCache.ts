@@ -51,7 +51,7 @@ async function fetchFromSupabase(
   ] = await Promise.all([
     supabaseAdmin
       .from('profiles')
-      .select('full_name, is_paid, mobile, avatar_url')
+      .select('full_name, is_paid, mobile, avatar_url, account_type')
       .eq('id', qrCode.profile_id)
       .single(),
     supabaseAdmin
@@ -83,18 +83,25 @@ async function fetchFromSupabase(
       .maybeSingle(),
   ]);
 
-  if (!profile || !profile.is_paid) return null;
+  if (!profile) return null;
+  // Fleet vehicle safety QR works without personal B2C payment activation.
+  if (!profile.is_paid && !fleetVehicle) return null;
+
+  const companyPhone = profile.mobile ?? null;
 
   return {
     profileId: qrCode.profile_id,
     fullName: profile.full_name,
-    mobile: profile.mobile ?? null,
+    mobile: companyPhone,
     avatarUrl: profile.avatar_url ?? null,
     bloodGroup: emergencyProfile?.blood_group ?? null,
-    guardianPhone: emergencyProfile?.guardian_phone ?? null,
-    secondaryContactPhone:
-      emergencyProfile?.secondary_contact_phone ??
-      (contacts?.[0]?.phone ?? null),
+    guardianPhone: fleetVehicle
+      ? companyPhone
+      : (emergencyProfile?.guardian_phone ?? null),
+    secondaryContactPhone: fleetVehicle
+      ? null
+      : (emergencyProfile?.secondary_contact_phone ??
+        (contacts?.[0]?.phone ?? null)),
     emergencyInstruction: emergencyProfile?.emergency_instruction ?? null,
     languageNote: emergencyProfile?.language_note ?? null,
     age: emergencyProfile?.age ?? null,
@@ -103,7 +110,7 @@ async function fetchFromSupabase(
     medicalConditions: medicalInfo?.medical_conditions ?? null,
     medications: medicalInfo?.medications ?? null,
     emergencyNote: emergencyNote?.note ?? null,
-    contacts: contacts ?? [],
+    contacts: fleetVehicle ? [] : (contacts ?? []),
     fleetVehicle: fleetVehicle ?? null,
   };
 }

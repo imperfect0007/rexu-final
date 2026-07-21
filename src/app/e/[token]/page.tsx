@@ -280,15 +280,6 @@ export default async function EmergencyPage({ params }: EmergencyPageProps) {
                 )}
               </div>
 
-              {data.mobile && (
-                <a
-                  href={`tel:${data.mobile}`}
-                  className="inline-flex items-center justify-center w-full px-4 py-2.5 rounded-2xl bg-red-650 text-white text-sm font-semibold hover:bg-red-700 active:scale-[0.98] transition"
-                >
-                  Call owner
-                </a>
-              )}
-
               {(driverName || driverPhone || driverBloodGroup) && (
                 <div className="rounded-[20px] border border-white/10 bg-[#101518]/90 px-5 py-4 space-y-1">
                   <p className="text-[11px] uppercase tracking-[0.22em] text-[#B7BEC4]/60">
@@ -371,6 +362,10 @@ export default async function EmergencyPage({ params }: EmergencyPageProps) {
             guardianPhone={guardianPhone}
             secondaryPhone={secondaryPhone}
             contacts={safeContacts}
+            primaryLabel={isFleetVehicle ? 'Call company' : undefined}
+            primarySublabel={
+              isFleetVehicle ? 'Company helpline' : undefined
+            }
           />
 
           {/* Government helplines - fixed */}
