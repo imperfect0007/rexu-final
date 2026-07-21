@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { logFleetActivity } from '@/lib/fleetLogger';
 import { downloadQrEmergencyCard, downloadBlobAsFile } from '@/lib/downloadQrCard';
-import { normalizeVehicleNumber } from '@/lib/fleetVehicleNumber';
+import { duplicateVehicleMessage, normalizeVehicleNumber } from '@/lib/fleetVehicleNumber';
 import {
   Shield,
   Plus,
@@ -358,7 +358,7 @@ export default function FleetManagerPage() {
         (v) => normalizeVehicleNumber(v.vehicle_number) === normalizedNum
       )
     ) {
-      setVehicleError(`Vehicle ${vNum.toUpperCase()} already exists.`);
+      setVehicleError(duplicateVehicleMessage(vNum));
       return;
     }
 
@@ -374,14 +374,14 @@ export default function FleetManagerPage() {
           (v) => normalizeVehicleNumber(v.vehicle_number) === normalizedNum
         )
       ) {
-        setVehicleError(`Vehicle ${vNum.toUpperCase()} already exists.`);
+        setVehicleError(duplicateVehicleMessage(vNum));
         return;
       }
 
       // 1. Insert vehicle
       const row = {
         owner_profile_id: user.id,
-        vehicle_number: vNum,
+        vehicle_number: normalizedNum,
         label: vehicleLabel.trim() || null,
         make_model: vehicleMakeModel.trim() || null,
         vehicle_kind: vehicleKind,
@@ -399,7 +399,7 @@ export default function FleetManagerPage() {
       if (error) {
         console.error('FleetManager: failed to create fleet vehicle:', error);
         if (error.code === '23505') {
-          setVehicleError(`Vehicle ${vNum.toUpperCase()} already exists.`);
+          setVehicleError(duplicateVehicleMessage(vNum));
         } else if (isMissingVehicleKindColumn(error.message)) {
           setVehicleError(
             'Database missing vehicle_kind column. In Supabase SQL Editor run: alter table public.fleet_vehicles add column if not exists vehicle_kind text;'

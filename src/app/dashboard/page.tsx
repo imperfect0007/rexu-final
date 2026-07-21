@@ -5,7 +5,7 @@ import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { logFleetActivity } from '@/lib/fleetLogger';
 import { downloadQrEmergencyCard } from '@/lib/downloadQrCard';
-import { normalizeVehicleNumber } from '@/lib/fleetVehicleNumber';
+import { duplicateVehicleMessage, normalizeVehicleNumber } from '@/lib/fleetVehicleNumber';
 import { resolvePersonalQrToken } from '@/lib/resolvePersonalQrToken';
 import { useRouter } from 'next/navigation';
 import {
@@ -901,7 +901,7 @@ export default function DashboardPage(props: PageProps) {
         (v) => normalizeVehicleNumber(v.vehicle_number) === normalizedNum
       )
     ) {
-      setVehicleError(`Vehicle ${vNum.toUpperCase()} already exists.`);
+      setVehicleError(duplicateVehicleMessage(vNum));
       return;
     }
 
@@ -917,7 +917,7 @@ export default function DashboardPage(props: PageProps) {
           (v) => normalizeVehicleNumber(v.vehicle_number) === normalizedNum
         )
       ) {
-        setVehicleError(`Vehicle ${vNum.toUpperCase()} already exists.`);
+        setVehicleError(duplicateVehicleMessage(vNum));
         return;
       }
 
@@ -926,7 +926,7 @@ export default function DashboardPage(props: PageProps) {
         .from('fleet_vehicles')
         .insert({
           owner_profile_id: profile.id,
-          vehicle_number: vNum,
+          vehicle_number: normalizedNum,
           label: vehicleLabel.trim() || null,
           make_model: vehicleMakeModel.trim() || null,
         })
@@ -936,7 +936,7 @@ export default function DashboardPage(props: PageProps) {
       if (error) {
         console.error('Failed to create fleet vehicle:', error);
         if (error.code === '23505') {
-          setVehicleError(`Vehicle ${vNum.toUpperCase()} already exists.`);
+          setVehicleError(duplicateVehicleMessage(vNum));
         } else {
           setVehicleError(error.message ?? 'Failed to save vehicle.');
         }
