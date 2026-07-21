@@ -246,11 +246,12 @@ export default function FleetManagerPage() {
         .order('created_at', { ascending: false });
 
       if (vehiclesRes.error && isMissingVehicleKindColumn(vehiclesRes.error.message)) {
-        vehiclesRes = await supabase
+        // Legacy DB without vehicle_kind — same shape at runtime, TS select strings differ.
+        vehiclesRes = (await supabase
           .from('fleet_vehicles')
           .select(FLEET_VEHICLE_COLUMNS_LEGACY)
           .eq('owner_profile_id', user.id)
-          .order('created_at', { ascending: false });
+          .order('created_at', { ascending: false })) as typeof vehiclesRes;
       }
 
       const [{ data, error }, { data: driversData, error: driversError }, { data: checkinsData, error: checkinsError }] = [
