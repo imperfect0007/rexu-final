@@ -1,8 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Trim — Vercel/env paste sometimes leaves trailing \r\n which breaks auth.
-const supabaseUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').trim();
-const serviceRoleKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
+function cleanEnv(value: string | undefined): string {
+  return (value || '').replace(/\\r/g, '').replace(/\\n/g, '').trim();
+}
+
+const supabaseUrl = cleanEnv(process.env.NEXT_PUBLIC_SUPABASE_URL);
+const serviceRoleKey = cleanEnv(process.env.SUPABASE_SERVICE_ROLE_KEY);
 
 // Centralized Supabase admin client for all backend/server logic.
 // Uses the service role key and should only be used in server-side code.

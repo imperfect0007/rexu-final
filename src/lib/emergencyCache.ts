@@ -154,29 +154,34 @@ async function fetchFromSupabase(
 export async function getEmergencyData(
   token: string
 ): Promise<CachedEmergencyData | null> {
-  const redis = getRedis();
-  const key = `${CACHE_PREFIX}${token}`;
+  try {
+    const redis = getRedis();
+    const key = `${CACHE_PREFIX}${token}`;
 
-  if (redis) {
-    try {
-      const cached = await redis.get(key);
-      if (isCachedEmergencyData(cached)) return cached;
-    } catch (err) {
-      console.error('Redis read failed, falling back to Supabase:', err);
+    if (redis) {
+      try {
+        const cached = await redis.get(key);
+        if (isCachedEmergencyData(cached)) return cached;
+      } catch (err) {
+        console.error('Redis read failed, falling back to Supabase:', err);
+      }
     }
-  }
 
-  const data = await fetchFromSupabase(token);
+    const data = await fetchFromSupabase(token);
 
-  if (data && redis) {
-    try {
-      await redis.set(key, data, { ex: CACHE_TTL_SECONDS });
-    } catch (err) {
-      console.error('Redis write failed:', err);
+    if (data && redis) {
+      try {
+        await redis.set(key, data, { ex: CACHE_TTL_SECONDS });
+      } catch (err) {
+        console.error('Redis write failed:', err);
+      }
     }
-  }
 
-  return data;
+    return data;
+  } catch (err) {
+    console.error('getEmergencyData failed:', err);
+    return null;
+  }
 }
 
 /**
