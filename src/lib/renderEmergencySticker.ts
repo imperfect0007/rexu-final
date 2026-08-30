@@ -40,15 +40,36 @@ type RenderOpts = {
   cardCrop?: CardCrop;
 };
 
+/** Load sticker art from disk (traced into the lambda) or CDN public URL. */
+async function loadTemplateBuffer(templateRel: string): Promise<Buffer> {
+  const localPath = path.join(process.cwd(), templateRel);
+  try {
+    await fs.access(localPath);
+    return await fs.readFile(localPath);
+  } catch {
+    const origin = (
+      process.env.NEXT_PUBLIC_APP_URL ||
+      process.env.NEXT_PUBLIC_SITE_URL ||
+      'https://rexu.in'
+    ).replace(/\/$/, '');
+    const publicPath = templateRel.replace(/^public[\\/]/, '').replace(/\\/g, '/');
+    const url = `${origin}/${publicPath}`;
+    const res = await fetch(url, { cache: 'force-cache' });
+    if (!res.ok) {
+      throw new Error(`Sticker template missing (${res.status}): ${publicPath}`);
+    }
+    return Buffer.from(await res.arrayBuffer());
+  }
+}
+
 /**
  * Model H sticker: template art + QR in measured box + cut strip
  * (vehicle left-aligned, company slightly right).
  */
 export async function renderModelHStickerPng(opts: RenderOpts): Promise<Buffer> {
-  const templatePath = path.join(process.cwd(), opts.templateRel);
-  await fs.access(templatePath);
+  const templateBuf = await loadTemplateBuffer(opts.templateRel);
 
-  const meta = await sharp(templatePath).metadata();
+  const meta = await sharp(templateBuf).metadata();
   const w = meta.width ?? 2000;
   const h = meta.height ?? 2000;
   const { qrBox } = opts;
@@ -69,7 +90,7 @@ export async function renderModelHStickerPng(opts: RenderOpts): Promise<Buffer> 
 
   // Composite QR on full template first, then crop — sharp may reorder
   // extract-before-composite if chained, which shifts QR by the crop offset.
-  const withQr = await sharp(templatePath)
+  const withQr = await sharp(templateBuf)
     .composite([{ input: qrPng, left: qrX, top: qrY }])
     .png()
     .toBuffer();
@@ -79,7 +100,7 @@ export async function renderModelHStickerPng(opts: RenderOpts): Promise<Buffer> 
     extract = opts.cardCrop;
   } else {
     // Emergency templates fill the frame — trim trailing empty space via footer ink.
-    const { data, info } = await sharp(templatePath)
+    const { data, info } = await sharp(templateBuf)
       .raw()
       .toBuffer({ resolveWithObject: true });
     const ch = info.channels;

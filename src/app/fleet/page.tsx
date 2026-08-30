@@ -641,8 +641,16 @@ export default function FleetManagerPage() {
         { headers: { Authorization: `Bearer ${accessToken}` }, cache: 'no-store' }
       );
       if (!res.ok) {
-        console.error('FleetManager: download-all error', await res.text());
-        window.alert('Could not download stickers zip. Try again.');
+        const detail = await res.text().catch(() => '');
+        console.error('FleetManager: download-all error', detail);
+        let msg = 'Could not download stickers zip. Try again.';
+        try {
+          const parsed = JSON.parse(detail) as { error?: string };
+          if (parsed.error) msg = parsed.error;
+        } catch {
+          /* keep default */
+        }
+        window.alert(msg);
         return;
       }
       const zipName = `${stickerNameBase(vehicle.vehicle_number, profileName)}.zip`;

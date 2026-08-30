@@ -5,6 +5,14 @@ import { fileURLToPath } from "url";
 const appRoot = path.dirname(fileURLToPath(import.meta.url));
 
 const nextConfig: NextConfig = {
+  // Keep native binaries out of the webpack bundle (Vercel serverless).
+  serverExternalPackages: ['sharp', 'bcrypt'],
+  // Stickers are read from disk in API routes; include them in the lambda trace.
+  outputFileTracingIncludes: {
+    '/api/qr/**': ['./public/stickers/**/*'],
+    '/api/fleet/download-vehicle-stickers/**': ['./public/stickers/**/*'],
+    '/api/fleet/checkin-qr-image/**': ['./public/stickers/**/*'],
+  },
   turbopack: {
     root: appRoot,
     resolveAlias: {
