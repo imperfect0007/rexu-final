@@ -3,8 +3,9 @@ import { promises as fs } from 'fs';
 import QRCode from 'qrcode';
 
 // Dynamic load — avoids hard-crashing the route module if native bindings fail to init.
-async function loadSharp(): Promise<typeof import('sharp')> {
-  return import('sharp');
+async function loadSharp() {
+  const mod = await import('sharp');
+  return mod.default;
 }
 
 function escapeXml(value: string): string {
@@ -71,7 +72,7 @@ async function loadTemplateBuffer(templateRel: string): Promise<Buffer> {
  * (vehicle left-aligned, company slightly right).
  */
 export async function renderModelHStickerPng(opts: RenderOpts): Promise<Buffer> {
-  const { default: sharp } = await loadSharp();
+  const sharp = await loadSharp();
   const templateBuf = await loadTemplateBuffer(opts.templateRel);
 
   const meta = await sharp(templateBuf).metadata();
