@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { randomUUID } from 'crypto';
 import { createClient } from '@supabase/supabase-js';
-import { supabaseAdmin } from '../../../../../backend/supabaseAdminClient';
+import { supabaseAdmin } from '../../../../backend/supabaseAdminClient';
 
 function clean(value: string | undefined): string {
   return (value || '').replace(/[\r\n]+/g, '').trim();
