@@ -5,6 +5,7 @@ import { SiteNavbar } from '@/components/marketing/SiteNavbar';
 import { SparkSheet } from '@/components/marketing/SparkSheet';
 import { SectionTag } from '@/components/marketing/SparkSheet';
 import { InstagramSection } from '@/components/marketing/InstagramSection';
+import { CustomerComplaintForm } from '@/components/CustomerComplaintForm';
 
 export const metadata: Metadata = {
   title: 'Contact Us – REXU',
@@ -58,6 +59,10 @@ export default function ContactPage() {
             <p className="text-sm text-neutral-500 mb-3">We typically respond within</p>
             <span className="text-sm font-semibold text-neutral-800">24–48 hours (business days)</span>
           </SparkSheet>
+        </div>
+
+        <div className="mb-12">
+          <CustomerComplaintForm />
         </div>
 
         <SparkSheet className="!p-6 space-y-4">
