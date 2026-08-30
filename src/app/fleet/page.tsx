@@ -34,6 +34,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { SiteNavbar } from '@/components/marketing/SiteNavbar';
 import { DashboardSidebar } from '@/components/DashboardSidebar';
+import { RequestQrReplacement } from '@/components/RequestQrReplacement';
 
 type VehicleKind = 'two_wheeler' | 'four_wheeler';
 
@@ -1247,6 +1248,15 @@ export default function FleetManagerPage() {
                           <button type="button" onClick={() => handleGenerateVehicleQr(v.id)} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-neutral-200 text-[11px] font-medium text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 transition-colors">
                             <QrCode className="w-3 h-3 text-neutral-500" /> Generate QR
                           </button>
+                        )}
+                        {v.qr_token && (
+                          <RequestQrReplacement
+                            variant="compact"
+                            segment="fleet"
+                            qrToken={v.qr_token}
+                            vehicleId={v.id}
+                            vehicleNumber={v.vehicle_number}
+                          />
                         )}
                         <button
                           type="button"

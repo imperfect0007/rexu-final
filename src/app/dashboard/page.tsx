@@ -7,6 +7,7 @@ import { logFleetActivity } from '@/lib/fleetLogger';
 import { downloadQrEmergencyCard } from '@/lib/downloadQrCard';
 import { duplicateVehicleMessage, normalizeVehicleNumber } from '@/lib/fleetVehicleNumber';
 import { resolvePersonalQrToken } from '@/lib/resolvePersonalQrToken';
+import { RequestQrReplacement } from '@/components/RequestQrReplacement';
 import { useRouter } from 'next/navigation';
 import {
   Shield,
@@ -2193,6 +2194,10 @@ export default function DashboardPage(props: PageProps) {
                       </>
                     )}
                   </button>
+                  <RequestQrReplacement
+                    segment="personal"
+                    qrToken={qrToken}
+                  />
                 </div>
               )}
             </div>
